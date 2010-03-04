@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+servicefilesdir=${prefix}/share/@SERVICE_FILES_DIR@
+providerfilesdir=${prefix}/share/@PROVIDER_FILES_DIR@
+
+Name: libaccounts-glib
+Description: A low-level library for managing accounts settings.
+Version: @VERSION@
+Libs: -L${libdir} -laccounts-glib
+Cflags: -I${includedir}
+

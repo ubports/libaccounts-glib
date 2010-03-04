@@ -1,0 +1,81 @@
+/* vi: set et sw=4 ts=4 cino=t0,(0: */
+/* -*- Mode: C; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/*
+ * This file is part of libaccounts-glib
+ *
+ * Copyright (C) 2009-2010 Nokia Corporation.
+ *
+ * Contact: Alberto Mardegan <alberto.mardegan@nokia.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ */
+
+#ifndef _AG_UTIL_H_
+#define _AG_UTIL_H_
+
+#include <dbus/dbus.h>
+#include <glib.h>
+#include <glib-object.h>
+#include <libxml/xmlreader.h>
+#include <sqlite3.h>
+
+G_BEGIN_DECLS
+
+GString *_ag_string_append_printf (GString *string,
+                                   const gchar *format,
+                                   ...) G_GNUC_INTERNAL;
+
+G_GNUC_INTERNAL
+GValue *_ag_value_slice_dup (const GValue *value);
+
+G_GNUC_INTERNAL
+void _ag_value_slice_free (GValue *value);
+
+G_GNUC_INTERNAL
+const gchar *_ag_value_to_db (const GValue *value);
+
+G_GNUC_INTERNAL
+GValue *_ag_value_from_db (sqlite3_stmt *stmt, gint col_type, gint col_value);
+
+G_GNUC_INTERNAL
+const gchar *_ag_type_from_g_type (GType type);
+
+G_GNUC_INTERNAL
+GType _ag_type_to_g_type (const gchar *type_str);
+
+G_GNUC_INTERNAL
+gboolean _ag_value_set_from_string (GValue *value, const gchar *string);
+
+G_GNUC_INTERNAL
+void _ag_iter_append_dict_entry (DBusMessageIter *iter, const gchar *key,
+                                 const GValue *value);
+G_GNUC_INTERNAL
+gboolean _ag_iter_get_dict_entry (DBusMessageIter *iter, const gchar **key,
+                                  GValue *value);
+
+G_GNUC_INTERNAL
+gboolean _ag_xml_get_element_data (xmlTextReaderPtr reader,
+                                   const gchar **dest_ptr);
+
+G_GNUC_INTERNAL
+gboolean _ag_xml_dup_element_data (xmlTextReaderPtr reader, gchar **dest_ptr);
+
+G_GNUC_INTERNAL
+gboolean _ag_xml_parse_settings (xmlTextReaderPtr reader, const gchar *group,
+                                 GHashTable *settings);
+
+G_END_DECLS
+
+#endif /* _AG_UTIL_H_ */

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+prefix=@prefix@
+datarootdir=@datarootdir@
+datadir=@datadir@
+
+export AG_SERVICES=@testdatadir@/
+export AG_PROVIDERS=@testdatadir@/	
+export ACCOUNTS=/tmp/ 
+
+accounts-glib-testsuite
