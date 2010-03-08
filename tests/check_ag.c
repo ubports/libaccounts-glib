@@ -346,7 +346,7 @@ START_TEST(test_service)
                  "Wrong service display name: %s", service_name);
 
     icon_name = ag_service_get_icon_name (service);
-    fail_unless (strcmp (service_name, "general_myservice") == 0,
+    fail_unless (strcmp (icon_name, "general_myservice") == 0,
                  "Wrong service icon name: %s", icon_name);
 
     ag_account_set_enabled (account, FALSE);
