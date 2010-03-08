@@ -64,6 +64,7 @@ add_providers_from_dir (AgManager *manager, const gchar *dirname,
     GDir *dir;
 
     g_return_if_fail (providers != NULL);
+    g_return_if_fail (dirname != NULL);
 
     dir = g_dir_open (dirname, 0, NULL);
     if (!dir) return;

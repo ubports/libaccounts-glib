@@ -401,7 +401,9 @@ exec_transaction (AgManager *manager, AgAccount *account,
         if (err_msg)
             sqlite3_free (err_msg);
 
-        sqlite3_step (priv->rollback_stmt);
+        ret = sqlite3_step (priv->rollback_stmt);
+        if (G_UNLIKELY (ret != SQLITE_OK))
+            g_warning ("Rollback failed");
         sqlite3_reset (priv->rollback_stmt);
         return;
     }
