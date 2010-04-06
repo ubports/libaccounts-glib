@@ -471,6 +471,10 @@ const gchar *
 ag_service_get_icon_name (AgService *service)
 {
     g_return_val_if_fail (service != NULL, NULL);
+
+    if (!service->file_data)
+        _ag_service_load_from_file (service);
+
     return service->icon_name;
 }
 
