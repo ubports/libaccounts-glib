@@ -181,6 +181,7 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
         if (esd->ts.tv_sec == ts.tv_sec &&
             esd->ts.tv_nsec == ts.tv_nsec)
         {
+            gboolean must_process = esd->must_process;
             /* message is ours: we can ignore it, as the changes
              * were already processed when the DB transaction succeeded. */
             ours = TRUE;
@@ -189,7 +190,7 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
             g_slice_free (EmittedSignalData, esd);
             priv->emitted_signals = g_list_delete_link (priv->emitted_signals,
                                                         list);
-            if (!esd->must_process)
+            if (!must_process)
                 goto nothing_to_do;
         }
     }
