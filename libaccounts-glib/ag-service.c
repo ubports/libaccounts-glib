@@ -166,9 +166,10 @@ parse_service (xmlTextReaderPtr reader, AgService *service)
 
     if (!service->name)
     {
-        service->name = g_strdup
-            ((const gchar *)xmlTextReaderGetAttribute (reader,
-                                                       (xmlChar *) "id"));
+        xmlChar *_name = xmlTextReaderGetAttribute (reader,
+                                                    (xmlChar *) "id");
+        service->name = g_strdup ((const gchar *)_name);
+        if (_name) xmlFree(_name);
     }
 
     ret = xmlTextReaderRead (reader);
@@ -555,6 +556,7 @@ ag_service_unref (AgService *service)
     {
         g_free (service->name);
         g_free (service->display_name);
+        g_free (service->icon_name);
         g_free (service->type);
         g_free (service->provider);
         g_free (service->file_data);

@@ -546,23 +546,28 @@ _ag_xml_dup_element_data (xmlTextReaderPtr reader, gchar **dest_ptr)
 static gboolean
 parse_param (xmlTextReaderPtr reader, GValue *value)
 {
-    const gchar *str_value, *str_type;
+    const gchar *str_value;
+    xmlChar *str_type;
     gboolean ok;
     GType type;
 
-    str_type = (const gchar *)xmlTextReaderGetAttribute (reader,
-                                                         (xmlChar *) "type");
+    str_type = xmlTextReaderGetAttribute (reader,
+                                          (xmlChar *) "type");
     if (!str_type)
-        str_type = "s"; /* string */
+        type = _ag_type_to_g_type ("s");
+    else
+    {
+        type = _ag_type_to_g_type ((const gchar*)str_type);
+        xmlFree(str_type);
+    }
+
+    if (G_UNLIKELY (type == G_TYPE_INVALID)) return FALSE;
 
     ok = _ag_xml_get_element_data (reader, &str_value);
     if (G_UNLIKELY (!ok)) return FALSE;
 
     /* Empty value is not an error, but simply ignored */
     if (G_UNLIKELY (!str_value)) return TRUE;
-
-    type = _ag_type_to_g_type (str_type);
-    if (G_UNLIKELY (type == G_TYPE_INVALID)) return FALSE;
 
     g_value_init (value, type);
 
@@ -600,12 +605,13 @@ _ag_xml_parse_settings (xmlTextReaderPtr reader, const gchar *group,
             if (strcmp (name, "setting") == 0)
             {
                 GValue value = { 0 }, *pval;
-                const gchar *key_name;
+                xmlChar *key_name;
                 gchar *key;
 
-                key_name = (const gchar *)xmlTextReaderGetAttribute
-                    (reader, (xmlChar *)"name");
-                key = g_strdup_printf ("%s%s", group, key_name);
+                key_name = xmlTextReaderGetAttribute (reader, (xmlChar *)"name");
+                key = g_strdup_printf ("%s%s", group, (const gchar*)key_name);
+
+                if (key_name) xmlFree (key_name);
 
                 ok = parse_param (reader, &value);
                 if (ok && G_VALUE_TYPE (&value) != G_TYPE_INVALID)
@@ -618,6 +624,8 @@ _ag_xml_parse_settings (xmlTextReaderPtr reader, const gchar *group,
                 }
                 else
                     g_free (key);
+
+                g_value_unset (&value);
             }
             else
             {
