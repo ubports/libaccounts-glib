@@ -138,9 +138,10 @@ parse_provider (xmlTextReaderPtr reader, AgProvider *provider)
 
     if (!provider->name)
     {
-        provider->name = g_strdup
-            ((const gchar *)xmlTextReaderGetAttribute (reader,
-                                                       (xmlChar *) "id"));
+        xmlChar *_name = xmlTextReaderGetAttribute (reader,
+                                                    (xmlChar *) "id");
+        provider->name = g_strdup((const gchar *)_name);
+        if (_name) xmlFree(_name);
     }
 
     ret = xmlTextReaderRead (reader);

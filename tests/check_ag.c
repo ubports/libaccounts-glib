@@ -131,7 +131,7 @@ START_TEST(test_provider)
                  "Failed to create the AgAccount.");
 
     provider_name = ag_account_get_provider_name (account);
-    fail_if (strcmp (provider_name, PROVIDER) != 0);
+    fail_if (g_strcmp0 (provider_name, PROVIDER) != 0);
 
     /* Test provider XML file loading */
     provider = ag_manager_get_provider (manager, "MyProvider");
@@ -165,7 +165,7 @@ void account_store_cb (AgAccount *account, const GError *error,
     fail_unless (AG_IS_ACCOUNT (account), "Account got disposed?");
     if (error)
         fail("Got error: %s", error->message);
-    fail_unless (strcmp (string, TEST_STRING) == 0, "Got wrong string");
+    fail_unless (g_strcmp0 (string, TEST_STRING) == 0, "Got wrong string");
 
     end_test ();
 }
@@ -198,7 +198,7 @@ void account_store_locked_cb (AgAccount *account, const GError *error,
     fail_unless (AG_IS_ACCOUNT (account), "Account got disposed?");
     if (error)
         fail("Got error: %s", error->message);
-    fail_unless (strcmp (string, TEST_STRING) == 0, "Got wrong string");
+    fail_unless (g_strcmp0 (string, TEST_STRING) == 0, "Got wrong string");
 
     fail_unless (lock_released, "Data stored while DB locked!");
 
@@ -246,7 +246,7 @@ account_store_locked_unref_cb (AgAccount *account, const GError *error,
     fail_unless (error != NULL, "Account disposed but no error set!");
     fail_unless (error->code == AG_ERROR_DISPOSED,
                  "Got a different error code");
-    fail_unless (strcmp (string, TEST_STRING) == 0, "Got wrong string");
+    fail_unless (g_strcmp0 (string, TEST_STRING) == 0, "Got wrong string");
 }
 
 static void
@@ -299,7 +299,7 @@ void account_store_now_cb (AgAccount *account, const GError *error,
     fail_unless (AG_IS_ACCOUNT (account), "Account got disposed?");
     if (error)
         fail("Got error: %s", error->message);
-    fail_unless (strcmp (string, TEST_STRING) == 0, "Got wrong string");
+    fail_unless (g_strcmp0 (string, TEST_STRING) == 0, "Got wrong string");
 
     data_stored = TRUE;
 }
@@ -334,19 +334,19 @@ START_TEST(test_service)
     fail_unless (service != NULL);
 
     service_type = ag_service_get_service_type (service);
-    fail_unless (strcmp (service_type, "e-mail") == 0,
+    fail_unless (g_strcmp0 (service_type, "e-mail") == 0,
                  "Wrong service type: %s", service_type);
 
     service_name = ag_service_get_name (service);
-    fail_unless (strcmp (service_name, "MyService") == 0,
+    fail_unless (g_strcmp0 (service_name, "MyService") == 0,
                  "Wrong service name: %s", service_name);
 
     service_name = ag_service_get_display_name (service);
-    fail_unless (strcmp (service_name, "My Service") == 0,
+    fail_unless (g_strcmp0 (service_name, "My Service") == 0,
                  "Wrong service display name: %s", service_name);
 
     icon_name = ag_service_get_icon_name (service);
-    fail_unless (strcmp (icon_name, "general_myservice") == 0,
+    fail_unless (g_strcmp0 (icon_name, "general_myservice") == 0,
                  "Wrong service icon name: %s", icon_name);
 
     ag_account_set_enabled (account, FALSE);
@@ -412,13 +412,13 @@ START_TEST(test_service)
                  "Couldn't load account %u", account_id);
 
     provider_name = ag_account_get_provider_name (account);
-    fail_unless (strcmp (provider_name, PROVIDER) == 0,
+    fail_unless (g_strcmp0 (provider_name, PROVIDER) == 0,
                  "Got provider %s, expecting %s", provider_name, PROVIDER);
 
     /* check that the values are retained */
     fail_unless (ag_account_get_enabled (account) == FALSE,
                  "Account enabled!");
-    fail_unless (strcmp (ag_account_get_display_name (account),
+    fail_unless (g_strcmp0 (ag_account_get_display_name (account),
                          display_name) == 0,
                  "Display name not retained!");
 
@@ -497,7 +497,7 @@ START_TEST(test_account_services)
     fail_unless (g_list_length (services) == 1);
 
     service = services->data;
-    fail_unless (strcmp (ag_service_get_name (service), "MyService") == 0);
+    fail_unless (g_strcmp0 (ag_service_get_name (service), "MyService") == 0);
 
     ag_service_list_free (services);
 
@@ -507,7 +507,7 @@ START_TEST(test_account_services)
     fail_unless (g_list_length (services) == 1);
 
     service = services->data;
-    fail_unless (strcmp (ag_service_get_name (service), "MyService") == 0);
+    fail_unless (g_strcmp0 (ag_service_get_name (service), "MyService") == 0);
 
     ag_service_list_free (services);
 
@@ -682,12 +682,12 @@ START_TEST(test_settings_iter)
         gboolean found = FALSE;
         for (i = 0; keys[i] != NULL; i++)
         {
-            if (strcmp (key, keys[i]) == 0)
+            if (g_strcmp0 (key, keys[i]) == 0)
             {
                 const gchar *text;
                 found = TRUE;
                 text = g_value_get_string (val);
-                fail_unless (strcmp (values[i], text) == 0,
+                fail_unless (g_strcmp0 (values[i], text) == 0,
                              "Got value %s for key %s, expecting %s",
                              text, key, values[i]);
                 break;
@@ -713,12 +713,12 @@ START_TEST(test_settings_iter)
                      "Got key %s, wrong prefix", key);
         for (i = 0; keys[i] != NULL; i++)
         {
-            if (strcmp (key, keys[i]) == 0)
+            if (g_strcmp0 (key, keys[i]) == 0)
             {
                 const gchar *text;
                 found = TRUE;
                 text = g_value_get_string (val);
-                fail_unless (strcmp (values[i], text) == 0,
+                fail_unless (g_strcmp0 (values[i], text) == 0,
                              "Got value %s for key %s, expecting %s",
                              text, key, values[i]);
                 break;
@@ -770,7 +770,7 @@ START_TEST(test_settings_iter)
         fail_unless (g_str_has_prefix (key, "parameters/"),
                      "Got key %s, wrong prefix", key);
         g_debug ("Got key %s of type %s", key, G_VALUE_TYPE_NAME (val));
-        if (strcmp (key, "parameters/port") == 0)
+        if (g_strcmp0 (key, "parameters/port") == 0)
         {
             gint port;
 
@@ -813,8 +813,8 @@ START_TEST(test_list_services)
 
         name = ag_service_get_name (service);
         g_debug ("Service name: %s", name);
-        fail_unless (strcmp (name, "MyService") == 0 ||
-                     strcmp (name, "OtherService") == 0,
+        fail_unless (g_strcmp0 (name, "MyService") == 0 ||
+                     g_strcmp0 (name, "OtherService") == 0,
                      "Got unexpected service `%s'", name);
     }
     ag_service_list_free (services);
@@ -828,7 +828,7 @@ START_TEST(test_list_services)
     list = services;
     service = list->data;
     name = ag_service_get_name (service);
-    fail_unless (strcmp (name, "OtherService") == 0,
+    fail_unless (g_strcmp0 (name, "OtherService") == 0,
                  "Got unexpected service `%s'", name);
     ag_service_list_free (services);
 
@@ -896,8 +896,8 @@ key_changed_cb (AgAccount *account, const gchar *key, gboolean *invoked)
     fail_unless (*invoked == FALSE, "Callback invoked twice!");
 
     fail_unless (key != NULL);
-    fail_unless (strcmp (key, "parameters/server") == 0 ||
-                 strcmp (key, "parameters/port") == 0,
+    fail_unless (g_strcmp0 (key, "parameters/server") == 0 ||
+                 g_strcmp0 (key, "parameters/port") == 0,
                  "Callback invoked for wrong key %s", key);
     *invoked = TRUE;
 }
@@ -909,7 +909,7 @@ dir_changed_cb (AgAccount *account, const gchar *key, gboolean *invoked)
     fail_unless (*invoked == FALSE, "Callback invoked twice!");
 
     fail_unless (key != NULL);
-    fail_unless (strcmp (key, "parameters/") == 0,
+    fail_unless (g_strcmp0 (key, "parameters/") == 0,
                  "Callback invoked for wrong dir %s", key);
     *invoked = TRUE;
 }
@@ -1293,11 +1293,11 @@ START_TEST(test_service_regression)
                  "Couldn't load account %u", account_id);
 
     provider_name = ag_account_get_provider_name (account);
-    fail_unless (strcmp (provider_name, PROVIDER) == 0,
+    fail_unless (g_strcmp0 (provider_name, PROVIDER) == 0,
                  "Got provider %s, expecting %s", provider_name, PROVIDER);
 
     /* check that the values are retained */
-    fail_unless (strcmp (ag_account_get_display_name (account),
+    fail_unless (g_strcmp0 (ag_account_get_display_name (account),
                          display_name) == 0,
                  "Display name not retained!");
 
@@ -1544,10 +1544,10 @@ START_TEST(test_cache_regression)
     account_id2 = account->id;
 
     /* check that the values are the correct ones */
-    fail_unless (strcmp (ag_account_get_display_name (account),
+    fail_unless (g_strcmp0 (ag_account_get_display_name (account),
                          display_name2) == 0);
 
-    fail_unless (strcmp (ag_account_get_provider_name (account),
+    fail_unless (g_strcmp0 (ag_account_get_provider_name (account),
                          provider2) == 0);
 
     end_test ();

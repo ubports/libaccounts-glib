@@ -1960,7 +1960,7 @@ ag_account_verify (AgAccount *account, const gchar *key, const gchar **token)
     guint service_id;
     gchar *data;
     gchar *sql;
-    AgSignature *sgn;
+    AgSignature sgn;
 
     g_return_val_if_fail (AG_IS_ACCOUNT (account), FALSE);
 
@@ -1969,7 +1969,6 @@ ag_account_verify (AgAccount *account, const gchar *key, const gchar **token)
     ss = get_service_settings (priv, priv->service, FALSE);
     g_return_val_if_fail (ss != NULL, FALSE);
 
-    sgn = g_slice_new (AgSignature);
     service_id = (priv->service != NULL) ? priv->service->id : 0;
 
     GString *sql_str;
@@ -1981,7 +1980,7 @@ ag_account_verify (AgAccount *account, const gchar *key, const gchar **token)
     sql = g_string_free (sql_str, FALSE);
     _ag_manager_exec_query (priv->manager,
                             (AgQueryCallback)got_account_signature,
-                            sgn, sql);
+                            &sgn, sql);
 
     data = signature_data(account, key);
 
