@@ -962,6 +962,7 @@ _ag_account_changes_from_dbus (DBusMessageIter *iter,
 
 error:
     g_warning ("Wrong format of D-Bus message");
+    g_slice_free(AgAccountChanges, changes);
     return NULL;
 }
 
