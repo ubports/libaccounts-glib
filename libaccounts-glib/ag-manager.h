@@ -70,6 +70,8 @@ GType ag_manager_get_type (void) G_GNUC_CONST;
 
 AgManager *ag_manager_new (void);
 
+AgManager *ag_manager_new_for_service_type (const gchar *service_type);
+
 GList *ag_manager_list (AgManager *manager);
 GList *ag_manager_list_by_service_type (AgManager *manager,
                                         const gchar *service_type);
@@ -85,6 +87,10 @@ AgService *ag_manager_get_service (AgManager *manager,
 GList *ag_manager_list_services (AgManager *manager);
 GList *ag_manager_list_services_by_type (AgManager *manager,
                                          const gchar *service_type);
+GList *ag_manager_list_enabled (AgManager *manager);
+GList *ag_manager_list_enabled_by_service_type (AgManager *manager,
+                                                const gchar *service_type);
+const gchar *ag_manager_get_service_type (AgManager *manager);
 
 AgProvider *ag_manager_get_provider (AgManager *manager,
                                      const gchar *provider_name);

@@ -70,6 +70,7 @@ gboolean ag_account_supports_service (AgAccount *account,
 GList *ag_account_list_services (AgAccount *account);
 GList *ag_account_list_services_by_type (AgAccount *account,
                                          const gchar *service_type);
+GList *ag_account_list_enabled_services (AgAccount *account);
 
 AgManager *ag_account_get_manager (AgAccount *account);
 
