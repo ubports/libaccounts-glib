@@ -38,6 +38,15 @@ G_BEGIN_DECLS
 
 typedef struct _AgAccountChanges AgAccountChanges;
 
+struct _AgAccountChanges {
+    gboolean deleted;
+    gboolean created;
+
+    /* The keys of the table are service names, and the values are
+     * AgServiceChanges structures */
+    GHashTable *services;
+};
+
 G_GNUC_INTERNAL
 void _ag_account_store_completed (AgAccount *account,
                                   AgAccountChanges *changes,
@@ -119,6 +128,12 @@ GList *_ag_providers_list (AgManager *manager);
 G_GNUC_INTERNAL
 AgProvider *_ag_provider_new_from_file (const gchar *provider_name);
 
-G_END_DECLS
+G_GNUC_INTERNAL
+gboolean _ag_account_changes_have_enabled (AgAccountChanges *changes);
 
+G_GNUC_INTERNAL
+GList *_ag_manager_list_all (AgManager *manager);
+
+G_GNUC_INTERNAL
+void _ag_account_changes_free (AgAccountChanges *change);
 #endif /* _AG_INTERNALS_H_ */

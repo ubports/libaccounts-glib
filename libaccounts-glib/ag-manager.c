@@ -43,8 +43,16 @@
 
 enum
 {
+    PROP_0,
+
+    PROP_SERVICE_TYPE,
+};
+
+enum
+{
     ACCOUNT_CREATED,
     ACCOUNT_DELETED,
+    ACCOUNT_ENABLED,
     LAST_SIGNAL
 };
 
@@ -75,6 +83,8 @@ struct _AgManagerPrivate {
     GList *emitted_signals;
 
     guint is_disposed : 1;
+
+    gchar *service_type;
 };
 
 typedef struct {
@@ -145,6 +155,28 @@ parse_message_header (DBusMessageIter *iter,
     return TRUE;
 }
 
+static void
+ag_manager_done_changes (AgManager *manager, AgAccountChanges *changes, AgAccountId account_id)
+{
+    AgManagerPrivate *priv = manager->priv;
+    gboolean enabled_event = FALSE;
+
+    /*TODO the enabled-event is emitted whenever enabled status has changed on
+     * any service or account. This has some possibility for optimization*/
+    if (priv->service_type)
+        enabled_event = _ag_account_changes_have_enabled (changes);
+
+    if (enabled_event)
+        g_signal_emit_by_name (manager, "enabled-event", account_id);
+
+    if (changes->deleted)
+        g_signal_emit_by_name (manager, "account-deleted", account_id);
+
+    if (changes->created)
+        g_signal_emit_by_name (manager, "account-created", account_id);
+
+}
+
 static DBusHandlerResult
 dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
                       void *user_data)
@@ -159,6 +191,7 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
     gboolean deleted, created;
     gboolean ret;
     gboolean ours = FALSE;
+    gboolean must_instantiate = TRUE;
     DBusMessageIter iter;
     GList *list;
 
@@ -191,7 +224,7 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
             priv->emitted_signals = g_list_delete_link (priv->emitted_signals,
                                                         list);
             if (!must_process)
-                goto nothing_to_do;
+                return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
         }
     }
 
@@ -207,16 +240,19 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
         esd->must_process = TRUE;
     }
 
+    changes = _ag_account_changes_from_dbus (&iter, created, deleted);
+
     /* check if the account is loaded */
     account = g_hash_table_lookup (priv->accounts,
                                    GUINT_TO_POINTER (account_id));
+
     if (!account && !created && !deleted)
-        goto nothing_to_do;
+        must_instantiate = FALSE;
 
     if (ours && (deleted || created))
-        goto nothing_to_do;
+        must_instantiate = FALSE;
 
-    if (!account)
+    if (!account && must_instantiate)
     {
         /* because of the checks above, this can happen if this is an account
          * created or deleted from another instance.
@@ -236,13 +272,12 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
         g_timeout_add_seconds (2, timed_unref_account, account);
     }
 
-    changes = _ag_account_changes_from_dbus (&iter, created, deleted);
-    _ag_account_done_changes (account, changes);
+    if (account)
+        _ag_account_done_changes (account, changes);
 
-    return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+    ag_manager_done_changes (manager, changes, account_id);
+    _ag_account_changes_free (changes);
 
-nothing_to_do:
-    g_debug ("Nothing to do");
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
@@ -433,6 +468,7 @@ exec_transaction (AgManager *manager, AgAccount *account,
     signal_account_changes (manager, account, changes);
 
     _ag_account_done_changes (account, changes);
+    ag_manager_done_changes (manager, changes, account->id);
 }
 
 static void
@@ -738,6 +774,25 @@ ag_manager_constructor (GType type, guint n_params,
 }
 
 static void
+ag_manager_set_property (GObject *object, guint property_id,
+                         const GValue *value, GParamSpec *pspec)
+{
+    AgManager *manager = AG_MANAGER (object);
+    AgManagerPrivate *priv = manager->priv;
+
+    switch (property_id)
+    {
+    case PROP_SERVICE_TYPE:
+        g_assert (priv->service_type == NULL);
+        priv->service_type = g_value_dup_string (value);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+        break;
+    }
+}
+
+static void
 ag_manager_dispose (GObject *object)
 {
     AgManagerPrivate *priv = AG_MANAGER_PRIV (object);
@@ -793,6 +848,7 @@ ag_manager_finalize (GObject *object)
                        sqlite3_errmsg (priv->db));
         priv->db = NULL;
     }
+    g_free (priv->service_type);
 
     G_OBJECT_CLASS (ag_manager_parent_class)->finalize (object);
 }
@@ -817,7 +873,14 @@ ag_manager_class_init (AgManagerClass *klass)
     klass->account_deleted = ag_manager_account_deleted;
     object_class->constructor = ag_manager_constructor;
     object_class->dispose = ag_manager_dispose;
+    object_class->set_property = ag_manager_set_property;
     object_class->finalize = ag_manager_finalize;
+
+    g_object_class_install_property
+        (object_class, PROP_SERVICE_TYPE,
+         g_param_spec_string ("service-type", "service type", "Set service type",
+                              NULL,
+                              G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
 
     /**
      * AgManager::account-created:
@@ -829,6 +892,29 @@ ag_manager_class_init (AgManagerClass *klass)
      * response to ag_manager_create_account().
      */
     signals[ACCOUNT_CREATED] = g_signal_new ("account-created",
+        G_TYPE_FROM_CLASS (klass),
+        G_SIGNAL_RUN_LAST,
+        0,
+        NULL, NULL,
+        g_cclosure_marshal_VOID__UINT,
+        G_TYPE_NONE,
+        1, G_TYPE_UINT);
+
+    /**
+     * AgManager::account-enabled:
+     * @manager: the #AgManager.
+     * @account_id: the #AgAccountId of the account that has been enabled.
+     *
+     * If the manager has been created with ag_manager_new_for_service_type(), this 
+     * signal will be emitted when an account (identified by @account_id) has been 
+     * modified in such a way that the application might be interested to start/stop 
+     * using it: the "enabled" flag on the account or in some service supported by the 
+     * account and matching the #AgManager:service-type have changed.
+     * In practice, this signal might be emitted more often than when strictly needed; 
+     * applications must call ag_account_list_enabled_services() or 
+     * ag_manager_list_enabled() to get the current state.
+     */
+    signals[ACCOUNT_ENABLED] = g_signal_new ("enabled-event",
         G_TYPE_FROM_CLASS (klass),
         G_SIGNAL_RUN_LAST,
         0,
@@ -867,17 +953,8 @@ ag_manager_new ()
     return g_object_new (AG_TYPE_MANAGER, NULL);
 }
 
-/**
- * ag_manager_list:
- * @manager: the #AgManager.
- *
- * Lists the accounts.
- *
- * Returns: a #GList of #AgAccountId representing the accounts. Must
- * be free'd with ag_manager_list_free().
- */
 GList *
-ag_manager_list (AgManager *manager)
+_ag_manager_list_all (AgManager *manager)
 {
     GList *list = NULL;
     const gchar *sql;
@@ -887,6 +964,30 @@ ag_manager_list (AgManager *manager)
     _ag_manager_exec_query (manager, (AgQueryCallback)add_id_to_list,
                             &list, sql);
     return list;
+}
+
+/**
+ * ag_manager_list:
+ * @manager: the #AgManager.
+ *
+ * Lists the accounts. If the #AgManager is created with specified service_type
+ * it will return only the accounts supporting this service_type.
+ *
+ * Returns: a #GList of #AgAccountId representing the accounts. Must
+ * be free'd with ag_manager_list_free().
+ */
+GList *
+ag_manager_list (AgManager *manager)
+{
+    AgManagerPrivate *priv;
+
+    g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
+    priv = manager->priv;
+
+    if (priv->service_type)
+        return ag_manager_list_by_service_type (manager, priv->service_type);
+
+    return _ag_manager_list_all (manager);
 }
 
 /**
@@ -910,6 +1011,60 @@ ag_manager_list_by_service_type (AgManager *manager,
                       "SELECT DISTINCT account FROM Settings "
                       "JOIN Services ON Settings.service = Services.id "
                       "WHERE Services.type = %Q;",
+                      service_type);
+    _ag_manager_exec_query (manager, (AgQueryCallback)add_id_to_list,
+                            &list, sql);
+    return list;
+}
+
+/**
+ * ag_manager_list_enabled:
+ * @manager: the #AgManager.
+ *
+ * Lists the enabled accounts.
+ *
+ * Returns: a #GList of the enabled #AgAccountId representing the accounts. Must
+ * be free'd with ag_manager_list_free().
+ */
+GList *
+ag_manager_list_enabled (AgManager *manager)
+{
+    GList *list = NULL;
+    char sql[512];
+
+    g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
+    sqlite3_snprintf (sizeof (sql), sql,
+                      "SELECT DISTINCT account FROM Settings "
+                      "JOIN Services ON Settings.service = Services.id;");
+    _ag_manager_exec_query (manager, (AgQueryCallback)add_id_to_list,
+                            &list, sql);
+    return list;
+}
+
+/**
+ * ag_manager_list_enabled_by_service_type:
+ * @manager: the #AgManager.
+ *
+ * Lists the enabled accounts supporting the given service type.
+ *
+ * Returns: a #GList of the enabled #AgAccountId representing the accounts. Must
+ * be free'd with ag_manager_list_free().
+ */
+GList *
+ag_manager_list_enabled_by_service_type (AgManager *manager,
+                                         const gchar *service_type)
+{
+    GList *list = NULL;
+    char sql[512];
+
+    g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
+    g_return_val_if_fail (service_type != NULL, NULL);
+    sqlite3_snprintf (sizeof (sql), sql,
+                      "SELECT Settings.account FROM Settings "
+                      "INNER JOIN Services ON Settings.service = Services.id "
+                      "WHERE Settings.key='enabled' AND Settings.value='1' "
+                      "AND Services.type = %Q AND Settings.account IN "
+                      "(SELECT id FROM Accounts WHERE enabled=1);",
                       service_type);
     _ag_manager_exec_query (manager, (AgQueryCallback)add_id_to_list,
                             &list, sql);
@@ -1057,6 +1212,8 @@ ag_manager_get_service (AgManager *manager, const gchar *service_name)
  * @manager: the #AgManager.
  *
  * Gets a list of all the installed services.
+ * If the #AgManager is created with specified service_type
+ * it will return only the installed services supporting this service_type.
  *
  * Returns: a list of #AgService, which must be then free'd with
  * ag_service_list_free().
@@ -1064,7 +1221,13 @@ ag_manager_get_service (AgManager *manager, const gchar *service_name)
 GList *
 ag_manager_list_services (AgManager *manager)
 {
+    AgManagerPrivate *priv;
+
     g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
+    priv = manager->priv;
+
+    if (priv->service_type)
+        return ag_manager_list_services_by_type (manager, priv->service_type);
 
     return _ag_services_list (manager);
 }
@@ -1091,8 +1254,8 @@ ag_manager_list_services_by_type (AgManager *manager, const gchar *service_type)
     /* if we kept the DB Service table always up-to-date with all known
      * services, then we could just run a query over it. But while we are not,
      * it's simpler to implement the function by reusing the output from
-     * ag_manager_list_services(). */
-    all_services = ag_manager_list_services (manager);
+     * _ag_services_list(manager). */
+    all_services = _ag_services_list (manager);
     for (list = all_services; list != NULL; list = list->next)
     {
         AgService *service = list->data;
@@ -1318,3 +1481,29 @@ ag_manager_list_providers (AgManager *manager)
     return _ag_providers_list (manager);
 }
 
+/**
+ * ag_manager_new_for_service_type:
+ * @service_type: the name of a service type
+ * 
+ * Returns: an instance of an #AgManager with specified service type.
+ */
+AgManager *
+ag_manager_new_for_service_type (const gchar *service_type)
+{
+    AgManager *manager;
+
+    g_return_val_if_fail (service_type != NULL, NULL);
+
+    manager = g_object_new (AG_TYPE_MANAGER, "service-type", service_type, NULL);
+    g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
+
+    return manager;
+}
+
+const gchar *
+ag_manager_get_service_type (AgManager *manager)
+{
+    g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
+
+    return manager->priv->service_type;
+}

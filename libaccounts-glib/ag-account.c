@@ -76,15 +76,6 @@ typedef struct _AgServiceSettings {
     GHashTable *settings;
 } AgServiceSettings;
 
-struct _AgAccountChanges {
-    gboolean deleted;
-    gboolean created;
-
-    /* The keys of the table are service names, and the values are
-     * AgServiceChanges structures */
-    GHashTable *services;
-};
-
 struct _AgAccountPrivate {
     AgManager *manager;
 
@@ -408,7 +399,7 @@ ag_service_changes_free (AgServiceChanges *sc)
     g_slice_free (AgServiceChanges, sc);
 }
 
-static void
+void
 _ag_account_changes_free (AgAccountChanges *changes)
 {
     if (G_LIKELY (changes))
@@ -572,16 +563,8 @@ _ag_account_done_changes (AgAccount *account, AgAccountChanges *changes)
     if (changes->deleted)
     {
         priv->deleted = TRUE;
-
-        /* emit first the disabled signal */
         g_signal_emit (account, signals[ENABLED], 0, NULL, FALSE);
-
         g_signal_emit (account, signals[DELETED], 0);
-        g_signal_emit_by_name (priv->manager, "account-deleted", account->id);
-    }
-    else if (changes->created)
-    {
-        g_signal_emit_by_name (priv->manager, "account-created", account->id);
     }
 }
 
@@ -966,6 +949,28 @@ error:
     return NULL;
 }
 
+gboolean
+_ag_account_changes_have_enabled (AgAccountChanges *changes)
+{
+    if (changes->services)
+    {
+        GHashTableIter iter;
+        AgServiceChanges *sc;
+
+        g_hash_table_iter_init (&iter, changes->services);
+        while (g_hash_table_iter_next (&iter,
+                                       NULL, (gpointer)&sc))
+        {
+            const gchar *key = "enabled";
+
+            if (g_hash_table_lookup (sc->settings, (gpointer)key))
+                return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
 static void
 ag_account_store_signature (AgAccount *account, AgServiceChanges *sc, GString *sql)
 {
@@ -1176,7 +1181,9 @@ ag_account_supports_service (AgAccount *account, const gchar *service_type)
  * @account: the #AgAccount.
  *
  * Returns: a #GList of #AgService items representing all the services
- * supported by this account. Must be free'd with ag_service_list_free().
+ * supported by this account. If the #AgManager was created with specified
+ * service_type this will return only services with this service_type.
+ * Must be free'd with ag_service_list_free().
  */
 GList *
 ag_account_list_services (AgAccount *account)
@@ -1233,14 +1240,13 @@ ag_account_list_services_by_type (AgAccount *account,
     if (!priv->provider_name)
         return NULL;
 
-    all_services = ag_manager_list_services (priv->manager);
+    all_services = ag_manager_list_services_by_type (priv->manager, service_type);
     for (list = all_services; list != NULL; list = list->next)
     {
         AgService *service = list->data;
 
-        if (service->provider && service->type &&
-            strcmp (service->provider, priv->provider_name) == 0 &&
-            strcmp (service->type, service_type) == 0)
+        if (service->provider &&
+            strcmp (service->provider, priv->provider_name) == 0)
         {
             services = g_list_prepend (services, service);
         }
@@ -1248,6 +1254,61 @@ ag_account_list_services_by_type (AgAccount *account,
             ag_service_unref (service);
     }
     g_list_free (all_services);
+    return services;
+}
+
+static gboolean
+add_name_to_list (sqlite3_stmt *stmt, GList **plist)
+{
+    gchar *name;
+    name = g_strdup ((gchar *)sqlite3_column_text (stmt, 0));
+
+    *plist = g_list_prepend(*plist, name);
+
+    return TRUE;
+}
+
+/**
+ * ag_account_list_enabled_services:
+ * @account: the #AgAccount.
+ *
+ * Returns: a #GList of #AgService items representing all the services
+ * which are enabled. Must be free'd with ag_service_list_free().
+ */
+GList *
+ag_account_list_enabled_services (AgAccount *account)
+{
+    AgAccountPrivate *priv;
+    GList *list = NULL;
+    GList *iter;
+    GList *services = NULL;
+    char sql[512];
+
+    g_return_val_if_fail (AG_IS_ACCOUNT (account), NULL);
+    priv = account->priv;
+
+    g_return_val_if_fail (AG_IS_ACCOUNT (account), NULL);
+    sqlite3_snprintf (sizeof (sql), sql,
+                      "SELECT DISTINCT Services.name FROM Services "
+                      "JOIN Settings ON Settings.service = Services.id " 
+                      "WHERE Settings.key='enabled' AND Settings.value='1';");
+    _ag_manager_exec_query (priv->manager, (AgQueryCallback)add_name_to_list,
+                            &list, sql);
+
+    for (iter = list; iter != NULL; iter = iter->next)
+    {
+        gchar *service_name;
+        AgService *service;
+
+        service_name = (gchar*)iter->data;
+        service = ag_manager_get_service (priv->manager, service_name);
+
+        services = g_list_prepend (services, service);
+        g_free (service_name);
+    }
+
+    g_list_free (list);
+
     return services;
 }
 
