@@ -425,7 +425,7 @@ START_TEST(test_service)
     g_value_init (&value, G_TYPE_STRING);
     source = ag_account_get_value (account, "description", &value);
     fail_unless (source == AG_SETTING_SOURCE_ACCOUNT, "Wrong source");
-    fail_unless (strcmp(g_value_get_string (&value), description) == 0,
+    fail_unless (g_strcmp0(g_value_get_string (&value), description) == 0,
                  "Wrong value");
     g_value_unset (&value);
 
@@ -438,7 +438,7 @@ START_TEST(test_service)
     g_value_init (&value, G_TYPE_STRING);
     source = ag_account_get_value (account, "username", &value);
     fail_unless (source == AG_SETTING_SOURCE_ACCOUNT, "Wrong source");
-    fail_unless (strcmp(g_value_get_string (&value), username) == 0,
+    fail_unless (g_strcmp0(g_value_get_string (&value), username) == 0,
                  "Wrong value");
     g_value_unset (&value);
 
@@ -1310,7 +1310,7 @@ START_TEST(test_service_regression)
     g_value_init (&value, G_TYPE_STRING);
     source = ag_account_get_value (account, "username", &value);
     fail_unless (source == AG_SETTING_SOURCE_ACCOUNT, "Wrong source");
-    fail_unless (strcmp(g_value_get_string (&value), username) == 0,
+    fail_unless (g_strcmp0(g_value_get_string (&value), username) == 0,
                  "Wrong value");
     g_value_unset (&value);
 
@@ -1647,6 +1647,202 @@ START_TEST(test_enabled_regression)
 }
 END_TEST
 
+START_TEST(test_manager_new_for_service_type)
+{
+    AgAccount *account1, *account2;
+    AgService *service1, *service2;
+    AgManager *manager2;
+    const gchar *provider = "first_provider";
+    GList *list;
+
+    /* delete the database */
+    g_unlink (db_filename);
+
+    g_type_init ();
+
+    manager2 = ag_manager_new();
+    manager = ag_manager_new_for_service_type ("e-mail");
+    fail_unless (g_strcmp0 (ag_manager_get_service_type (manager),
+                         "e-mail") == 0);
+
+    account1 = ag_manager_create_account (manager, provider);
+    fail_unless (account1 != NULL);
+    account2 = ag_manager_create_account (manager, provider);
+    fail_unless (account2 != NULL);
+
+    service1 = ag_manager_get_service (manager, "MyService");
+    fail_unless (service1 != NULL);
+    service2 = ag_manager_get_service (manager, "OtherService");
+    fail_unless (service2 != NULL);
+
+    ag_account_set_enabled (account1, TRUE);
+    ag_account_select_service (account1, service1);
+    ag_account_set_enabled (account1, TRUE);
+    ag_account_set_enabled (account2, TRUE);
+    ag_account_select_service (account2, service2);
+    ag_account_set_enabled (account2, FALSE);
+
+    ag_account_store (account1, account_store_now_cb, TEST_STRING);
+    fail_unless (data_stored, "Callback not invoked immediately");
+    ag_account_store (account2, account_store_now_cb, TEST_STRING);
+    fail_unless (data_stored, "Callback not invoked immediately");
+
+    fail_unless (account1->id != 0);
+    fail_unless (account2->id != 0);
+
+    list = ag_manager_list_enabled_by_service_type (manager, "e-mail");
+    fail_unless (g_list_length (list) == 1);
+    fail_unless (account1->id == list->data);
+
+    /* clear up */
+    ag_service_unref (service1);
+    ag_service_unref (service2);
+    g_object_unref (account1);
+    g_object_unref (account2);
+    ag_manager_list_free (list);
+
+    end_test ();
+}
+END_TEST
+
+static void
+on_enabled_event (AgManager *manager, AgAccountId account_id,
+                  AgAccountId *id)
+{
+    g_debug ("%s called (%u)", G_STRFUNC, account_id);
+    AgAccount *acc;
+    AgService *service;
+
+    acc = ag_manager_get_account (manager, account_id);
+    fail_unless (acc != NULL);
+    fail_unless (ag_account_get_enabled (acc));
+
+    service = ag_manager_get_service (manager, "MyService");
+    fail_unless (service != NULL);
+    ag_account_select_service (acc, service);
+    fail_unless (ag_account_get_enabled (acc));
+
+    *id = account_id;
+
+    g_main_loop_quit (main_loop);
+}
+
+static gboolean
+enabled_event_test_failed (gpointer userdata)
+{
+    g_debug ("Timeout");
+    g_main_loop_quit (main_loop);
+    source_id = 0;
+    return FALSE;
+}
+
+START_TEST(test_manager_enabled_event)
+{
+    g_type_init();
+
+    /* delete the database */
+    g_unlink (db_filename);
+
+    /* watch account enabledness */
+    gchar command[512];
+    AgAccountId source_id;
+    AgAccountId account_id;
+
+    manager = ag_manager_new_for_service_type ("e-mail");
+    fail_unless (manager != NULL);
+    account = ag_manager_create_account (manager, "maemo");
+    fail_unless (account != NULL);
+
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    fail_unless (data_stored, "Callback not invoked immediately");
+
+    main_loop = g_main_loop_new (NULL, FALSE);
+
+    g_signal_connect (manager, "enabled-event",
+                      G_CALLBACK (on_enabled_event), &account_id);
+
+    sprintf (command, "test-process enabled_event %d", account->id);
+    system (command);
+
+    source_id = g_timeout_add_seconds (2, enabled_event_test_failed, NULL);
+    g_main_loop_run (main_loop);
+    fail_unless (source_id != 0, "Timeout happened");
+    g_source_remove (source_id);
+
+    fail_unless (account_id == account->id);
+
+    end_test ();
+}
+END_TEST
+
+START_TEST(test_account_list_enabled_services)
+{
+    GList *services, *list;
+    gint n_services;
+    AgService *service1, *service2;
+    const gchar *name;
+
+    g_type_init ();
+
+    /* delete the database */
+    g_unlink (db_filename);
+    manager = ag_manager_new ();
+
+    account = ag_manager_create_account (manager, "maemo");
+    fail_unless (account != NULL);
+
+
+    service1 = ag_manager_get_service (manager, "MyService");
+    fail_unless (service1 != NULL);
+    service2 = ag_manager_get_service (manager, "OtherService");
+    fail_unless (service2 != NULL);
+
+    /* 2 services, 1 enabled  */
+    ag_account_select_service (account, service1);
+    ag_account_set_enabled (account, TRUE);
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+
+    ag_account_select_service (account, service2);
+    ag_account_set_enabled (account, FALSE);
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+
+    services = ag_account_list_enabled_services (account);
+
+    n_services = g_list_length (services);
+    fail_unless (n_services == 1, "Got %d services, expecting 1", n_services);
+
+    /* 2 services, 2 enabled  */
+    ag_account_select_service (account, service2);
+    ag_account_set_enabled (account, TRUE);
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+
+    services = ag_account_list_enabled_services (account);
+
+    n_services = g_list_length (services);
+    fail_unless (n_services == 2, "Got %d services, expecting 2", n_services);
+
+    /* 2 services, 0 enabled  */
+    ag_account_select_service (account, service1);
+    ag_account_set_enabled (account, FALSE);
+
+    ag_account_select_service (account, service2);
+    ag_account_set_enabled (account, FALSE);
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+
+    services = ag_account_list_enabled_services (account);
+
+    n_services = g_list_length (services);
+    fail_unless (n_services == 0, "Got %d services, expecting 0", n_services);
+    services = ag_account_list_enabled_services (account);
+    /* clear up */
+    ag_service_unref (service1);
+    ag_service_unref (service2);
+    ag_manager_list_free (services);
+
+    end_test ();
+}
+END_TEST
+
 Suite *
 ag_suite(void)
 {
@@ -1679,6 +1875,9 @@ ag_suite(void)
     tcase_add_test (tc_create, test_cache_regression);
     tcase_add_test (tc_create, test_serviceid_regression);
     tcase_add_test (tc_create, test_enabled_regression);
+    tcase_add_test (tc_create, test_manager_new_for_service_type);
+    tcase_add_test (tc_create, test_manager_enabled_event);
+    tcase_add_test (tc_create, test_account_list_enabled_services);
 
     tcase_set_timeout (tc_create, 10);
 
