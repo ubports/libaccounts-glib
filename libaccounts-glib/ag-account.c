@@ -898,7 +898,7 @@ _ag_account_changes_from_dbus (DBusMessageIter *iter,
         dbus_message_iter_get_basic (&i_struct, &service_name);
         dbus_message_iter_next (&i_struct);
 
-        sc = g_slice_new (AgServiceChanges);
+        sc = g_slice_new0 (AgServiceChanges);
         sc->service = NULL;
         sc->settings = g_hash_table_new_full
             (g_str_hash, g_str_equal,
