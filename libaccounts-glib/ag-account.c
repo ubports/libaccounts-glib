@@ -2044,6 +2044,7 @@ ag_account_verify (AgAccount *account, const gchar *key, const gchar **token)
                             (AgQueryCallback)got_account_signature,
                             &sgn, sql);
 
+    g_free(sql);
     data = signature_data(account, key);
 
     /* TODO: verify data with sgn->signature - depends on libmaemosec */
