@@ -40,9 +40,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#define MAX_SQLITE_BUSY_LOOP_TIME 2
-#define MAX_SQLITE_BUSY_LOOP_TIME_MS (MAX_SQLITE_BUSY_LOOP_TIME * 1000)
-
 enum
 {
     PROP_0,

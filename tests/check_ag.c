@@ -1378,7 +1378,7 @@ START_TEST(test_blocking)
     lock_filename = "/tmp/check_ag.lock";
     fd = open (lock_filename, O_CREAT | O_RDWR, 0666);
 
-    timeout_ms = 2000;
+    timeout_ms = MAX_SQLITE_BUSY_LOOP_TIME_MS;
 
     sprintf (command, "test-process lock_db %d %s &",
              timeout_ms, lock_filename);
@@ -1862,7 +1862,10 @@ START_TEST(test_open_locked)
     lock_filename = "/tmp/check_ag.lock";
     fd = open (lock_filename, O_CREAT | O_RDWR, 0666);
 
-    timeout_ms = 3000;
+    /* this timeout is initialized so that the first manager instantation
+     * will fail, and the second one will succeed */
+    timeout_ms =
+        MAX_SQLITE_BUSY_LOOP_TIME_MS + MAX_SQLITE_BUSY_LOOP_TIME_MS / 2;
 
     sprintf (command, "test-process lock_db %d %s &",
              timeout_ms, lock_filename);
