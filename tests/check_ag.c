@@ -1848,6 +1848,57 @@ START_TEST(test_account_list_enabled_services)
 }
 END_TEST
 
+START_TEST(test_open_locked)
+{
+    const gchar *lock_filename;
+    gchar command[512];
+    gint timeout_ms;
+    struct timespec start_time, end_time;
+    gint fd;
+
+    g_type_init ();
+
+    /* first, create a lock file to synchronize the test */
+    lock_filename = "/tmp/check_ag.lock";
+    fd = open (lock_filename, O_CREAT | O_RDWR, 0666);
+
+    timeout_ms = 3000;
+
+    sprintf (command, "test-process lock_db %d %s &",
+             timeout_ms, lock_filename);
+    system (command);
+
+    /* wait till the file is locked */
+    while (lockf (fd, F_TEST, 0) == 0)
+        sched_yield ();
+
+    /* now the DB is locked; instantiate the manager; this should block
+     * until the timeout (2 seconds) is expired, and then fail */
+
+    clock_gettime (CLOCK_MONOTONIC, &start_time);
+    manager = ag_manager_new ();
+    clock_gettime (CLOCK_MONOTONIC, &end_time);
+
+    /* we expect a failure */
+    g_debug ("%u ms elapsed while creating the manager",
+             time_diff (&start_time, &end_time));
+    fail_unless (manager == NULL,
+                 "Manager created despite the DB being locked");
+
+    /* try again: now after some time it should succeed */
+    clock_gettime (CLOCK_MONOTONIC, &start_time);
+    manager = ag_manager_new ();
+    clock_gettime (CLOCK_MONOTONIC, &end_time);
+
+    /* we expect a failure */
+    g_debug ("%u ms elapsed while creating the manager",
+             time_diff (&start_time, &end_time));
+    fail_unless (manager != NULL);
+
+    end_test ();
+}
+END_TEST
+
 Suite *
 ag_suite(void)
 {
@@ -1883,6 +1934,7 @@ ag_suite(void)
     tcase_add_test (tc_create, test_manager_new_for_service_type);
     tcase_add_test (tc_create, test_manager_enabled_event);
     tcase_add_test (tc_create, test_account_list_enabled_services);
+    tcase_add_test (tc_create, test_open_locked);
 
     tcase_set_timeout (tc_create, 10);
 
