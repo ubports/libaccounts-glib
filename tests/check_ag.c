@@ -1698,7 +1698,7 @@ START_TEST(test_manager_new_for_service_type)
 
     list = ag_manager_list_enabled_by_service_type (manager, "e-mail");
     fail_unless (g_list_length (list) == 1);
-    fail_unless (account1->id == list->data);
+    fail_unless (account1->id == GPOINTER_TO_INT(list->data));
 
     /* clear up */
     ag_service_unref (service1);
@@ -1783,10 +1783,9 @@ END_TEST
 
 START_TEST(test_account_list_enabled_services)
 {
-    GList *services, *list;
+    GList *services;
     gint n_services;
     AgService *service1, *service2;
-    const gchar *name;
 
     g_type_init ();
 
