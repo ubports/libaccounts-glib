@@ -1446,8 +1446,8 @@ _ag_manager_exec_query (AgManager *manager,
                 }
 
             default:
-                g_debug ("%s: runtime error while executing \"%s\": %s",
-                         G_STRFUNC, sql, sqlite3_errmsg (db));
+                g_warning ("%s: runtime error while executing \"%s\": %s",
+                           G_STRFUNC, sql, sqlite3_errmsg (db));
                 sqlite3_finalize (stmt);
                 return rows;
         }
