@@ -63,6 +63,15 @@ typedef struct {
     gboolean enabled;
 } EnabledCbData;
 
+static guint
+time_diff(struct timespec *start_time, struct timespec *end_time)
+{
+    struct timespec diff_time;
+    diff_time.tv_sec = end_time->tv_sec - start_time->tv_sec;
+    diff_time.tv_nsec = end_time->tv_nsec - start_time->tv_nsec;
+    return diff_time.tv_sec * 1000 + diff_time.tv_nsec / 1000000;
+}
+
 static void
 end_test ()
 {
@@ -1338,7 +1347,7 @@ START_TEST(test_blocking)
     gint timeout_ms, block_ms;
     GError *error = NULL;
     gboolean ok;
-    struct timespec start_time, end_time, diff_time;
+    struct timespec start_time, end_time;
     gint fd;
 
     g_type_init ();
@@ -1391,11 +1400,8 @@ START_TEST(test_blocking)
     fail_unless (g_strcmp0 (display_name, "Want to change") == 0);
 
     /* make sure that we have been waiting for a reasonable time */
-    diff_time.tv_sec = end_time.tv_sec - start_time.tv_sec;
-    diff_time.tv_nsec = end_time.tv_nsec - start_time.tv_nsec;
-    block_ms = diff_time.tv_sec * 1000 + diff_time.tv_nsec / 1000000;
-    g_debug ("Been blocking for %ld.%ld secs (%u ms)",
-             diff_time.tv_sec, diff_time.tv_nsec, block_ms);
+    block_ms = time_diff(&start_time, &end_time);
+    g_debug ("Been blocking for %u ms", block_ms);
 
     fail_unless (block_ms > timeout_ms - 100);
 
