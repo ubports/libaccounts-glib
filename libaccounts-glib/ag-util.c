@@ -625,7 +625,8 @@ _ag_xml_parse_settings (xmlTextReaderPtr reader, const gchar *group,
                 else
                     g_free (key);
 
-                g_value_unset (&value);
+                if (G_IS_VALUE(&value))
+                    g_value_unset (&value);
             }
             else
             {
