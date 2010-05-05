@@ -40,6 +40,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifndef DATABASE_DIR
+#define DATABASE_DIR ".accounts"
+#endif
+
 enum
 {
     PROP_0,
@@ -614,13 +618,24 @@ open_db (AgManager *manager)
 {
     AgManagerPrivate *priv = manager->priv;
     const gchar *sql, *basedir;
-    gchar *filename, *error;
+    gchar *filename, *pathname, *error;
     int ret;
 
     basedir = g_getenv ("ACCOUNTS");
     if (G_LIKELY (!basedir))
+    {
         basedir = g_get_home_dir ();
-    filename = g_build_filename (basedir, "accounts.db", NULL);
+        pathname = g_build_path (G_DIR_SEPARATOR_S, basedir, 
+            DATABASE_DIR, NULL);
+        if (G_UNLIKELY (g_mkdir_with_parents(pathname, 0755)))
+            g_warning ("Cannot create directory: %s", pathname);
+        filename = g_build_filename (pathname, "accounts.db", NULL);
+        g_free (pathname);
+    }
+    else
+    {
+        filename = g_build_filename (basedir, "accounts.db", NULL);
+    }
     ret = sqlite3_open (filename, &priv->db);
     g_free (filename);
 
