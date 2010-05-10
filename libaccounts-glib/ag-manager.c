@@ -613,45 +613,29 @@ create_functions (AgManagerPrivate *priv)
                              get_account_id, NULL, NULL);
 }
 
-static gboolean
-open_db (AgManager *manager)
+static gint
+get_db_version (sqlite3 *db)
 {
-    AgManagerPrivate *priv = manager->priv;
-    const gchar *sql, *basedir;
-    gchar *filename, *pathname, *error;
+    sqlite3_stmt *stmt;
+    gint version = 0, ret;
+
+    ret = sqlite3_prepare(db, "PRAGMA user_version", -1, &stmt, NULL);
+    if (G_UNLIKELY(ret != SQLITE_OK)) return 0;
+
+    ret = sqlite3_step(stmt);
+    if (G_LIKELY(ret == SQLITE_ROW))
+        version = sqlite3_column_int(stmt, 0);
+
+    sqlite3_finalize(stmt);
+    return version;
+}
+
+static gboolean
+create_db (sqlite3 *db)
+{
+    const gchar *sql;
+    gchar *error;
     int ret;
-
-    basedir = g_getenv ("ACCOUNTS");
-    if (G_LIKELY (!basedir))
-    {
-        basedir = g_get_home_dir ();
-        pathname = g_build_path (G_DIR_SEPARATOR_S, basedir, 
-            DATABASE_DIR, NULL);
-        if (G_UNLIKELY (g_mkdir_with_parents(pathname, 0755)))
-            g_warning ("Cannot create directory: %s", pathname);
-        filename = g_build_filename (pathname, "accounts.db", NULL);
-        g_free (pathname);
-    }
-    else
-    {
-        filename = g_build_filename (basedir, "accounts.db", NULL);
-    }
-    ret = sqlite3_open (filename, &priv->db);
-    g_free (filename);
-
-    if (ret != SQLITE_OK)
-    {
-        if (priv->db)
-        {
-            g_warning ("Error opening accounts DB: %s",
-                       sqlite3_errmsg (priv->db));
-            sqlite3_close (priv->db);
-            priv->db = NULL;
-        }
-        return FALSE;
-    }
-
-    /* TODO: busy handler */
 
     sql = ""
         "CREATE TABLE IF NOT EXISTS Accounts ("
@@ -690,10 +674,12 @@ open_db (AgManager *manager)
             "signature TEXT NOT NULL,"
             "token TEXT NOT NULL);"
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_signatures ON Signatures "
-           "(account, service, key);";
+           "(account, service, key);"
+
+        "PRAGMA user_version = 1;";
 
     error = NULL;
-    ret = sqlite3_exec (priv->db, sql, NULL, NULL, &error);
+    ret = sqlite3_exec (db, sql, NULL, NULL, &error);
     if (ret == SQLITE_BUSY)
     {
         guint t;
@@ -703,7 +689,7 @@ open_db (AgManager *manager)
             sched_yield ();
             g_assert(error != NULL);
             sqlite3_free (error);
-            ret = sqlite3_exec (priv->db, sql, NULL, NULL, &error);
+            ret = sqlite3_exec (db, sql, NULL, NULL, &error);
             if (ret != SQLITE_BUSY) break;
             usleep(t * 1000);
         }
@@ -713,6 +699,62 @@ open_db (AgManager *manager)
     {
         g_warning ("Error initializing DB: %s", error);
         sqlite3_free (error);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+static gboolean
+open_db (AgManager *manager)
+{
+    AgManagerPrivate *priv = manager->priv;
+    const gchar *basedir;
+    gchar *filename, *pathname;
+    gint version;
+    gboolean ok = TRUE;
+    int ret;
+
+    basedir = g_getenv ("ACCOUNTS");
+    if (G_LIKELY (!basedir))
+    {
+        basedir = g_get_home_dir ();
+        pathname = g_build_path (G_DIR_SEPARATOR_S, basedir,
+            DATABASE_DIR, NULL);
+        if (G_UNLIKELY (g_mkdir_with_parents(pathname, 0755)))
+            g_warning ("Cannot create directory: %s", pathname);
+        filename = g_build_filename (pathname, "accounts.db", NULL);
+        g_free (pathname);
+    }
+    else
+    {
+        filename = g_build_filename (basedir, "accounts.db", NULL);
+    }
+    ret = sqlite3_open (filename, &priv->db);
+    g_free (filename);
+
+    if (ret != SQLITE_OK)
+    {
+        if (priv->db)
+        {
+            g_warning ("Error opening accounts DB: %s",
+                       sqlite3_errmsg (priv->db));
+            sqlite3_close (priv->db);
+            priv->db = NULL;
+        }
+        return FALSE;
+    }
+
+    /* TODO: busy handler */
+
+    version = get_db_version(priv->db);
+    g_debug("DB version: %d", version);
+    if (version < 1)
+        ok = create_db(priv->db);
+    /* insert here code to upgrade the DB from older versions... */
+
+    if (G_UNLIKELY (!ok))
+    {
         sqlite3_close (priv->db);
         priv->db = NULL;
         return FALSE;
