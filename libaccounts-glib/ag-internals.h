@@ -36,7 +36,7 @@ G_BEGIN_DECLS
 #define AG_DBUS_IFACE "com.nokia.AccountsLib"
 #define AG_DBUS_SIG_CHANGED "AccountChanged"
 
-#define MAX_SQLITE_BUSY_LOOP_TIME 2
+#define MAX_SQLITE_BUSY_LOOP_TIME 5
 #define MAX_SQLITE_BUSY_LOOP_TIME_MS (MAX_SQLITE_BUSY_LOOP_TIME * 1000)
 
 typedef struct _AgAccountChanges AgAccountChanges;
