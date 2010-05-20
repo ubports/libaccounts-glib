@@ -96,6 +96,9 @@ AgProvider *ag_manager_get_provider (AgManager *manager,
                                      const gchar *provider_name);
 GList *ag_manager_list_providers (AgManager *manager);
 
+void ag_manager_set_db_timeout (AgManager *manager, guint timeout_ms);
+guint ag_manager_get_db_timeout (AgManager *manager);
+
 G_END_DECLS
 
 #endif /* _AG_MANAGER_H_ */

@@ -85,6 +85,8 @@ struct _AgManagerPrivate {
     /* list of EmittedSignalData for the signals emitted by this instance */
     GList *emitted_signals;
 
+    guint db_timeout;
+
     guint is_disposed : 1;
 
     gchar *service_type;
@@ -631,7 +633,7 @@ get_db_version (sqlite3 *db)
 }
 
 static gboolean
-create_db (sqlite3 *db)
+create_db (sqlite3 *db, guint timeout)
 {
     const gchar *sql;
     gchar *error;
@@ -750,7 +752,7 @@ open_db (AgManager *manager)
     version = get_db_version(priv->db);
     g_debug("DB version: %d", version);
     if (version < 1)
-        ok = create_db(priv->db);
+        ok = create_db(priv->db, priv->db_timeout);
     /* insert here code to upgrade the DB from older versions... */
 
     if (G_UNLIKELY (!ok))
@@ -820,6 +822,8 @@ ag_manager_init (AgManager *manager)
     priv->accounts =
         g_hash_table_new_full (NULL, NULL,
                                NULL, (GDestroyNotify)account_weak_unref);
+
+    priv->db_timeout = MAX_SQLITE_BUSY_LOOP_TIME_MS; /* 5 seconds */
 }
 
 static GObject *
@@ -1474,7 +1478,8 @@ _ag_manager_exec_query (AgManager *manager,
     /* Set maximum time we're prepared to wait. Have to do it here also,
      *    * because SQLite doesn't guarantee running the busy handler. Thanks,
      *       * SQLite. */
-    try_until = time (NULL) + MAX_SQLITE_BUSY_LOOP_TIME;
+    /* TODO: use the monotonic clock */
+    try_until = time (NULL) + manager->priv->db_timeout / 1000;
 
     do
     {
@@ -1578,3 +1583,35 @@ ag_manager_get_service_type (AgManager *manager)
 
     return manager->priv->service_type;
 }
+
+/**
+ * ag_manager_set_db_timeout:
+ * @manager: the #AgManager.
+ * @timeout_ms: the new timeout, in milliseconds.
+ *
+ * Sets the timeout for database operations. This tells the library how long
+ * it is allowed to block while waiting for a locked DB to become accessible.
+ * Higher values mean a higher chance of successful reads, but also mean that
+ * the execution might be blocked for a longer time.
+ * The default is 5 seconds.
+ */
+void
+ag_manager_set_db_timeout (AgManager *manager, guint timeout_ms)
+{
+    g_return_if_fail (AG_IS_MANAGER (manager));
+    manager->priv->db_timeout = timeout_ms;
+}
+
+/**
+ * ag_manager_get_db_timeout:
+ * @manager: the #AgManager.
+ *
+ * Returns: the timeout (in milliseconds) for database operations.
+ */
+guint
+ag_manager_get_db_timeout (AgManager *manager)
+{
+    g_return_val_if_fail (AG_IS_MANAGER (manager), 0);
+    return manager->priv->db_timeout;
+}
+
