@@ -1445,6 +1445,13 @@ _ag_manager_exec_transaction_blocking (AgManager *manager, const gchar *sql,
     exec_transaction (manager, account, sql, changes, error);
 }
 
+static guint
+timespec_diff_ms(struct timespec *ts1, struct timespec *ts0)
+{
+    return (ts1->tv_sec - ts0->tv_sec) * 1000 +
+        (ts1->tv_nsec - ts0->tv_nsec) / 1000000;
+}
+
 /* Executes an SQL statement, and optionally calls
  * the callback for every row of the result.
  * Returns the number of rows fetched.
@@ -1457,7 +1464,7 @@ _ag_manager_exec_query (AgManager *manager,
     sqlite3 *db;
     int ret;
     sqlite3_stmt *stmt;
-    time_t try_until;
+    struct timespec ts0, ts1;
     gint rows = 0;
 
     g_return_val_if_fail (AG_IS_MANAGER (manager), 0);
@@ -1475,11 +1482,9 @@ _ag_manager_exec_query (AgManager *manager,
 
     g_debug ("%s: about to run:\n%s", G_STRFUNC, sql);
 
-    /* Set maximum time we're prepared to wait. Have to do it here also,
-     *    * because SQLite doesn't guarantee running the busy handler. Thanks,
-     *       * SQLite. */
-    /* TODO: use the monotonic clock */
-    try_until = time (NULL) + manager->priv->db_timeout / 1000;
+    /* get the current time, to abort the operation in case the DB is locked
+     * for longer than db_timeout. */
+    clock_gettime(CLOCK_MONOTONIC, &ts0);
 
     do
     {
@@ -1498,7 +1503,8 @@ _ag_manager_exec_query (AgManager *manager,
                 break;
 
             case SQLITE_BUSY:
-                if (time (NULL) < try_until)
+                clock_gettime(CLOCK_MONOTONIC, &ts1);
+                if (timespec_diff_ms(&ts1, &ts0) > manager->priv->db_timeout)
                 {
                     /* If timeout was specified and table is locked,
                      * wait instead of executing default runtime
