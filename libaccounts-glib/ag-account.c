@@ -918,7 +918,7 @@ _ag_account_changes_from_dbus (DBusMessageIter *iter,
             if (_ag_iter_get_dict_entry (&i_dict, &key, &value))
             {
                 g_hash_table_insert (sc->settings, g_strdup (key),
-                                     _ag_value_slice_dup (&value));
+                                     g_slice_dup (GValue, &value));
             }
             dbus_message_iter_next (&i_dict);
         }
