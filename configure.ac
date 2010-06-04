@@ -57,8 +57,8 @@ if test "x$checks" = "xno"; then
 fi
 
 AC_ARG_ENABLE(debug,     [  --enable-debug          enable printing of debug messages],[ddebug=${enableval}],ddebug=no)
-if test "x$ddebug" != "xyes"; then
-    CFLAGS="$CFLAGS -DG_DEBUG_DISABLE"
+if test "x$ddebug" = "xyes"; then
+    CFLAGS="$CFLAGS -DENABLE_DEBUG"
 fi
 
 AC_ARG_ENABLE(coverage, [  --enable-coverage      compile with coverage info],[coverage=${enableval}],coverage=no)
