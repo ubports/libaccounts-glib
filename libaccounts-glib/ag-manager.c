@@ -428,6 +428,7 @@ exec_transaction (AgManager *manager, AgAccount *account,
     gchar *err_msg = NULL;
     int ret;
 
+    DEBUG_LOCKS ("Accounts DB is now locked");
     DEBUG_QUERIES ("called: %s", sql);
     g_return_if_fail (AG_IS_MANAGER (manager));
     priv = manager->priv;
@@ -446,6 +447,7 @@ exec_transaction (AgManager *manager, AgAccount *account,
         if (G_UNLIKELY (ret != SQLITE_OK))
             g_warning ("Rollback failed");
         sqlite3_reset (priv->rollback_stmt);
+        DEBUG_LOCKS ("Accounts DB is now unlocked");
         return;
     }
 
@@ -456,6 +458,8 @@ exec_transaction (AgManager *manager, AgAccount *account,
                                       sqlite3_errmsg (priv->db));
         return;
     }
+
+    DEBUG_LOCKS ("Accounts DB is now unlocked");
 
     /* everything went well; if this was a new account, we must update the
      * local data structure */
