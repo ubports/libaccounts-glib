@@ -1015,6 +1015,8 @@ ag_manager_class_init (AgManagerClass *klass)
         g_cclosure_marshal_VOID__UINT,
         G_TYPE_NONE,
         1, G_TYPE_UINT);
+
+    _ag_debug_init();
 }
 
 /**
