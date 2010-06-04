@@ -1504,7 +1504,7 @@ _ag_manager_exec_query (AgManager *manager,
 
             case SQLITE_BUSY:
                 clock_gettime(CLOCK_MONOTONIC, &ts1);
-                if (timespec_diff_ms(&ts1, &ts0) > manager->priv->db_timeout)
+                if (timespec_diff_ms(&ts1, &ts0) < manager->priv->db_timeout)
                 {
                     /* If timeout was specified and table is locked,
                      * wait instead of executing default runtime
