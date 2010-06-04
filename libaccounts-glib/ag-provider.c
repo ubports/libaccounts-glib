@@ -264,7 +264,7 @@ _ag_provider_load_from_file (AgProvider *provider)
 
     g_return_val_if_fail (provider->name != NULL, FALSE);
 
-    g_debug ("Loading provider %s", provider->name);
+    DEBUG_REFS ("Loading provider %s", provider->name);
     filepath = find_provider_file (provider->name);
     if (G_UNLIKELY (!filepath)) return FALSE;
 
@@ -378,8 +378,8 @@ ag_provider_ref (AgProvider *provider)
     g_return_val_if_fail (provider != NULL, NULL);
     g_return_val_if_fail (provider->ref_count > 0, NULL);
 
-    g_debug ("Referencing provider %s (%d)",
-             provider->name, provider->ref_count);
+    DEBUG_REFS ("Referencing provider %s (%d)",
+                provider->name, provider->ref_count);
     provider->ref_count++;
     return provider;
 }
@@ -396,8 +396,8 @@ ag_provider_unref (AgProvider *provider)
     g_return_if_fail (provider != NULL);
     g_return_if_fail (provider->ref_count > 0);
 
-    g_debug ("Unreferencing provider %s (%d)",
-             provider->name, provider->ref_count);
+    DEBUG_REFS ("Unreferencing provider %s (%d)",
+                provider->name, provider->ref_count);
     provider->ref_count--;
     if (provider->ref_count == 0)
     {

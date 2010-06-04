@@ -331,7 +331,7 @@ _ag_service_load_from_file (AgService *service)
 
     g_return_val_if_fail (service->name != NULL, FALSE);
 
-    g_debug ("Loading service %s", service->name);
+    DEBUG_REFS ("Loading service %s", service->name);
     filepath = find_service_file (service->name);
     if (G_UNLIKELY (!filepath)) return FALSE;
 
@@ -531,8 +531,8 @@ ag_service_ref (AgService *service)
     g_return_val_if_fail (service != NULL, NULL);
     g_return_val_if_fail (service->ref_count > 0, NULL);
 
-    g_debug ("Referencing service %s (%d)",
-             service->name, service->ref_count);
+    DEBUG_REFS ("Referencing service %s (%d)",
+                service->name, service->ref_count);
     service->ref_count++;
     return service;
 }
@@ -549,8 +549,8 @@ ag_service_unref (AgService *service)
     g_return_if_fail (service != NULL);
     g_return_if_fail (service->ref_count > 0);
 
-    g_debug ("Unreferencing service %s (%d)",
-             service->name, service->ref_count);
+    DEBUG_REFS ("Unreferencing service %s (%d)",
+                service->name, service->ref_count);
     service->ref_count--;
     if (service->ref_count == 0)
     {

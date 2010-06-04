@@ -23,6 +23,7 @@
  */
 
 #include "ag-util.h"
+#include "ag-debug.h"
 #include "ag-errors.h"
 
 #include <dbus/dbus.h>
@@ -601,7 +602,7 @@ _ag_xml_parse_settings (xmlTextReaderPtr reader, const gchar *group,
         {
             gboolean ok;
 
-            g_debug ("found name %s", name);
+            DEBUG_INFO ("found name %s", name);
             if (strcmp (name, "setting") == 0)
             {
                 GValue value = { 0 }, *pval;

@@ -117,8 +117,8 @@ static void account_weak_notify (gpointer userdata, GObject *dead_account);
 static gboolean
 timed_unref_account (gpointer account)
 {
-    g_debug ("Releasing temporary reference on account %u",
-             AG_ACCOUNT (account)->id);
+    DEBUG_REFS ("Releasing temporary reference on account %u",
+                AG_ACCOUNT (account)->id);
     g_object_unref (account);
     return FALSE;
 }
@@ -224,7 +224,7 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
              * were already processed when the DB transaction succeeded. */
             ours = TRUE;
 
-            g_debug ("Signal is ours, must_process = %d", esd->must_process);
+            DEBUG_INFO ("Signal is ours, must_process = %d", esd->must_process);
             g_slice_free (EmittedSignalData, esd);
             priv->emitted_signals = g_list_delete_link (priv->emitted_signals,
                                                         list);
@@ -241,7 +241,7 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
     for (list = priv->emitted_signals; list != NULL; list = list->next)
     {
         EmittedSignalData *esd = list->data;
-        g_debug ("Marking pending signal for processing");
+        DEBUG_INFO ("Marking pending signal for processing");
         esd->must_process = TRUE;
     }
 
@@ -312,7 +312,7 @@ signal_account_changes (AgManager *manager, AgAccount *account,
     }
 
     dbus_connection_flush (priv->dbus_conn);
-    g_debug ("Emitted signal, time: %lu-%lu", eds.ts.tv_sec, eds.ts.tv_nsec);
+    DEBUG_INFO ("Emitted signal, time: %lu-%lu", eds.ts.tv_sec, eds.ts.tv_nsec);
 
     eds.must_process = FALSE;
     priv->emitted_signals =
@@ -395,7 +395,7 @@ account_weak_notify (gpointer userdata, GObject *dead_account)
     GHashTableIter iter;
     GObject *account;
 
-    g_debug ("%s called for %p", G_STRFUNC, dead_account);
+    DEBUG_REFS ("called for %p", dead_account);
     g_hash_table_iter_init (&iter, priv->accounts);
     while (g_hash_table_iter_next (&iter, NULL, (gpointer)&account))
     {
@@ -428,7 +428,7 @@ exec_transaction (AgManager *manager, AgAccount *account,
     gchar *err_msg = NULL;
     int ret;
 
-    g_debug ("%s called: %s", G_STRFUNC, sql);
+    DEBUG_QUERIES ("called: %s", sql);
     g_return_if_fail (AG_IS_MANAGER (manager));
     priv = manager->priv;
     g_return_if_fail (AG_IS_ACCOUNT (account));
@@ -589,7 +589,6 @@ set_last_rowid_as_account_id (sqlite3_context *ctx,
 {
     AgManagerPrivate *priv;
 
-    g_debug ("%s called", G_STRFUNC);
     priv = sqlite3_user_data (ctx);
     priv->last_account_id = sqlite3_last_insert_rowid (priv->db);
     sqlite3_result_null (ctx);
@@ -687,7 +686,7 @@ create_db (sqlite3 *db, guint timeout)
         guint t;
         for (t = 5; t < MAX_SQLITE_BUSY_LOOP_TIME_MS; t *= 2)
         {
-            g_debug ("Database locked, retrying...");
+            DEBUG_LOCKS ("Database locked, retrying...");
             sched_yield ();
             g_assert(error != NULL);
             sqlite3_free (error);
@@ -750,7 +749,7 @@ open_db (AgManager *manager)
     /* TODO: busy handler */
 
     version = get_db_version(priv->db);
-    g_debug("DB version: %d", version);
+    DEBUG_INFO ("DB version: %d", version);
     if (version < 1)
         ok = create_db(priv->db, priv->db_timeout);
     /* insert here code to upgrade the DB from older versions... */
@@ -1428,10 +1427,11 @@ _ag_manager_exec_transaction_blocking (AgManager *manager, const gchar *sql,
          * polling mechanism */
         if (sleep_ms > 30000)
         {
-            g_debug ("Database locked for more than 30 seconds; giving up!");
+            DEBUG_LOCKS ("Database locked for more than 30 seconds; "
+                         "giving up!");
             break;
         }
-        g_debug ("Database locked, sleeping for %ums", sleep_ms);
+        DEBUG_LOCKS ("Database locked, sleeping for %ums", sleep_ms);
         g_usleep (sleep_ms * 1000);
         sleep_ms *= 2;
         ret = sqlite3_step (priv->begin_stmt);
@@ -1477,12 +1477,12 @@ _ag_manager_exec_query (AgManager *manager,
     ret = sqlite3_prepare_v2 (db, sql, -1, &stmt, NULL);
     if (ret != SQLITE_OK)
     {
-        g_debug ("%s: can't compile SQL statement \"%s\": %s", G_STRFUNC, sql,
-                 sqlite3_errmsg (db));
+        g_warning ("%s: can't compile SQL statement \"%s\": %s", G_STRFUNC, sql,
+                   sqlite3_errmsg (db));
         return 0;
     }
 
-    g_debug ("%s: about to run:\n%s", G_STRFUNC, sql);
+    DEBUG_QUERIES ("about to run:\n%s", sql);
 
     /* get the current time, to abort the operation in case the DB is locked
      * for longer than db_timeout. */
