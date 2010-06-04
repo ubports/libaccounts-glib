@@ -456,8 +456,10 @@ exec_transaction (AgManager *manager, AgAccount *account,
     {
         *error = g_error_new_literal (AG_ERRORS, AG_ERROR_DB,
                                       sqlite3_errmsg (priv->db));
+        sqlite3_reset (priv->commit_stmt);
         return;
     }
+    sqlite3_reset (priv->commit_stmt);
 
     DEBUG_LOCKS ("Accounts DB is now unlocked");
 
