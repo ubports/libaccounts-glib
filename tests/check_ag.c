@@ -1902,6 +1902,71 @@ START_TEST(test_open_locked)
 }
 END_TEST
 
+START_TEST(test_read_locked)
+{
+    const gchar *lock_filename;
+    gchar command[512];
+    gint timeout_ms;
+    struct timespec start_time, end_time;
+    gint fd;
+    gboolean ok;
+    AgAccountId id;
+    GError *error = NULL;
+
+    g_type_init ();
+
+    manager = ag_manager_new ();
+    account = ag_manager_create_account (manager, "maemo");
+    ok = ag_account_store_blocking (account, &error);
+    fail_unless (ok, "Got error %s", error ? error->message : "No error set");
+    fail_unless (account->id != 0);
+    id = account->id;
+    g_object_unref(account);
+
+    /* first, create a lock file to synchronize the test */
+    lock_filename = "/tmp/check_ag.lock";
+    fd = open (lock_filename, O_CREAT | O_RDWR, 0666);
+
+    /* this timeout is initialized so that the first manager instantation
+     * will fail, and the second one will succeed */
+    timeout_ms =
+        MAX_SQLITE_BUSY_LOOP_TIME_MS + MAX_SQLITE_BUSY_LOOP_TIME_MS / 2;
+
+    sprintf (command, "test-process lock_db %d %s &",
+             timeout_ms, lock_filename);
+    system (command);
+
+    /* wait till the file is locked */
+    while (lockf (fd, F_TEST, 0) == 0)
+        sched_yield ();
+
+    /* now the DB is locked; try to read an account; this should block
+     * until the timeout is expired, and then fail */
+
+    clock_gettime (CLOCK_MONOTONIC, &start_time);
+    account = ag_manager_get_account (manager, id);
+    clock_gettime (CLOCK_MONOTONIC, &end_time);
+
+    /* we expect a failure */
+    g_debug ("%u ms elapsed while getting account",
+             time_diff (&start_time, &end_time));
+    fail_unless (account == NULL,
+                 "Got account despite the DB being locked");
+
+    /* try again: now after some time it should succeed */
+    clock_gettime (CLOCK_MONOTONIC, &start_time);
+    account = ag_manager_get_account (manager, id);
+    clock_gettime (CLOCK_MONOTONIC, &end_time);
+
+    /* we expect a failure */
+    g_debug ("%u ms elapsed while getting account",
+             time_diff (&start_time, &end_time));
+    fail_unless (account != NULL);
+
+    end_test ();
+}
+END_TEST
+
 Suite *
 ag_suite(void)
 {
@@ -1938,6 +2003,7 @@ ag_suite(void)
     tcase_add_test (tc_create, test_manager_enabled_event);
     tcase_add_test (tc_create, test_account_list_enabled_services);
     tcase_add_test (tc_create, test_open_locked);
+    tcase_add_test (tc_create, test_read_locked);
 
     tcase_set_timeout (tc_create, 10);
 
