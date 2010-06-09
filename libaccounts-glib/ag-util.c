@@ -629,8 +629,32 @@ _ag_xml_parse_settings (xmlTextReaderPtr reader, const gchar *group,
                 if (G_IS_VALUE(&value))
                     g_value_unset (&value);
             }
+            else if (strcmp (name, "group") == 0 &&
+                     xmlTextReaderHasAttributes (reader))
+            {
+                /* it's a subgroup */
+                if (!xmlTextReaderIsEmptyElement (reader))
+                {
+                    xmlChar *group_name;
+                    gchar *subgroup;
+
+                    group_name = xmlTextReaderGetAttribute (reader,
+                                                            (xmlChar *)"name");
+                    subgroup = g_strdup_printf ("%s%s/", group,
+                                                (const gchar *)group_name);
+                    if (group_name) xmlFree (group_name);
+
+                    ok = _ag_xml_parse_settings (reader, subgroup, settings);
+                    g_free (subgroup);
+                }
+                else
+                    ok = TRUE;
+            }
             else
             {
+                g_warning ("%s: using wrong XML for groups; "
+                           "please change to <group name=\"%s\">",
+                           xmlTextReaderConstBaseUri (reader), name);
                 /* it's a subgroup */
                 if (!xmlTextReaderIsEmptyElement (reader))
                 {
