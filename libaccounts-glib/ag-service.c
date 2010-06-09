@@ -345,11 +345,10 @@ _ag_service_load_from_file (AgService *service)
         return FALSE;
     }
 
-    g_free (filepath);
-
     /* TODO: cache the xmlReader */
     reader = xmlReaderForMemory (service->file_data, len,
-                                 NULL, NULL, 0);
+                                 filepath, NULL, 0);
+    g_free (filepath);
     if (G_UNLIKELY (reader == NULL))
         return FALSE;
 
