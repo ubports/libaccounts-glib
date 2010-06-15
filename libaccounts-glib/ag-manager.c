@@ -631,6 +631,31 @@ create_functions (AgManagerPrivate *priv)
                              get_account_id, NULL, NULL);
 }
 
+static void
+setup_db_options (sqlite3 *db)
+{
+    gchar *error;
+    int ret;
+
+    error = NULL;
+    ret = sqlite3_exec (db, "PRAGMA synchronous = 0", NULL, NULL, &error);
+    if (ret != SQLITE_OK)
+    {
+        g_warning ("%s: couldn't set asynchronous mode (%s)",
+                   G_STRFUNC, error);
+        sqlite3_free (error);
+    }
+
+    error = NULL;
+    ret = sqlite3_exec (db, "PRAGMA journal_mode = MEMORY", NULL, NULL, &error);
+    if (ret != SQLITE_OK)
+    {
+        g_warning ("%s: couldn't set journal mode to MEMORY (%s)",
+                   G_STRFUNC, error);
+        sqlite3_free (error);
+    }
+}
+
 static gint
 get_db_version (sqlite3 *db)
 {
@@ -778,6 +803,7 @@ open_db (AgManager *manager)
         return FALSE;
     }
 
+    setup_db_options (priv->db);
     create_functions (priv);
 
     return TRUE;
