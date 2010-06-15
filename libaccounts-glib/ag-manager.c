@@ -160,26 +160,31 @@ parse_message_header (DBusMessageIter *iter,
     return TRUE;
 }
 
-static void
-ag_manager_done_changes (AgManager *manager, AgAccountChanges *changes, AgAccountId account_id)
+static gboolean
+ag_manager_must_emit_enabled (AgManager *manager, AgAccountChanges *changes)
 {
     AgManagerPrivate *priv = manager->priv;
-    gboolean enabled_event = FALSE;
 
     /*TODO the enabled-event is emitted whenever enabled status has changed on
      * any service or account. This has some possibility for optimization*/
-    if (priv->service_type)
-        enabled_event = _ag_account_changes_have_enabled (changes);
+    return (priv->service_type != NULL) ?
+        _ag_account_changes_have_enabled (changes) : FALSE;
+}
 
+static void
+ag_manager_emit_signals (AgManager *manager, AgAccountId account_id,
+                         gboolean enabled_event,
+                         gboolean created,
+                         gboolean deleted)
+{
     if (enabled_event)
         g_signal_emit_by_name (manager, "enabled-event", account_id);
 
-    if (changes->deleted)
+    if (deleted)
         g_signal_emit_by_name (manager, "account-deleted", account_id);
 
-    if (changes->created)
+    if (created)
         g_signal_emit_by_name (manager, "account-created", account_id);
-
 }
 
 static DBusHandlerResult
@@ -193,7 +198,7 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
     AgAccount *account;
     AgAccountChanges *changes;
     struct timespec ts;
-    gboolean deleted, created;
+    gboolean deleted, created, enabled_event;
     gboolean ret;
     gboolean ours = FALSE;
     gboolean must_instantiate = TRUE;
@@ -277,11 +282,14 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
         g_timeout_add_seconds (2, timed_unref_account, account);
     }
 
+    enabled_event = ag_manager_must_emit_enabled (manager, changes);
     if (account)
         _ag_account_done_changes (account, changes);
 
-    ag_manager_done_changes (manager, changes, account_id);
     _ag_account_changes_free (changes);
+
+    ag_manager_emit_signals (manager, account_id,
+                             enabled_event, created, deleted);
 
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
@@ -427,6 +435,7 @@ exec_transaction (AgManager *manager, AgAccount *account,
     AgManagerPrivate *priv;
     gchar *err_msg = NULL;
     int ret;
+    gboolean enabled_event;
 
     DEBUG_LOCKS ("Accounts DB is now locked");
     DEBUG_QUERIES ("called: %s", sql);
@@ -478,8 +487,10 @@ exec_transaction (AgManager *manager, AgAccount *account,
     /* emit DBus signals to notify other processes */
     signal_account_changes (manager, account, changes);
 
+    enabled_event = ag_manager_must_emit_enabled(manager, changes);
     _ag_account_done_changes (account, changes);
-    ag_manager_done_changes (manager, changes, account->id);
+    ag_manager_emit_signals (manager, account->id, enabled_event,
+                             changes->created, changes->deleted);
 }
 
 static void
