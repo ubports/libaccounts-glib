@@ -1752,13 +1752,14 @@ START_TEST(test_manager_enabled_event)
     /* watch account enabledness */
     gchar command[512];
     AgAccountId source_id;
-    AgAccountId account_id;
+    AgAccountId account_id = 0;
 
     manager = ag_manager_new_for_service_type ("e-mail");
     fail_unless (manager != NULL);
     account = ag_manager_create_account (manager, "maemo");
     fail_unless (account != NULL);
 
+    ag_account_set_enabled (account, TRUE);
     ag_account_store (account, account_store_now_cb, TEST_STRING);
     fail_unless (data_stored, "Callback not invoked immediately");
 
@@ -1767,7 +1768,21 @@ START_TEST(test_manager_enabled_event)
     g_signal_connect (manager, "enabled-event",
                       G_CALLBACK (on_enabled_event), &account_id);
 
+    /* this command will enable MyService (which is of type e-mail) */
     sprintf (command, "test-process enabled_event %d", account->id);
+    system (command);
+
+    source_id = g_timeout_add_seconds (2, enabled_event_test_failed, NULL);
+    g_main_loop_run (main_loop);
+    fail_unless (source_id != 0, "Timeout happened");
+    g_source_remove (source_id);
+
+    fail_unless (account_id == account->id);
+
+    account_id = 0;
+
+    /* now disable the account. This also should trigger the enabled-event. */
+    sprintf (command, "test-process enabled_event2 %d", account->id);
     system (command);
 
     source_id = g_timeout_add_seconds (2, enabled_event_test_failed, NULL);

@@ -243,10 +243,25 @@ gboolean test_enabled_event (TestArgs *args)
     manager = ag_manager_new ();
     id = atoi(args->argv[0]);
     account = ag_manager_get_account (manager, id);
-    ag_account_set_enabled (account, TRUE);
     service = ag_manager_get_service (manager, "MyService");
     ag_account_select_service (account, service);
     ag_account_set_enabled (account, TRUE);
+    ag_account_store (account, account_store_cb, NULL);
+
+    return FALSE;
+}
+
+gboolean test_enabled_event2 (TestArgs *args)
+{
+    GValue value = { 0 };
+
+    AgAccountId id;
+
+    manager = ag_manager_new ();
+    id = atoi (args->argv[0]);
+    account = ag_manager_get_account (manager, id);
+    ag_account_select_service (account, NULL);
+    ag_account_set_enabled (account, FALSE);
     ag_account_store (account, account_store_cb, NULL);
 
     return FALSE;
@@ -319,6 +334,10 @@ int main(int argc, char **argv)
         else if (strcmp (test_name, "enabled_event") == 0)
         {
             g_idle_add ((GSourceFunc)test_enabled_event, &args);
+        }
+        else if (strcmp (test_name, "enabled_event2") == 0)
+        {
+            g_idle_add ((GSourceFunc)test_enabled_event2, &args);
         }
 
         main_loop = g_main_loop_new (NULL, FALSE);
