@@ -1666,3 +1666,25 @@ ag_manager_get_db_timeout (AgManager *manager)
     return manager->priv->db_timeout;
 }
 
+/**
+ * ag_manager_load_service_type:
+ * @manager: the #AgManager.
+ * @service_type: the name of the service type.
+ *
+ * Instantiate the service type @service_type.
+ *
+ * Returns: an #AgServiceType, which must be then free'd with
+ * ag_service_type_unref().
+ */
+AgServiceType *
+ag_manager_load_service_type (AgManager *manager, const gchar *service_type)
+{
+    g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
+
+    /* Given the small size of the service type file, and the unlikely need to
+     * load them more than once, we don't cache them in the manager. But this
+     * might change in the future.
+     */
+    return _ag_service_type_new_from_file (service_type);
+}
+

@@ -24,6 +24,8 @@ libaccounts_glib_la_SOURCES = \
 	ag-provider.c \
 	ag-service.h \
 	ag-service.c \
+	ag-service-type.h \
+	ag-service-type.c \
 	ag-util.h \
 	ag-util.c \
 	$(BUILT_SOURCES)
@@ -34,6 +36,7 @@ libaccounts_glib_include_HEADERS = \
 	ag-errors.h \
 	ag-provider.h \
 	ag-service.h \
+	ag-service-type.h \
 	ag-manager.h
 
 %-marshal.h: %-marshal.list Makefile
