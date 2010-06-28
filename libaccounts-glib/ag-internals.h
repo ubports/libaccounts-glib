@@ -140,4 +140,9 @@ GList *_ag_manager_list_all (AgManager *manager);
 
 G_GNUC_INTERNAL
 void _ag_account_changes_free (AgAccountChanges *change);
+
+/* Service type functions */
+G_GNUC_INTERNAL
+AgServiceType *_ag_service_type_new_from_file (const gchar *service_type_name);
+
 #endif /* _AG_INTERNALS_H_ */
