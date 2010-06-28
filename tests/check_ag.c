@@ -1982,6 +1982,41 @@ START_TEST(test_read_locked)
 }
 END_TEST
 
+START_TEST(test_service_type)
+{
+    const gchar *string;
+    AgServiceType *service_type;
+
+    g_type_init ();
+
+    manager = ag_manager_new ();
+
+    service_type = ag_manager_load_service_type (manager, "I don't exist");
+    fail_unless (service_type == NULL);
+
+    service_type = ag_manager_load_service_type (manager, "e-mail");
+    fail_unless (service_type != NULL);
+
+    string = ag_service_type_get_name (service_type);
+    fail_unless (g_strcmp0 (string, "e-mail") == 0,
+                 "Wrong service type name: %s", string);
+
+    string = ag_service_type_get_display_name (service_type);
+    fail_unless (g_strcmp0 (string, "Electronic mail") == 0,
+                 "Wrong service type display name: %s", string);
+
+    string = ag_service_type_get_icon_name (service_type);
+    fail_unless (g_strcmp0 (string, "email_icon") == 0,
+                 "Wrong service type icon name: %s", string);
+
+    string = ag_service_type_get_i18n_domain (service_type);
+    fail_unless (g_strcmp0 (string, "translation_file") == 0,
+                 "Wrong service type i18n name: %s", string);
+
+    end_test ();
+}
+END_TEST
+
 Suite *
 ag_suite(void)
 {
@@ -2019,6 +2054,7 @@ ag_suite(void)
     tcase_add_test (tc_create, test_account_list_enabled_services);
     tcase_add_test (tc_create, test_open_locked);
     tcase_add_test (tc_create, test_read_locked);
+    tcase_add_test (tc_create, test_service_type);
 
     tcase_set_timeout (tc_create, 10);
 
