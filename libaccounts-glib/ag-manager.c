@@ -56,6 +56,7 @@ enum
     ACCOUNT_CREATED,
     ACCOUNT_DELETED,
     ACCOUNT_ENABLED,
+    ACCOUNT_UPDATED,
     LAST_SIGNAL
 };
 
@@ -161,23 +162,40 @@ parse_message_header (DBusMessageIter *iter,
 }
 
 static gboolean
+ag_manager_must_emit_updated (AgManager *manager, AgAccountChanges *changes)
+{
+    AgManagerPrivate *priv = manager->priv;
+
+    /* The update-event is emitted whenever any value has been changed on
+     * particular service of account.
+     */
+    return (priv->service_type != NULL) ?
+        _ag_account_changes_have_service_type (changes, priv->service_type) : FALSE;
+}
+
+static gboolean
 ag_manager_must_emit_enabled (AgManager *manager, AgAccountChanges *changes)
 {
     AgManagerPrivate *priv = manager->priv;
 
-    /*TODO the enabled-event is emitted whenever enabled status has changed on
-     * any service or account. This has some possibility for optimization*/
+    /* TODO: the enabled-event is emitted whenever enabled status has changed on
+     * any service or account. This has some possibility for optimization.
+     */
     return (priv->service_type != NULL) ?
         _ag_account_changes_have_enabled (changes) : FALSE;
 }
 
 static void
 ag_manager_emit_signals (AgManager *manager, AgAccountId account_id,
-                         gboolean enabled_event,
+                         gboolean updated,
+                         gboolean enabled,
                          gboolean created,
                          gboolean deleted)
 {
-    if (enabled_event)
+    if (updated)
+        g_signal_emit_by_name (manager, "account-updated", account_id);
+
+    if (enabled)
         g_signal_emit_by_name (manager, "enabled-event", account_id);
 
     if (deleted)
@@ -198,7 +216,7 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
     AgAccount *account;
     AgAccountChanges *changes;
     struct timespec ts;
-    gboolean deleted, created, enabled_event;
+    gboolean deleted, created, updated, enabled;
     gboolean ret;
     gboolean ours = FALSE;
     gboolean must_instantiate = TRUE;
@@ -282,14 +300,19 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
         g_timeout_add_seconds (2, timed_unref_account, account);
     }
 
-    enabled_event = ag_manager_must_emit_enabled (manager, changes);
+    updated = ag_manager_must_emit_updated(manager, changes);
+
+    enabled = ag_manager_must_emit_enabled (manager, changes);
     if (account)
         _ag_account_done_changes (account, changes);
 
     _ag_account_changes_free (changes);
 
     ag_manager_emit_signals (manager, account_id,
-                             enabled_event, created, deleted);
+                             updated,
+                             enabled,
+                             created,
+                             deleted);
 
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
@@ -435,7 +458,7 @@ exec_transaction (AgManager *manager, AgAccount *account,
     AgManagerPrivate *priv;
     gchar *err_msg = NULL;
     int ret;
-    gboolean enabled_event;
+    gboolean updated, enabled;
 
     DEBUG_LOCKS ("Accounts DB is now locked");
     DEBUG_QUERIES ("called: %s", sql);
@@ -487,10 +510,16 @@ exec_transaction (AgManager *manager, AgAccount *account,
     /* emit DBus signals to notify other processes */
     signal_account_changes (manager, account, changes);
 
-    enabled_event = ag_manager_must_emit_enabled(manager, changes);
+    updated = ag_manager_must_emit_updated(manager, changes);
+
+    enabled = ag_manager_must_emit_enabled(manager, changes);
     _ag_account_done_changes (account, changes);
-    ag_manager_emit_signals (manager, account->id, enabled_event,
-                             changes->created, changes->deleted);
+
+    ag_manager_emit_signals (manager, account->id,
+                             updated,
+                             enabled,
+                             changes->created,
+                             changes->deleted);
 }
 
 static void
@@ -1022,13 +1051,13 @@ ag_manager_class_init (AgManagerClass *klass)
      * @manager: the #AgManager.
      * @account_id: the #AgAccountId of the account that has been enabled.
      *
-     * If the manager has been created with ag_manager_new_for_service_type(), this 
-     * signal will be emitted when an account (identified by @account_id) has been 
-     * modified in such a way that the application might be interested to start/stop 
-     * using it: the "enabled" flag on the account or in some service supported by the 
+     * If the manager has been created with ag_manager_new_for_service_type(), this
+     * signal will be emitted when an account (identified by @account_id) has been
+     * modified in such a way that the application might be interested to start/stop
+     * using it: the "enabled" flag on the account or in some service supported by the
      * account and matching the #AgManager:service-type have changed.
-     * In practice, this signal might be emitted more often than when strictly needed; 
-     * applications must call ag_account_list_enabled_services() or 
+     * In practice, this signal might be emitted more often than when strictly needed;
+     * applications must call ag_account_list_enabled_services() or
      * ag_manager_list_enabled() to get the current state.
      */
     signals[ACCOUNT_ENABLED] = g_signal_new ("enabled-event",
@@ -1057,6 +1086,24 @@ ag_manager_class_init (AgManagerClass *klass)
         g_cclosure_marshal_VOID__UINT,
         G_TYPE_NONE,
         1, G_TYPE_UINT);
+
+    /**
+     * AgManager::account-updated:
+     * @manager: the #AgManager.
+     * @account_id: the #AgAccountId of the account that has been update.
+     *
+     * Emitted when particular service of an account has been updated.
+     * This signal is redundant with AgAccount::deleted, but it's convenient to
+     * provide full change notification to #AgManager.
+     */
+    signals[ACCOUNT_UPDATED] = g_signal_new ("account-updated",
+         G_TYPE_FROM_CLASS (klass),
+         G_SIGNAL_RUN_LAST,
+         0,
+         NULL, NULL,
+         g_cclosure_marshal_VOID__UINT,
+         G_TYPE_NONE,
+         1, G_TYPE_UINT);
 
     _ag_debug_init();
 }
@@ -1611,7 +1658,7 @@ ag_manager_list_providers (AgManager *manager)
 /**
  * ag_manager_new_for_service_type:
  * @service_type: the name of a service type
- * 
+ *
  * Returns: an instance of an #AgManager with specified service type.
  */
 AgManager *
