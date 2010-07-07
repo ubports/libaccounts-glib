@@ -44,6 +44,7 @@
 #include <string.h>
 
 #define SERVICE_GLOBAL "global"
+#define SERVICE_GLOBAL_TYPE "unknown"
 
 enum
 {
@@ -67,6 +68,8 @@ static guint signals[LAST_SIGNAL] = { 0 };
 typedef struct _AgServiceChanges {
     AgService *service; /* this is set only if the change came from this
                            instance */
+    gchar *service_type;
+
     GHashTable *settings;
     GHashTable *signatures;
 } AgServiceChanges;
@@ -163,7 +166,7 @@ _ag_account_build_signal (AgAccount *account, AgAccountChanges *changes,
     /* Append the settings */
     dbus_message_iter_init_append (msg, &iter);
     dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
-                                      "(sa{sv}as)", &i_serv);
+                                      "(ssa{sv}as)", &i_serv);
     if (changes->services)
     {
         GHashTableIter iter;
@@ -184,6 +187,10 @@ _ag_account_build_signal (AgAccount *account, AgAccountChanges *changes,
             /* Append the service name */
             dbus_message_iter_append_basic (&i_struct, DBUS_TYPE_STRING,
                                             &service_name);
+            /* Append the service type */
+            dbus_message_iter_append_basic (&i_struct, DBUS_TYPE_STRING,
+                                            &sc->service_type);
+
             /* Append the dictionary of service settings */
             dbus_message_iter_open_container (&i_struct, DBUS_TYPE_ARRAY,
                                               "{sv}", &dict);
@@ -391,7 +398,10 @@ ag_account_changes_get_display_name (AgAccountChanges *changes,
 static void
 ag_service_changes_free (AgServiceChanges *sc)
 {
-    g_hash_table_unref (sc->settings);
+    g_free (sc->service_type);
+
+    if (sc->settings)
+        g_hash_table_unref (sc->settings);
 
     if (sc->signatures)
         g_hash_table_unref (sc->signatures);
@@ -597,15 +607,20 @@ account_service_changes_get (AgAccountPrivate *priv, AgService *service,
     AgAccountChanges *changes;
     AgServiceChanges *sc;
     gchar *service_name;
+    gchar *service_type;
 
     changes = account_changes_get (priv);
 
     service_name = service ? service->name : SERVICE_GLOBAL;
+    service_type = service ? service->type : SERVICE_GLOBAL_TYPE;
+
     sc = g_hash_table_lookup (changes->services, service_name);
     if (!sc)
     {
         sc = g_slice_new0 (AgServiceChanges);
         sc->service = service;
+        sc->service_type = g_strdup (service_type);
+
         sc->settings = g_hash_table_new_full
             (g_str_hash, g_str_equal,
             g_free, (GDestroyNotify)_ag_value_slice_free);
@@ -868,6 +883,7 @@ _ag_account_changes_from_dbus (DBusMessageIter *iter,
     AgServiceChanges *sc;
     DBusMessageIter i_serv, i_struct, i_dict, i_list;
     gchar *service_name;
+    gchar *service_type;
 
     changes = g_slice_new0 (AgAccountChanges);
     changes->created = created;
@@ -888,7 +904,7 @@ _ag_account_changes_from_dbus (DBusMessageIter *iter,
     EXPECT_TYPE (iter, DBUS_TYPE_ARRAY);
     dbus_message_iter_recurse (iter, &i_serv);
 
-    /* iterate the array of "sa{sv}as", each one holds one service */
+    /* iterate the array of "ssa{sv}as", each one holds one service */
     while (dbus_message_iter_get_arg_type (&i_serv) != DBUS_TYPE_INVALID)
     {
         EXPECT_TYPE (&i_serv, DBUS_TYPE_STRUCT);
@@ -898,8 +914,14 @@ _ag_account_changes_from_dbus (DBusMessageIter *iter,
         dbus_message_iter_get_basic (&i_struct, &service_name);
         dbus_message_iter_next (&i_struct);
 
+        EXPECT_TYPE (&i_struct, DBUS_TYPE_STRING);
+        dbus_message_iter_get_basic (&i_struct, &service_type);
+        dbus_message_iter_next (&i_struct);
+
         sc = g_slice_new0 (AgServiceChanges);
         sc->service = NULL;
+        sc->service_type = g_strdup (service_type);
+
         sc->settings = g_hash_table_new_full
             (g_str_hash, g_str_equal,
              g_free, (GDestroyNotify)_ag_value_slice_free);
@@ -947,6 +969,26 @@ error:
     g_warning ("Wrong format of D-Bus message");
     g_slice_free(AgAccountChanges, changes);
     return NULL;
+}
+
+gboolean
+_ag_account_changes_have_service_type (AgAccountChanges *changes, gchar *service_type)
+{
+    if (changes->services)
+    {
+        GHashTableIter iter;
+        AgServiceChanges *sc;
+
+        g_hash_table_iter_init (&iter, changes->services);
+        while (g_hash_table_iter_next (&iter,
+                                       NULL, (gpointer)&sc))
+        {
+            if (g_strcmp0(sc->service_type, service_type) == 0)
+                return TRUE;
+        }
+    }
+
+    return FALSE;
 }
 
 gboolean
@@ -1290,7 +1332,7 @@ ag_account_list_enabled_services (AgAccount *account)
     g_return_val_if_fail (AG_IS_ACCOUNT (account), NULL);
     sqlite3_snprintf (sizeof (sql), sql,
                       "SELECT DISTINCT Services.name FROM Services "
-                      "JOIN Settings ON Settings.service = Services.id " 
+                      "JOIN Settings ON Settings.service = Services.id "
                       "WHERE Settings.key='enabled' AND Settings.value='1';");
     _ag_manager_exec_query (priv->manager, (AgQueryCallback)add_name_to_list,
                             &list, sql);
