@@ -43,6 +43,9 @@
 #include <libxml/xmlreader.h>
 #include <string.h>
 
+static const gchar suffix[] = ".provider";
+#define SUFFIX_LEN (sizeof(suffix) - 1)
+
 static gint
 cmp_provider_name (AgProvider *provider, const gchar *provider_name)
 {
@@ -58,9 +61,9 @@ static void
 add_providers_from_dir (AgManager *manager, const gchar *dirname,
                        GList **providers)
 {
-    const gchar *filename, *suffix;
-    gchar provider_name[256];
+    const gchar *filename;
     AgProvider *provider;
+    gchar provider_name[256];
     GDir *dir;
 
     g_return_if_fail (providers != NULL);
@@ -74,11 +77,11 @@ add_providers_from_dir (AgManager *manager, const gchar *dirname,
         if (filename[0] == '.')
             continue;
 
-        suffix = strstr (filename, ".provider");
-        if (!suffix) continue;
+        if (!g_str_has_suffix (filename, suffix))
+            continue;
 
         g_snprintf (provider_name, sizeof (provider_name),
-                    "%.*s", suffix - filename, filename);
+                    "%.*s", strlen (filename) - SUFFIX_LEN, filename);
 
         /* if there is already a provider with the same name in the list, then
          * we skip this one (we process directories in descending order of
