@@ -1,3 +1,3 @@
 gtkdocize
-autoreconf -i --force && ./configure "$@"
+autoreconf -i && ./configure "$@"
 
