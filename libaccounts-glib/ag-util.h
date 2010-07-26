@@ -76,6 +76,9 @@ G_GNUC_INTERNAL
 gboolean _ag_xml_parse_settings (xmlTextReaderPtr reader, const gchar *group,
                                  GHashTable *settings);
 
+G_GNUC_INTERNAL
+gchar *_ag_dbus_escape_as_identifier (const gchar *name);
+
 G_END_DECLS
 
 #endif /* _AG_UTIL_H_ */
