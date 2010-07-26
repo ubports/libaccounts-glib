@@ -87,6 +87,9 @@ struct _AgManagerPrivate {
     /* list of EmittedSignalData for the signals emitted by this instance */
     GList *emitted_signals;
 
+    /* list of ProcessedSignalData, to avoid processing signals twice */
+    GList *processed_signals;
+
     guint db_timeout;
 
     guint is_disposed : 1;
@@ -108,6 +111,10 @@ typedef struct {
     struct timespec ts;
     gboolean must_process;
 } EmittedSignalData;
+
+typedef struct {
+    struct timespec ts;
+} ProcessedSignalData;
 
 G_DEFINE_TYPE (AgManager, ag_manager, G_TYPE_OBJECT);
 
@@ -206,6 +213,51 @@ ag_manager_emit_signals (AgManager *manager, AgAccountId account_id,
         g_signal_emit_by_name (manager, "account-created", account_id);
 }
 
+static gboolean
+check_signal_processed (AgManagerPrivate *priv, struct timespec *ts)
+{
+    ProcessedSignalData *psd;
+    GList *list;
+
+    for (list = priv->processed_signals; list != NULL; list = list->next)
+    {
+        psd = list->data;
+
+        if (psd->ts.tv_sec == ts->tv_sec &&
+            psd->ts.tv_nsec == ts->tv_nsec)
+        {
+            DEBUG_INFO ("Signal already processed: %lu-%lu",
+                        ts->tv_sec, ts->tv_nsec);
+            g_slice_free (ProcessedSignalData, psd);
+            priv->processed_signals =
+                g_list_delete_link (priv->processed_signals, list);
+            return TRUE;
+        }
+    }
+
+    /* Add the signal to the list of processed ones; this is necessary if the
+     * manager was created for a specific service type, because in that case
+     * we are subscribing for DBus signals on two different object paths (the
+     * one for our service type, and one for the global settings), so we might
+     * get notified about the same signal twice.
+     */
+
+    /* Don't keep more than a very few elements in the list */
+    for (list = g_list_nth (priv->processed_signals, 2);
+         list != NULL;
+         list = g_list_nth (priv->processed_signals, 2))
+    {
+        priv->processed_signals = g_list_delete_link (priv->processed_signals,
+                                                      list);
+    }
+
+    psd = g_slice_new (ProcessedSignalData);
+    psd->ts = *ts;
+    priv->processed_signals = g_list_prepend (priv->processed_signals, psd);
+
+    return FALSE;
+}
+
 static DBusHandlerResult
 dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
                       void *user_data)
@@ -258,6 +310,9 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
                 return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
         }
     }
+
+    if (check_signal_processed (priv, &ts))
+        return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
     /* we must mark our emitted signals for reprocessing, because the current
      * signal might modify some of the fields that were previously modified by
@@ -1051,6 +1106,13 @@ ag_manager_finalize (GObject *object)
         g_slice_free (EmittedSignalData, priv->emitted_signals->data);
         priv->emitted_signals = g_list_delete_link (priv->emitted_signals,
                                                     priv->emitted_signals);
+    }
+
+    while (priv->processed_signals)
+    {
+        g_slice_free (ProcessedSignalData, priv->processed_signals->data);
+        priv->processed_signals = g_list_delete_link (priv->processed_signals,
+                                                      priv->processed_signals);
     }
 
     if (priv->begin_stmt)
