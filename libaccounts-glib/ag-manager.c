@@ -34,6 +34,7 @@
 
 #include "ag-errors.h"
 #include "ag-internals.h"
+#include "ag-util.h"
 #include <dbus/dbus-glib-lowlevel.h>
 #include <sched.h>
 #include <sqlite3.h>
@@ -235,6 +236,8 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
         return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
     }
 
+    DEBUG_INFO ("path = %s, time = %lu-%lu",
+                dbus_message_get_path (msg), ts.tv_sec, ts.tv_nsec);
     for (list = priv->emitted_signals; list != NULL; list = list->next)
     {
         EmittedSignalData *esd = list->data;
@@ -317,6 +320,52 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
+static DBusMessage *
+make_signal_for_service_type (DBusMessage *global_msg,
+                              const gchar *service_type)
+{
+    gchar path[256];
+    gchar *escaped_type;
+    DBusMessage *msg;
+
+    escaped_type = _ag_dbus_escape_as_identifier (service_type);
+    g_snprintf (path, sizeof (path), "%s/%s",
+                AG_DBUS_PATH_SERVICE, escaped_type);
+    g_free (escaped_type);
+
+    msg = dbus_message_copy (global_msg);
+    DEBUG_INFO("Setting path to %s", path);
+    if (!dbus_message_set_path (msg, path))
+        g_warning("setting path failed!");
+    return msg;
+}
+
+static void
+signal_account_changes_on_service_types (AgManager *manager,
+                                         AgAccountChanges *changes,
+                                         DBusMessage *global_msg)
+{
+    GPtrArray *service_types;
+    gint i;
+
+    service_types = _ag_account_changes_get_service_types (changes);
+    for (i = 0; i < service_types->len; i++)
+    {
+        const gchar *service_type;
+        DBusMessage *msg;
+        gboolean ret;
+
+        service_type = g_ptr_array_index(service_types, i);
+        msg = make_signal_for_service_type (global_msg, service_type);
+
+        ret = dbus_connection_send (manager->priv->dbus_conn, msg, NULL);
+        if (G_UNLIKELY (!ret))
+            g_warning ("Emission of DBus signal failed");
+        dbus_message_unref (msg);
+    }
+    g_ptr_array_free (service_types, TRUE);
+}
+
 static void
 signal_account_changes (AgManager *manager, AgAccount *account,
                         AgAccountChanges *changes)
@@ -341,6 +390,9 @@ signal_account_changes (AgManager *manager, AgAccount *account,
         g_warning ("Emission of DBus signal failed");
         goto finish;
     }
+
+    /* emit the signal on all service-types */
+    signal_account_changes_on_service_types(manager, changes, msg);
 
     dbus_connection_flush (priv->dbus_conn);
     DEBUG_INFO ("Emitted signal, time: %lu-%lu", eds.ts.tv_sec, eds.ts.tv_nsec);
@@ -864,9 +916,36 @@ setup_dbus (AgManager *manager)
     }
 
     dbus_error_init (&error);
-    dbus_bus_add_match (priv->dbus_conn,
-                        "type='signal',interface='" AG_DBUS_IFACE "'",
-                        &error);
+    if (priv->service_type == NULL)
+    {
+        /* listen to all changes */
+        dbus_bus_add_match (priv->dbus_conn,
+                            "type='signal',interface='" AG_DBUS_IFACE "',"
+                            "path='" AG_DBUS_PATH "'",
+                            &error);
+    }
+    else
+    {
+        gchar *escaped_type, match[1024];
+
+        /* listen for changes on our service type only */
+        escaped_type = _ag_dbus_escape_as_identifier (priv->service_type);
+        g_snprintf (match, sizeof (match),
+                    "type='signal',interface='" AG_DBUS_IFACE "',"
+                    "path='" AG_DBUS_PATH_SERVICE "/%s'",
+                    escaped_type);
+        g_free (escaped_type);
+        dbus_bus_add_match (priv->dbus_conn, match, &error);
+        if (G_LIKELY (!dbus_error_is_set (&error)))
+        {
+            /* add also the global service type */
+            dbus_bus_add_match (priv->dbus_conn,
+                                "type='signal',interface='" AG_DBUS_IFACE "',"
+                                "path='" AG_DBUS_PATH_SERVICE_GLOBAL "'",
+                                &error);
+        }
+    }
+
     if (G_UNLIKELY (dbus_error_is_set (&error)))
     {
         g_warning ("Failed to add dbus filter (%s)", error.message);

@@ -44,7 +44,6 @@
 #include <string.h>
 
 #define SERVICE_GLOBAL "global"
-#define SERVICE_GLOBAL_TYPE "unknown"
 
 enum
 {
