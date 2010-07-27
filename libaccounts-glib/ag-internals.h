@@ -133,6 +133,9 @@ G_GNUC_INTERNAL
 AgProvider *_ag_provider_new_from_file (const gchar *provider_name);
 
 G_GNUC_INTERNAL
+GPtrArray *_ag_account_changes_get_service_types (AgAccountChanges *changes);
+
+G_GNUC_INTERNAL
 gboolean _ag_account_changes_have_service_type (AgAccountChanges *changes,
                                                 gchar *service_type);
 
