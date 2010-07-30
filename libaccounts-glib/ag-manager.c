@@ -90,6 +90,9 @@ struct _AgManagerPrivate {
     /* list of ProcessedSignalData, to avoid processing signals twice */
     GList *processed_signals;
 
+    /* D-Bus object paths we are listening to */
+    GPtrArray *object_paths;
+
     guint db_timeout;
 
     guint is_disposed : 1;
@@ -950,6 +953,32 @@ open_db (AgManager *manager)
 }
 
 static gboolean
+add_matches (AgManagerPrivate *priv)
+{
+    gchar match[DBUS_MAXIMUM_MATCH_RULE_LENGTH];
+    DBusError error;
+    gint i;
+
+    dbus_error_init (&error);
+    for (i = 0; i < priv->object_paths->len; i++)
+    {
+        const gchar *path = g_ptr_array_index(priv->object_paths, i);
+
+        g_snprintf (match, sizeof (match),
+                    "type='signal',interface='" AG_DBUS_IFACE "',path='%s'",
+                    path);
+        dbus_bus_add_match (priv->dbus_conn, match, &error);
+        if (G_UNLIKELY (dbus_error_is_set (&error)))
+        {
+            g_warning ("Failed to add dbus filter (%s)", error.message);
+            dbus_error_free (&error);
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+static gboolean
 setup_dbus (AgManager *manager)
 {
     AgManagerPrivate *priv = manager->priv;
@@ -974,43 +1003,28 @@ setup_dbus (AgManager *manager)
         return FALSE;
     }
 
-    dbus_error_init (&error);
     if (priv->service_type == NULL)
     {
         /* listen to all changes */
-        dbus_bus_add_match (priv->dbus_conn,
-                            "type='signal',interface='" AG_DBUS_IFACE "',"
-                            "path='" AG_DBUS_PATH "'",
-                            &error);
+        g_ptr_array_add (priv->object_paths, g_strdup (AG_DBUS_PATH));
     }
     else
     {
-        gchar *escaped_type, match[1024];
+        gchar *escaped_type, *path;
 
         /* listen for changes on our service type only */
         escaped_type = _ag_dbus_escape_as_identifier (priv->service_type);
-        g_snprintf (match, sizeof (match),
-                    "type='signal',interface='" AG_DBUS_IFACE "',"
-                    "path='" AG_DBUS_PATH_SERVICE "/%s'",
-                    escaped_type);
+        path = g_strdup_printf (AG_DBUS_PATH_SERVICE "/%s", escaped_type);
         g_free (escaped_type);
-        dbus_bus_add_match (priv->dbus_conn, match, &error);
-        if (G_LIKELY (!dbus_error_is_set (&error)))
-        {
-            /* add also the global service type */
-            dbus_bus_add_match (priv->dbus_conn,
-                                "type='signal',interface='" AG_DBUS_IFACE "',"
-                                "path='" AG_DBUS_PATH_SERVICE_GLOBAL "'",
-                                &error);
-        }
+        g_ptr_array_add (priv->object_paths, path);
+
+        /* add also the global service type */
+        g_ptr_array_add (priv->object_paths,
+                         g_strdup (AG_DBUS_PATH_SERVICE_GLOBAL));
     }
 
-    if (G_UNLIKELY (dbus_error_is_set (&error)))
-    {
-        g_warning ("Failed to add dbus filter (%s)", error.message);
-        dbus_error_free (&error);
-        return FALSE;
-    }
+    ret = add_matches(priv);
+    if (G_UNLIKELY (!ret)) return FALSE;
 
     dbus_connection_setup_with_g_main (priv->dbus_conn, NULL);
     return TRUE;
@@ -1033,6 +1047,8 @@ ag_manager_init (AgManager *manager)
                                NULL, (GDestroyNotify)account_weak_unref);
 
     priv->db_timeout = MAX_SQLITE_BUSY_LOOP_TIME_MS; /* 5 seconds */
+
+    priv->object_paths = g_ptr_array_new_with_free_func (g_free);
 }
 
 static GObject *
@@ -1104,6 +1120,8 @@ ag_manager_finalize (GObject *object)
                                        object);
         dbus_connection_unref (priv->dbus_conn);
     }
+
+    g_ptr_array_free (priv->object_paths, TRUE);
 
     while (priv->emitted_signals)
     {
