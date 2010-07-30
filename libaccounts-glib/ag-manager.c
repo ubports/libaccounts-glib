@@ -174,6 +174,10 @@ ag_manager_must_emit_updated (AgManager *manager, AgAccountChanges *changes)
 {
     AgManagerPrivate *priv = manager->priv;
 
+    /* Don't emit the "updated" signal along with "created" or "deleted" */
+    if (changes->created || changes->deleted)
+        return FALSE;
+
     /* The update-event is emitted whenever any value has been changed on
      * particular service of account.
      */
