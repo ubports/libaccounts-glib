@@ -265,6 +265,28 @@ check_signal_processed (AgManagerPrivate *priv, struct timespec *ts)
     return FALSE;
 }
 
+/**
+ * checks whether the sender of the message is listed in the object_paths array
+ */
+static gboolean
+message_is_from_interesting_object (DBusMessage *msg, GPtrArray *object_paths)
+{
+    const gchar *msg_object_path;
+    gint i;
+
+    msg_object_path = dbus_message_get_path (msg);
+    if (G_UNLIKELY (msg_object_path == NULL))
+        return FALSE;
+
+    for (i = 0; i < object_paths->len; i++)
+    {
+        const gchar *object_path = g_ptr_array_index (object_paths, i);
+        if (strcmp (msg_object_path, object_path) == 0)
+            return TRUE;
+    }
+    return FALSE;
+}
+
 static DBusHandlerResult
 dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
                       void *user_data)
@@ -284,6 +306,9 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
     GList *list;
 
     if (!dbus_message_is_signal (msg, AG_DBUS_IFACE, AG_DBUS_SIG_CHANGED))
+        return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+    if (!message_is_from_interesting_object(msg, priv->object_paths))
         return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
     dbus_message_iter_init (msg, &iter);
