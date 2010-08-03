@@ -324,6 +324,10 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
                 dbus_message_get_path (msg), ts.tv_sec, ts.tv_nsec,
                 manager);
 
+    /* Do not process the same signal more than once. */
+    if (check_signal_processed (priv, &ts))
+        return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
     for (list = priv->emitted_signals; list != NULL; list = list->next)
     {
         EmittedSignalData *esd = list->data;
@@ -344,9 +348,6 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
                 return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
         }
     }
-
-    if (check_signal_processed (priv, &ts))
-        return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
     /* we must mark our emitted signals for reprocessing, because the current
      * signal might modify some of the fields that were previously modified by
