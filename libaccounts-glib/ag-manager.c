@@ -320,8 +320,10 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
         return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
     }
 
-    DEBUG_INFO ("path = %s, time = %lu-%lu",
-                dbus_message_get_path (msg), ts.tv_sec, ts.tv_nsec);
+    DEBUG_INFO ("path = %s, time = %lu-%lu (%p)",
+                dbus_message_get_path (msg), ts.tv_sec, ts.tv_nsec,
+                manager);
+
     for (list = priv->emitted_signals; list != NULL; list = list->next)
     {
         EmittedSignalData *esd = list->data;
