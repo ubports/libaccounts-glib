@@ -167,9 +167,13 @@ parse_provider (xmlTextReaderPtr reader, AgProvider *provider)
                 ok = _ag_xml_dup_element_data (reader, &provider->display_name);
                 /* that's the only thing we are interested of: we can stop the
                  * parsing now. */
-                return TRUE;
             }
-            else
+            else if (strcmp (name, "translations") == 0)
+            {
+                ok = _ag_xml_dup_element_data (reader,
+                                               &provider->i18n_domain);
+            }
+	    else
                 ok = TRUE;
 
             if (G_UNLIKELY (!ok)) return FALSE;
@@ -325,6 +329,20 @@ ag_provider_get_name (AgProvider *provider)
 }
 
 /**
+ * ag_provider_get_i18n_domain:
+ * @provider: the #AgProvider.
+ *
+ * Returns: the translation domain.
+ */
+const gchar *
+ag_provider_get_i18n_domain (AgProvider *provider)
+{
+    g_return_val_if_fail (provider != NULL, NULL);
+    return provider->i18n_domain;
+}
+
+
+/**
  * ag_provider_get_display_name:
  * @provider: the #AgProvider.
  *
@@ -405,6 +423,7 @@ ag_provider_unref (AgProvider *provider)
     if (provider->ref_count == 0)
     {
         g_free (provider->name);
+	g_free (provider->i18n_domain);
         g_free (provider->display_name);
         g_free (provider->file_data);
         g_slice_free (AgProvider, provider);

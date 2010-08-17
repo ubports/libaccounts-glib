@@ -126,6 +126,7 @@ AgService *_ag_service_new (void);
 struct _AgProvider {
     /*< private >*/
     gint ref_count;
+    gchar *i18n_domain;
     gchar *name;
     gchar *display_name;
     gchar *file_data;
