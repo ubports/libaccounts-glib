@@ -188,16 +188,20 @@ static gboolean
 read_provider_file (xmlTextReaderPtr reader, AgProvider *provider)
 {
     const xmlChar *name;
-    int ret;
+    int ret, type;
 
     ret = xmlTextReaderRead (reader);
     while (ret == 1)
     {
-        name = xmlTextReaderConstName (reader);
-        if (G_LIKELY (name &&
-                      strcmp ((const gchar *)name, "provider") == 0))
+        type = xmlTextReaderNodeType (reader);
+        if (type == XML_READER_TYPE_ELEMENT)
         {
-            return parse_provider (reader, provider);
+            name = xmlTextReaderConstName (reader);
+            if (G_LIKELY (name &&
+                          strcmp ((const gchar *)name, "provider") == 0))
+            {
+                return parse_provider (reader, provider);
+            }
         }
 
         ret = xmlTextReaderNext (reader);
