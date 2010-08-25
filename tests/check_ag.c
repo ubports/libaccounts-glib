@@ -1801,6 +1801,7 @@ START_TEST(test_account_list_enabled_services)
     GList *services;
     gint n_services;
     AgService *service1, *service2;
+    AgAccount *account2;
 
     g_type_init ();
 
@@ -1810,7 +1811,6 @@ START_TEST(test_account_list_enabled_services)
 
     account = ag_manager_create_account (manager, "maemo");
     fail_unless (account != NULL);
-
 
     service1 = ag_manager_get_service (manager, "MyService");
     fail_unless (service1 != NULL);
@@ -1849,6 +1849,16 @@ START_TEST(test_account_list_enabled_services)
     ag_account_set_enabled (account, FALSE);
     ag_account_store (account, account_store_now_cb, TEST_STRING);
 
+    /*
+     * here we enable same service1 for another account
+     * */
+    account2 = ag_manager_create_account (manager, "maemo");
+    fail_unless (account2 != NULL);
+
+    ag_account_select_service (account2, service1);
+    ag_account_set_enabled (account2, TRUE);
+    ag_account_store (account2, account_store_now_cb, TEST_STRING);
+
     services = ag_account_list_enabled_services (account);
 
     n_services = g_list_length (services);
@@ -1859,6 +1869,7 @@ START_TEST(test_account_list_enabled_services)
     ag_service_unref (service2);
     ag_manager_list_free (services);
 
+    g_object_unref (account2);
     end_test ();
 }
 END_TEST
