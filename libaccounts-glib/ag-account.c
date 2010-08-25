@@ -1391,8 +1391,8 @@ ag_account_list_enabled_services (AgAccount *account)
                       "JOIN Settings ON Settings.service = Services.id "
                       "WHERE Settings.key='enabled' "
                       "AND Settings.value='1' "
-                      "AND Settings.account='%d';"
-                       , account->id);
+                      "AND Settings.account='%d';",
+                      account->id);
 
     _ag_manager_exec_query (priv->manager, (AgQueryCallback)add_name_to_list,
                             &list, sql);
