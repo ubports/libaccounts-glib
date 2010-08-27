@@ -37,6 +37,7 @@ typedef enum {
     AG_ERROR_DB,
     AG_ERROR_DISPOSED,
     AG_ERROR_DELETED,
+    AG_ERROR_DB_LOCKED,
 } AgError;
 
 G_END_DECLS

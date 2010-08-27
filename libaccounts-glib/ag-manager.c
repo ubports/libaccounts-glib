@@ -128,6 +128,33 @@ G_DEFINE_TYPE (AgManager, ag_manager, G_TYPE_OBJECT);
 static void store_cb_data_free (StoreCbData *sd);
 static void account_weak_notify (gpointer userdata, GObject *dead_account);
 
+static void
+set_error_from_db (AgManager *manager)
+{
+    AgManagerPrivate *priv = manager->priv;
+    AgError code;
+    GError *error;
+
+    switch (sqlite3_errcode (priv->db))
+    {
+    case SQLITE_DONE:
+    case SQLITE_OK:
+        _ag_manager_take_error (manager, NULL);
+        return;
+    case SQLITE_BUSY:
+        code = AG_ERROR_DB_LOCKED;
+        break;
+    default:
+        code = AG_ERROR_DB;
+        break;
+    }
+
+    error = g_error_new (AG_ERRORS, code, "SQLite error %d: %s",
+                         sqlite3_errcode (priv->db),
+                         sqlite3_errmsg (priv->db));
+    _ag_manager_take_error (manager, error);
+}
+
 static gboolean
 timed_unref_account (gpointer account)
 {
@@ -1815,6 +1842,7 @@ _ag_manager_exec_query (AgManager *manager,
                 }
 
             default:
+                set_error_from_db (manager);
                 g_warning ("%s: runtime error while executing \"%s\": %s",
                            G_STRFUNC, sql, sqlite3_errmsg (db));
                 sqlite3_finalize (stmt);
