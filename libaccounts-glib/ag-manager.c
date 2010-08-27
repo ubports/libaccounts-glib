@@ -809,10 +809,10 @@ setup_db_options (sqlite3 *db)
     int ret;
 
     error = NULL;
-    ret = sqlite3_exec (db, "PRAGMA synchronous = 0", NULL, NULL, &error);
+    ret = sqlite3_exec (db, "PRAGMA synchronous = 1", NULL, NULL, &error);
     if (ret != SQLITE_OK)
     {
-        g_warning ("%s: couldn't set asynchronous mode (%s)",
+        g_warning ("%s: couldn't set synchronous mode (%s)",
                    G_STRFUNC, error);
         sqlite3_free (error);
     }
