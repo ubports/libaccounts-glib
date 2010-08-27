@@ -206,6 +206,11 @@ parse_service (xmlTextReaderPtr reader, AgService *service)
             {
                 ok = _ag_xml_dup_element_data (reader, &service->icon_name);
             }
+            else if (strcmp (name, "translations") == 0)
+            {
+                ok = _ag_xml_dup_element_data (reader, &service->i18n_domain);
+            }
+
             else if (strcmp (name, "template") == 0)
             {
                 ok = parse_template (reader, service);
@@ -481,7 +486,22 @@ ag_service_get_icon_name (AgService *service)
     return service->icon_name;
 }
 
+/**
+ * ag_service_get_i18n_domain:
+ * @service: the #AgService.
+ *
+ * Returns: the name of the translation catalog.
+ */
+const gchar *
+ag_service_get_i18n_domain (AgService *service)
+{
+    g_return_val_if_fail (service != NULL, NULL);
 
+    if (!service->file_data)
+        _ag_service_load_from_file (service);
+
+    return service->i18n_domain;
+}
 
 /**
  * ag_service_get_file_contents:
