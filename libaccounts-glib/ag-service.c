@@ -579,7 +579,8 @@ ag_service_unref (AgService *service)
         g_free (service->name);
         g_free (service->display_name);
         g_free (service->icon_name);
-        g_free (service->type);
+	g_free (service->i18n_domain);
+	g_free (service->type);
         g_free (service->provider);
         g_free (service->file_data);
         if (service->default_settings)
