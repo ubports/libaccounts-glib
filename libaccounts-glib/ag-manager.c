@@ -1494,10 +1494,29 @@ ag_manager_list_free (GList *list)
  * @account_id.
  *
  * Returns: an #AgAccount, on which the client must call g_object_unref()
- * when it's done with it.
+ * when it's done with it, or %NULL if an error occurs.
  */
 AgAccount *
 ag_manager_get_account (AgManager *manager, AgAccountId account_id)
+{
+    return ag_manager_load_account (manager, account_id, NULL);
+}
+
+/**
+ * ag_manager_load_account:
+ * @manager: the #AgManager.
+ * @account_id: the #AgAccountId of the account.
+ * @error: pointer to a #GError, or %NULL.
+ *
+ * Instantiates the object representing the account identified by
+ * @account_id.
+ *
+ * Returns: an #AgAccount, on which the client must call g_object_unref()
+ * when it's done with it, or %NULL if an error occurs.
+ */
+AgAccount *
+ag_manager_load_account (AgManager *manager, AgAccountId account_id,
+                         GError **error)
 {
     AgManagerPrivate *priv;
     AgAccount *account;
@@ -1521,6 +1540,13 @@ ag_manager_get_account (AgManager *manager, AgAccountId account_id)
         g_object_weak_ref (G_OBJECT (account), account_weak_notify, manager);
         g_hash_table_insert (priv->accounts, GUINT_TO_POINTER (account_id),
                              account);
+    }
+    else if (priv->last_error != NULL)
+    {
+        g_set_error_literal (error,
+                             priv->last_error->domain,
+                             priv->last_error->code,
+                             priv->last_error->message);
     }
     return account;
 }
