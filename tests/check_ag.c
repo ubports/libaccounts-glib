@@ -325,6 +325,7 @@ START_TEST(test_service)
     const gboolean check_automatically = TRUE;
     const gchar *display_name = "My test account";
     AgSettingSource source;
+    GError *error = NULL;
 
     g_type_init ();
 
@@ -416,9 +417,17 @@ START_TEST(test_service)
     g_object_unref (manager);
 
     manager = ag_manager_new ();
-    account = ag_manager_get_account (manager, account_id);
+
+    /* first, try to load an unexisting account */
+    account = ag_manager_load_account (manager, account_id + 2, &error);
+    fail_unless (account == NULL, "Loading a non-existing account!");
+    fail_unless (error != NULL, "Error is NULL");
+    g_clear_error (&error);
+
+    account = ag_manager_load_account (manager, account_id, &error);
     fail_unless (AG_IS_ACCOUNT (account),
                  "Couldn't load account %u", account_id);
+    fail_unless (error == NULL, "Error is not NULL");
 
     provider_name = ag_account_get_provider_name (account);
     fail_unless (g_strcmp0 (provider_name, PROVIDER) == 0,
