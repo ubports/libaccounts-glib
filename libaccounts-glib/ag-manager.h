@@ -102,6 +102,8 @@ GList *ag_manager_list_providers (AgManager *manager);
 
 void ag_manager_set_db_timeout (AgManager *manager, guint timeout_ms);
 guint ag_manager_get_db_timeout (AgManager *manager);
+void ag_manager_set_abort_on_db_timeout (AgManager *manager, gboolean abort);
+gboolean ag_manager_get_abort_on_db_timeout (AgManager *manager);
 
 AgServiceType *ag_manager_load_service_type (AgManager *manager,
                                              const gchar *service_type);
