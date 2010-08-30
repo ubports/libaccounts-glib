@@ -681,6 +681,14 @@ ag_account_load (AgAccount *account)
                 "FROM Accounts WHERE id = %u", account->id);
     rows = _ag_manager_exec_query (priv->manager,
                                    (AgQueryCallback)got_account, priv, sql);
+    /* if the query succeeded but we didn't get a row, we must set the
+     * NOT_FOUND error */
+    if (_ag_manager_get_last_error (priv->manager) == NULL && rows != 1)
+    {
+        GError *error = g_error_new (AG_ERRORS, AG_ERROR_ACCOUNT_NOT_FOUND,
+                                     "Account %u not found in DB", account->id);
+        _ag_manager_take_error (priv->manager, error);
+    }
 
     return rows == 1;
 }
