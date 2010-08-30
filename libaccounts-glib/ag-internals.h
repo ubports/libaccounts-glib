@@ -101,6 +101,7 @@ struct _AgService {
     gchar *type;
     gchar *provider;
     gchar *icon_name;
+    gchar *i18n_domain;
     gchar *file_data;
     gsize type_data_offset;
     gint id;
