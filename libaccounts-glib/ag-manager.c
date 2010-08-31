@@ -97,6 +97,7 @@ struct _AgManagerPrivate {
 
     guint db_timeout;
 
+    guint abort_on_db_timeout : 1;
     guint is_disposed : 1;
 
     gchar *service_type;
@@ -143,6 +144,8 @@ set_error_from_db (AgManager *manager)
         return;
     case SQLITE_BUSY:
         code = AG_ERROR_DB_LOCKED;
+        if (priv->abort_on_db_timeout)
+            g_error ("Accounts DB timeout: causing application to abort.");
         break;
     default:
         code = AG_ERROR_DB;
@@ -1982,6 +1985,34 @@ ag_manager_get_db_timeout (AgManager *manager)
 {
     g_return_val_if_fail (AG_IS_MANAGER (manager), 0);
     return manager->priv->db_timeout;
+}
+
+/**
+ * ag_manager_set_abort_on_db_timeout:
+ * @manager: the #AgManager.
+ * @abort: whether to abort when a DB timeout occurs.
+ *
+ * Tells libaccounts whether it should make the client application abort when
+ * a timeout error occurs. The default is %FALSE.
+ */
+void
+ag_manager_set_abort_on_db_timeout (AgManager *manager, gboolean abort)
+{
+    g_return_if_fail (AG_IS_MANAGER (manager));
+    manager->priv->abort_on_db_timeout = abort;
+}
+
+/**
+ * ag_manager_get_abort_on_db_timeout:
+ * @manager: the #AgManager.
+ *
+ * Returns: whether the library will abort when a timeout error occurs.
+ */
+gboolean
+ag_manager_get_abort_on_db_timeout (AgManager *manager)
+{
+    g_return_val_if_fail (AG_IS_MANAGER (manager), FALSE);
+    return manager->priv->abort_on_db_timeout;
 }
 
 /**
