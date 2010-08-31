@@ -93,6 +93,8 @@ struct _AgManagerPrivate {
     /* D-Bus object paths we are listening to */
     GPtrArray *object_paths;
 
+    GError *last_error;
+
     guint db_timeout;
 
     guint is_disposed : 1;
@@ -1187,6 +1189,9 @@ ag_manager_finalize (GObject *object)
     }
     g_free (priv->service_type);
 
+    if (priv->last_error)
+        g_error_free (priv->last_error);
+
     G_OBJECT_CLASS (ag_manager_parent_class)->finalize (object);
 }
 
@@ -1321,6 +1326,19 @@ _ag_manager_list_all (AgManager *manager)
     _ag_manager_exec_query (manager, (AgQueryCallback)add_id_to_list,
                             &list, sql);
     return list;
+}
+
+void
+_ag_manager_take_error (AgManager *manager, GError *error)
+{
+    AgManagerPrivate *priv;
+
+    g_return_if_fail (AG_IS_MANAGER (manager));
+    priv = manager->priv;
+
+    if (priv->last_error)
+        g_free (priv->last_error);
+    priv->last_error = error;
 }
 
 /**
