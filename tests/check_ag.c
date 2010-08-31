@@ -1801,13 +1801,33 @@ START_TEST(test_account_list_enabled_services)
     GList *services;
     gint n_services;
     AgService *service1, *service2;
-    AgAccount *account2;
+
+    /*
+     * Two additional managers:
+     * manager2 : e-mail type
+     * manager3 : sharing type
+     * */
+    AgManager *manager2, *manager3;
+
+    /*
+     * Same instances of account:
+     * account2: from e-mail type manager
+     * account3: from sharing manager
+     * */
+    AgAccount *account2, *account3;
+
+    /*
+     * new account for the same manager
+     * */
+    AgAccount *account4;
 
     g_type_init ();
 
     /* delete the database */
     g_unlink (db_filename);
+
     manager = ag_manager_new ();
+    fail_unless (manager != NULL);
 
     account = ag_manager_create_account (manager, "maemo");
     fail_unless (account != NULL);
@@ -1827,9 +1847,9 @@ START_TEST(test_account_list_enabled_services)
     ag_account_store (account, account_store_now_cb, TEST_STRING);
 
     services = ag_account_list_enabled_services (account);
-
     n_services = g_list_length (services);
     fail_unless (n_services == 1, "Got %d services, expecting 1", n_services);
+    ag_manager_list_free (services);
 
     /* 2 services, 2 enabled  */
     ag_account_select_service (account, service2);
@@ -1840,24 +1860,47 @@ START_TEST(test_account_list_enabled_services)
 
     n_services = g_list_length (services);
     fail_unless (n_services == 2, "Got %d services, expecting 2", n_services);
+    ag_manager_list_free (services);
+
+    manager2 = ag_manager_new_for_service_type ("e-mail");
+    fail_unless (manager2 != NULL);
+
+    account2 = ag_manager_get_account (manager2, account->id);
+    fail_unless (account2 != NULL);
+
+    manager3 = ag_manager_new_for_service_type ("sharing");
+    fail_unless (manager3 != NULL);
+
+    account3 = ag_manager_get_account (manager3, account->id);
+    fail_unless (account3 != NULL);
+
+    services = ag_account_list_enabled_services (account2);
+
+    n_services = g_list_length (services);
+    fail_unless (n_services == 1, "Got %d services, expecting 1", n_services);
+    ag_manager_list_free (services);
+
+    services = ag_account_list_enabled_services (account3);
+
+    n_services = g_list_length (services);
+    fail_unless (n_services == 1, "Got %d services, expecting 1", n_services);
+    ag_manager_list_free (services);
 
     /* 2 services, 0 enabled  */
+    account4 = ag_manager_create_account (manager, "maemo");
+    fail_unless (account4 != NULL);
+
     ag_account_select_service (account, service1);
     ag_account_set_enabled (account, FALSE);
 
     ag_account_select_service (account, service2);
     ag_account_set_enabled (account, FALSE);
+
     ag_account_store (account, account_store_now_cb, TEST_STRING);
 
-    /*
-     * here we enable same service1 for another account
-     * */
-    account2 = ag_manager_create_account (manager, "maemo");
-    fail_unless (account2 != NULL);
-
-    ag_account_select_service (account2, service1);
-    ag_account_set_enabled (account2, TRUE);
-    ag_account_store (account2, account_store_now_cb, TEST_STRING);
+    ag_account_select_service (account4, service2);
+    ag_account_set_enabled (account4, TRUE);
+    ag_account_store (account4, account_store_now_cb, TEST_STRING);
 
     services = ag_account_list_enabled_services (account);
 
@@ -1870,6 +1913,11 @@ START_TEST(test_account_list_enabled_services)
     ag_manager_list_free (services);
 
     g_object_unref (account2);
+    g_object_unref (account3);
+    g_object_unref (account4);
+    g_object_unref (manager2);
+    g_object_unref (manager3);
+
     end_test ();
 }
 END_TEST
