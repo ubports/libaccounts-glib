@@ -1368,6 +1368,14 @@ _ag_manager_take_error (AgManager *manager, GError *error)
     priv->last_error = error;
 }
 
+const GError *
+_ag_manager_get_last_error (AgManager *manager)
+{
+    g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
+
+    return manager->priv->last_error;
+}
+
 /**
  * ag_manager_list:
  * @manager: the #AgManager.
