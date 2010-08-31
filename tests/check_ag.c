@@ -1829,6 +1829,12 @@ START_TEST(test_account_list_enabled_services)
     manager = ag_manager_new ();
     fail_unless (manager != NULL);
 
+    manager2 = ag_manager_new_for_service_type ("e-mail");
+    fail_unless (manager2 != NULL);
+
+    manager3 = ag_manager_new_for_service_type ("sharing");
+    fail_unless (manager3 != NULL);
+
     account = ag_manager_create_account (manager, "maemo");
     fail_unless (account != NULL);
 
@@ -1862,14 +1868,8 @@ START_TEST(test_account_list_enabled_services)
     fail_unless (n_services == 2, "Got %d services, expecting 2", n_services);
     ag_manager_list_free (services);
 
-    manager2 = ag_manager_new_for_service_type ("e-mail");
-    fail_unless (manager2 != NULL);
-
     account2 = ag_manager_get_account (manager2, account->id);
     fail_unless (account2 != NULL);
-
-    manager3 = ag_manager_new_for_service_type ("sharing");
-    fail_unless (manager3 != NULL);
 
     account3 = ag_manager_get_account (manager3, account->id);
     fail_unless (account3 != NULL);
