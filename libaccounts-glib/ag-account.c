@@ -1386,8 +1386,9 @@ ag_account_list_enabled_services (AgAccount *account)
     priv = account->priv;
 
     g_return_val_if_fail (AG_IS_ACCOUNT (account), NULL);
+    const char *service_type = ag_manager_get_service_type(priv->manager);
 
-    if (ag_manager_get_service_type(priv->manager) != NULL)
+    if (service_type != NULL)
         sqlite3_snprintf (sizeof (sql), sql,
                           "SELECT DISTINCT Services.name FROM Services "
                           "JOIN Settings ON Settings.service = Services.id "
@@ -1396,7 +1397,7 @@ ag_account_list_enabled_services (AgAccount *account)
                           "AND Settings.account='%d' "
                           "AND Services.type = '%s';",
                            account->id,
-                           ag_manager_get_service_type(priv->manager));
+                           service_type);
     else
         sqlite3_snprintf (sizeof (sql), sql,
                           "SELECT DISTINCT Services.name FROM Services "
