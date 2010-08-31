@@ -80,6 +80,9 @@ void ag_manager_list_free (GList *list);
 
 AgAccount *ag_manager_get_account (AgManager *manager,
                                    AgAccountId account_id);
+AgAccount *ag_manager_load_account (AgManager *manager,
+                                    AgAccountId account_id,
+                                    GError **error);
 AgAccount *ag_manager_create_account (AgManager *manager,
                                       const gchar *provider_name);
 
