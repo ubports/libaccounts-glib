@@ -1367,7 +1367,7 @@ _ag_manager_take_error (AgManager *manager, GError *error)
     priv = manager->priv;
 
     if (priv->last_error)
-        g_free (priv->last_error);
+        g_error_free (priv->last_error);
     priv->last_error = error;
 }
 
