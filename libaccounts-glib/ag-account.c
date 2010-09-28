@@ -509,7 +509,7 @@ update_settings (AgAccount *account, GHashTable *services)
             g_hash_table_iter_steal (&si);
 
             if (value)
-                g_hash_table_replace (ss->settings, key, value);
+                g_hash_table_replace (ss->settings, g_strdup (key), value);
             else
                 g_hash_table_remove (ss->settings, key);
 
@@ -525,6 +525,7 @@ update_settings (AgAccount *account, GHashTable *services)
                 g_signal_emit (account, signals[ENABLED], 0,
                                service_name, enabled);
             }
+	    g_free(key);
         }
     }
 
