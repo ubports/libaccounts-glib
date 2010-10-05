@@ -393,7 +393,7 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
         esd->must_process = TRUE;
     }
 
-    changes = _ag_account_changes_from_dbus (&iter, created, deleted);
+    changes = _ag_account_changes_from_dbus (manager, &iter, created, deleted);
 
     /* check if the account is loaded */
     account = g_hash_table_lookup (priv->accounts,
@@ -1587,6 +1587,29 @@ ag_manager_create_account (AgManager *manager, const gchar *provider_name)
                             "provider", provider_name,
                             NULL);
     return account;
+}
+
+/* This is called when creating AgService objects from inside the DBus
+ * handler: we don't want to access the Db from there */
+AgService *
+_ag_manager_get_service_lazy (AgManager *manager, const gchar *service_name,
+                              const gchar *service_type)
+{
+    AgManagerPrivate *priv;
+    AgService *service;
+
+    g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
+    g_return_val_if_fail (service_name != NULL, NULL);
+    priv = manager->priv;
+
+    service = g_hash_table_lookup (priv->services, service_name);
+    if (service)
+        return ag_service_ref (service);
+
+    service = _ag_service_new_with_type (service_name, service_type);
+
+    g_hash_table_insert (priv->services, service->name, service);
+    return ag_service_ref (service);
 }
 
 /**

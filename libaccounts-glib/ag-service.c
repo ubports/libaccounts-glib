@@ -382,6 +382,18 @@ _ag_service_new_from_file (const gchar *service_name)
     return service;
 }
 
+AgService *
+_ag_service_new_with_type (const gchar *service_name, const gchar *service_type)
+{
+    AgService *service;
+
+    service = _ag_service_new ();
+    service->name = g_strdup (service_name);
+    service->type = g_strdup (service_type);
+
+    return service;
+}
+
 GHashTable *
 _ag_service_load_default_settings (AgService *service)
 {

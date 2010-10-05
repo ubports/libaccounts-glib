@@ -901,7 +901,7 @@ ag_account_class_init (AgAccountClass *klass)
 }
 
 AgAccountChanges *
-_ag_account_changes_from_dbus (DBusMessageIter *iter,
+_ag_account_changes_from_dbus (AgManager *manager, DBusMessageIter *iter,
                                gboolean created, gboolean deleted)
 {
     AgAccountChanges *changes;
@@ -944,7 +944,11 @@ _ag_account_changes_from_dbus (DBusMessageIter *iter,
         dbus_message_iter_next (&i_struct);
 
         sc = g_slice_new0 (AgServiceChanges);
-        sc->service = NULL;
+        if (service_name != NULL && strcmp (service_name, SERVICE_GLOBAL) == 0)
+            sc->service = NULL;
+        else
+            sc->service = _ag_manager_get_service_lazy (manager, service_name,
+                                                        service_type);
         sc->service_type = g_strdup (service_type);
 
         sc->settings = g_hash_table_new_full
