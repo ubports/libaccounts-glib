@@ -474,11 +474,25 @@ update_settings (AgAccount *account, GHashTable *services)
         GValue *value;
         GHashTable *watches = NULL;
 
-        /* if the changed service doesn't have a AgServiceSettings entry it
-         * means that the service was never selected on this account, so we
-         * don't need to update its settings. */
-        if (!priv->services) continue;
-        ss = g_hash_table_lookup (priv->services, service_name);
+        if (priv->foreign)
+        {
+            /* If the account has been created from another instance
+             * (which might be in another process), the "changes" structure
+             * contains all the account settings for all services.
+             *
+             * Instead of discarding this precious information, we store all
+             * the settings in memory, to minimize future disk accesses.
+             */
+            ss = get_service_settings (priv, sc->service, TRUE);
+        }
+        else
+        {
+            /* if the changed service doesn't have a AgServiceSettings entry it
+             * means that the service was never selected on this account, so we
+             * don't need to update its settings. */
+            if (!priv->services) continue;
+            ss = g_hash_table_lookup (priv->services, service_name);
+        }
         if (!ss) continue;
 
         /* get the watches associated to this service */
