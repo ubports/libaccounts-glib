@@ -2085,6 +2085,94 @@ START_TEST(test_service_type)
 }
 END_TEST
 
+static void
+on_account_created_with_db_locked (AgManager *manager, AgAccountId account_id)
+{
+    AgAccount *account;
+    AgService *service;
+    const gchar *name;
+    GList *list;
+
+    g_debug ("%s called (%u)", G_STRFUNC, account_id);
+
+    account = ag_manager_get_account (manager, account_id);
+    fail_unless (account != NULL);
+
+    g_debug ("account loaded");
+    list = ag_account_list_enabled_services (account);
+    fail_unless (list != NULL);
+    fail_unless (g_list_length (list) == 1);
+
+    service = list->data;
+    fail_unless (service != NULL);
+
+    name = ag_service_get_name (service);
+    fail_unless (strcmp (name, "MyService") == 0);
+
+    ag_service_list_free (list);
+    g_main_loop_quit (main_loop);
+}
+
+START_TEST(test_db_access)
+{
+    const gchar *lock_filename;
+    gchar command[512];
+    gint timeout_ms;
+    gint fd;
+
+    /* This test is for making sure that no DB accesses occur while certain
+     * events occur.
+     *
+     * Checked scenarios:
+     *
+     * - when another process creates an account and we get the
+     *   account-created signal and call
+     *   ag_account_list_enabled_services(), we shouldn't be blocked.
+     */
+    g_type_init ();
+
+    /* first, create a lock file to synchronize the test */
+    lock_filename = "/tmp/check_ag.lock";
+    fd = open (lock_filename, O_CREAT | O_RDWR, 0666);
+
+    timeout_ms = 2000; /* two seconds */
+
+    manager = ag_manager_new ();
+    ag_manager_set_db_timeout (manager, 0);
+    ag_manager_set_abort_on_db_timeout (manager, TRUE);
+    g_signal_connect (manager, "account-created",
+                      G_CALLBACK (on_account_created_with_db_locked), NULL);
+
+    /* create an account with the e-mail service type enabled */
+    system ("test-process create2 myprovider MyAccountName");
+
+    /* lock the DB for the specified timeout */
+    sprintf (command, "test-process lock_db %d %s &",
+             timeout_ms, lock_filename);
+    system (command);
+
+    /* wait till the file is locked */
+    while (lockf (fd, F_TEST, 0) == 0)
+        sched_yield ();
+
+    /* now the DB is locked; we iterate the main loop to get the signals
+     * about the account creation and do some operations with the account.
+     * We expect to never get any error because of the locked DB, as the
+     * methods we are calling should not access it */
+
+    main_loop = g_main_loop_new (NULL, FALSE);
+    source_id = g_timeout_add_seconds (timeout_ms / 1000,
+                                       concurrency_test_failed, NULL);
+    g_debug ("Running loop");
+    g_main_loop_run (main_loop);
+
+    fail_unless (source_id != 0, "Timeout happened");
+    g_source_remove (source_id);
+
+    end_test ();
+}
+END_TEST
+
 Suite *
 ag_suite(void)
 {
@@ -2123,6 +2211,7 @@ ag_suite(void)
     tcase_add_test (tc_create, test_open_locked);
     tcase_add_test (tc_create, test_read_locked);
     tcase_add_test (tc_create, test_service_type);
+    tcase_add_test (tc_create, test_db_access);
 
     tcase_set_timeout (tc_create, 10);
 
