@@ -52,6 +52,7 @@ enum
     PROP_ID,
     PROP_MANAGER,
     PROP_PROVIDER,
+    PROP_FOREIGN,
 };
 
 enum
@@ -101,6 +102,11 @@ struct _AgAccountPrivate {
      * AgAccountWatch-es. */
     GHashTable *watches;
 
+    /* The "foreign" flag means that the account has been created by another
+     * instance and we got informed about it from D-Bus. In this case, all the
+     * informations that we get via D-Bus will be cached in the
+     * AgServiceSetting structures. */
+    guint foreign : 1;
     guint enabled : 1;
     guint deleted : 1;
 };
@@ -722,7 +728,8 @@ ag_account_constructor (GType type, guint n_params,
         }
     }
 
-    ag_account_select_service (account, NULL);
+    if (!account->priv->foreign)
+        ag_account_select_service (account, NULL);
 
     return object;
 }
@@ -753,6 +760,9 @@ ag_account_set_property (GObject *object, guint property_id,
             AgAccountChanges *changes = account_changes_get (priv);
             changes->created = TRUE;
         }
+        break;
+    case PROP_FOREIGN:
+        priv->foreign = g_value_get_boolean (value);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -832,6 +842,13 @@ ag_account_class_init (AgAccountClass *klass)
                               NULL,
                               G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
                               G_PARAM_STATIC_STRINGS));
+
+    g_object_class_install_property
+        (object_class, PROP_FOREIGN,
+         g_param_spec_boolean ("foreign", "foreign", "foreign",
+                               FALSE,
+                               G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+                               G_PARAM_STATIC_STRINGS));
 
     /**
      * AgAccount::enabled:

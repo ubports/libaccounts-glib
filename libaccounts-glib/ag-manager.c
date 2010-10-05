@@ -415,6 +415,7 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
                                 "manager", manager,
                                 "provider", provider_name,
                                 "id", account_id,
+                                "foreign", created,
                                 NULL);
         g_return_val_if_fail (AG_IS_ACCOUNT (account),
                               DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
