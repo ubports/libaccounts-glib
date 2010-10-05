@@ -2174,15 +2174,19 @@ START_TEST(test_db_access)
 END_TEST
 
 Suite *
-ag_suite(void)
+ag_suite(const char *test_case)
 {
     Suite *s = suite_create ("accounts-glib");
+
+#define IF_TEST_CASE_ENABLED(test_name) \
+    if (test_case == NULL || strcmp (test_name, test_case) == 0)
 
     /* Core test case */
     TCase * tc_core = tcase_create("Core");
     tcase_add_test (tc_core, test_init);
 
-    suite_add_tcase (s, tc_core);
+    IF_TEST_CASE_ENABLED("Core")
+        suite_add_tcase (s, tc_core);
 
     TCase * tc_create = tcase_create("Create");
     tcase_add_test (tc_create, test_object);
@@ -2215,15 +2219,21 @@ ag_suite(void)
 
     tcase_set_timeout (tc_create, 10);
 
-    suite_add_tcase (s, tc_create);
+    IF_TEST_CASE_ENABLED("Create")
+        suite_add_tcase (s, tc_create);
 
     return s;
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
     int number_failed;
-    Suite * s = ag_suite();
+    const char *test_case = NULL;
+
+    if (argc > 1)
+        test_case = argv[1];
+
+    Suite * s = ag_suite(test_case);
     SRunner * sr = srunner_create(s);
 
     db_filename = g_build_filename (g_getenv ("ACCOUNTS"), "accounts.db",
