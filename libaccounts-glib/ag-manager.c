@@ -1670,6 +1670,35 @@ ag_manager_get_service (AgManager *manager, const gchar *service_name)
     return ag_service_ref (service);
 }
 
+guint
+_ag_manager_get_service_id (AgManager *manager, AgService *service)
+{
+    g_return_val_if_fail (AG_IS_MANAGER (manager), 0);
+
+    if (service == NULL) return 0; /* global service */
+
+    if (service->id == 0)
+    {
+        gchar *sql;
+        gint rows;
+
+        /* We got this service name from another process; load the id from the
+         * DB - it must already exist */
+        sql = sqlite3_mprintf ("SELECT id FROM Services WHERE name = %Q",
+                               service->name);
+        rows = _ag_manager_exec_query (manager, (AgQueryCallback)got_service_id,
+                                       service, sql);
+        sqlite3_free (sql);
+        if (G_UNLIKELY (rows != 1))
+        {
+            g_warning ("%s: got %d rows when asking for service %s",
+                       G_STRFUNC, rows, service->name);
+        }
+    }
+
+    return service->id;
+}
+
 /**
  * ag_manager_list_services:
  * @manager: the #AgManager.
