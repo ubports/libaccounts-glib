@@ -1539,7 +1539,7 @@ ag_account_select_service (AgAccount *account, AgService *service)
 
     priv->service = service;
 
-    if ((service == NULL || service->id != 0) && account->id != 0 &&
+    if (account->id != 0 &&
         !get_service_settings (priv, service, FALSE))
     {
         /* the settings for this service are not yet loaded: do it now */
@@ -1553,7 +1553,7 @@ ag_account_select_service (AgAccount *account, AgService *service)
         guint service_id;
         gchar sql[128];
 
-        service_id = (service != NULL) ? service->id : 0;
+        service_id = _ag_manager_get_service_id (priv->manager, service);
         g_snprintf (sql, sizeof (sql),
                     "SELECT key, type, value FROM Settings "
                     "WHERE account = %u AND service = %u",

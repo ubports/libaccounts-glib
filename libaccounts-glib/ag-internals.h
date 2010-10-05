@@ -102,6 +102,9 @@ G_GNUC_INTERNAL
 AgService *_ag_manager_get_service_lazy (AgManager *manager,
                                          const gchar *service_name,
                                          const gchar *service_type);
+G_GNUC_INTERNAL
+guint _ag_manager_get_service_id (AgManager *manager, AgService *service);
+
 struct _AgService {
     /*< private >*/
     gint ref_count;
