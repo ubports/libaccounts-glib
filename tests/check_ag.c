@@ -2181,46 +2181,46 @@ ag_suite(const char *test_case)
 #define IF_TEST_CASE_ENABLED(test_name) \
     if (test_case == NULL || strcmp (test_name, test_case) == 0)
 
-    /* Core test case */
-    TCase * tc_core = tcase_create("Core");
-    tcase_add_test (tc_core, test_init);
+    TCase *tc;
 
+    tc = tcase_create("Core");
+    tcase_add_test (tc, test_init);
     IF_TEST_CASE_ENABLED("Core")
-        suite_add_tcase (s, tc_core);
+        suite_add_tcase (s, tc);
 
-    TCase * tc_create = tcase_create("Create");
-    tcase_add_test (tc_create, test_object);
-    tcase_add_test (tc_create, test_provider);
-    tcase_add_test (tc_create, test_store);
-    tcase_add_test (tc_create, test_store_locked);
-    tcase_add_test (tc_create, test_store_locked_unref);
-    tcase_add_test (tc_create, test_service);
-    tcase_add_test (tc_create, test_account_services);
-    tcase_add_test (tc_create, test_signals);
-    tcase_add_test (tc_create, test_list);
-    tcase_add_test (tc_create, test_settings_iter);
-    tcase_add_test (tc_create, test_list_services);
-    tcase_add_test (tc_create, test_delete);
-    tcase_add_test (tc_create, test_watches);
-    tcase_add_test (tc_create, test_concurrency);
-    tcase_add_test (tc_create, test_service_regression);
-    tcase_add_test (tc_create, test_blocking);
-    tcase_add_test (tc_create, test_sign_verify_key);
-    tcase_add_test (tc_create, test_cache_regression);
-    tcase_add_test (tc_create, test_serviceid_regression);
-    tcase_add_test (tc_create, test_enabled_regression);
-    tcase_add_test (tc_create, test_manager_new_for_service_type);
-    tcase_add_test (tc_create, test_manager_enabled_event);
-    tcase_add_test (tc_create, test_account_list_enabled_services);
-    tcase_add_test (tc_create, test_open_locked);
-    tcase_add_test (tc_create, test_read_locked);
-    tcase_add_test (tc_create, test_service_type);
-    tcase_add_test (tc_create, test_db_access);
+    tc = tcase_create("Create");
+    tcase_add_test (tc, test_object);
+    tcase_add_test (tc, test_provider);
+    tcase_add_test (tc, test_store);
+    tcase_add_test (tc, test_store_locked);
+    tcase_add_test (tc, test_store_locked_unref);
+    tcase_add_test (tc, test_service);
+    tcase_add_test (tc, test_account_services);
+    tcase_add_test (tc, test_signals);
+    tcase_add_test (tc, test_list);
+    tcase_add_test (tc, test_settings_iter);
+    tcase_add_test (tc, test_list_services);
+    tcase_add_test (tc, test_delete);
+    tcase_add_test (tc, test_watches);
+    tcase_add_test (tc, test_concurrency);
+    tcase_add_test (tc, test_service_regression);
+    tcase_add_test (tc, test_blocking);
+    tcase_add_test (tc, test_sign_verify_key);
+    tcase_add_test (tc, test_cache_regression);
+    tcase_add_test (tc, test_serviceid_regression);
+    tcase_add_test (tc, test_enabled_regression);
+    tcase_add_test (tc, test_manager_new_for_service_type);
+    tcase_add_test (tc, test_manager_enabled_event);
+    tcase_add_test (tc, test_account_list_enabled_services);
+    tcase_add_test (tc, test_open_locked);
+    tcase_add_test (tc, test_read_locked);
+    tcase_add_test (tc, test_service_type);
+    tcase_add_test (tc, test_db_access);
 
-    tcase_set_timeout (tc_create, 10);
+    tcase_set_timeout (tc, 10);
 
     IF_TEST_CASE_ENABLED("Create")
-        suite_add_tcase (s, tc_create);
+        suite_add_tcase (s, tc);
 
     return s;
 }
