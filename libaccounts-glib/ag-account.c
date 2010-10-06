@@ -1410,6 +1410,28 @@ add_name_to_list (sqlite3_stmt *stmt, GList **plist)
     return TRUE;
 }
 
+static inline GList *
+list_enabled_services_from_memory (AgAccountPrivate *priv,
+                                   const gchar *service_type)
+{
+    GHashTableIter iter;
+    AgServiceSettings *ss;
+    GList *list = NULL;
+
+    g_hash_table_iter_init (&iter, priv->services);
+    while (g_hash_table_iter_next (&iter, NULL, (gpointer)&ss))
+    {
+        GValue *value;
+
+        if (ss->service == NULL) continue;
+
+        value = g_hash_table_lookup (ss->settings, "enabled");
+        if (value != NULL && g_value_get_boolean (value))
+            list = g_list_prepend (list, ag_service_ref(ss->service));
+    }
+    return list;
+}
+
 /**
  * ag_account_list_enabled_services:
  * @account: the #AgAccount.
@@ -1431,6 +1453,10 @@ ag_account_list_enabled_services (AgAccount *account)
     priv = account->priv;
 
     service_type = ag_manager_get_service_type (priv->manager);
+
+    /* avoid accessing the DB, if possible */
+    if (priv->foreign)
+        return list_enabled_services_from_memory (priv, service_type);
 
     if (service_type != NULL)
         sqlite3_snprintf (sizeof (sql), sql,
