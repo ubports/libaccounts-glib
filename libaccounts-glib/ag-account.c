@@ -1424,13 +1424,13 @@ ag_account_list_enabled_services (AgAccount *account)
     GList *list = NULL;
     GList *iter;
     GList *services = NULL;
+    const gchar *service_type;
     char sql[512];
 
     g_return_val_if_fail (AG_IS_ACCOUNT (account), NULL);
     priv = account->priv;
 
-    g_return_val_if_fail (AG_IS_ACCOUNT (account), NULL);
-    const char *service_type = ag_manager_get_service_type(priv->manager);
+    service_type = ag_manager_get_service_type (priv->manager);
 
     if (service_type != NULL)
         sqlite3_snprintf (sizeof (sql), sql,
