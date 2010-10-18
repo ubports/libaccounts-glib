@@ -1425,6 +1425,10 @@ list_enabled_services_from_memory (AgAccountPrivate *priv,
 
         if (ss->service == NULL) continue;
 
+        if (service_type != NULL &&
+            g_strcmp0 (ag_service_get_service_type (ss->service), service_type) != 0)
+                continue;
+
         value = g_hash_table_lookup (ss->settings, "enabled");
         if (value != NULL && g_value_get_boolean (value))
             list = g_list_prepend (list, ag_service_ref(ss->service));
