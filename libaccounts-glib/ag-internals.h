@@ -136,7 +136,7 @@ G_GNUC_INTERNAL
 const GValue *_ag_service_get_default_setting (AgService *service,
                                                const gchar *key);
 
-inline
+G_GNUC_INTERNAL
 AgService *_ag_service_new (void);
 
 struct _AgProvider {
