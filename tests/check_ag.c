@@ -2144,7 +2144,7 @@ START_TEST(test_db_access)
                       G_CALLBACK (on_account_created_with_db_locked), NULL);
 
     /* create an account with the e-mail service type enabled */
-    system ("test-process create2 myprovider MyAccountName");
+    system ("test-process create3 myprovider MyAccountName");
 
     /* lock the DB for the specified timeout */
     sprintf (command, "test-process lock_db %d %s &",
