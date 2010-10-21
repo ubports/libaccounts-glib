@@ -393,7 +393,7 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
         esd->must_process = TRUE;
     }
 
-    changes = _ag_account_changes_from_dbus (&iter, created, deleted);
+    changes = _ag_account_changes_from_dbus (manager, &iter, created, deleted);
 
     /* check if the account is loaded */
     account = g_hash_table_lookup (priv->accounts,
@@ -415,6 +415,7 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
                                 "manager", manager,
                                 "provider", provider_name,
                                 "id", account_id,
+                                "foreign", created,
                                 NULL);
         g_return_val_if_fail (AG_IS_ACCOUNT (account),
                               DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
@@ -1588,6 +1589,29 @@ ag_manager_create_account (AgManager *manager, const gchar *provider_name)
     return account;
 }
 
+/* This is called when creating AgService objects from inside the DBus
+ * handler: we don't want to access the Db from there */
+AgService *
+_ag_manager_get_service_lazy (AgManager *manager, const gchar *service_name,
+                              const gchar *service_type)
+{
+    AgManagerPrivate *priv;
+    AgService *service;
+
+    g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
+    g_return_val_if_fail (service_name != NULL, NULL);
+    priv = manager->priv;
+
+    service = g_hash_table_lookup (priv->services, service_name);
+    if (service)
+        return ag_service_ref (service);
+
+    service = _ag_service_new_with_type (service_name, service_type);
+
+    g_hash_table_insert (priv->services, service->name, service);
+    return ag_service_ref (service);
+}
+
 /**
  * ag_manager_get_service:
  * @manager: the #AgManager.
@@ -1644,6 +1668,35 @@ ag_manager_get_service (AgManager *manager, const gchar *service_name)
 
     g_hash_table_insert (priv->services, service->name, service);
     return ag_service_ref (service);
+}
+
+guint
+_ag_manager_get_service_id (AgManager *manager, AgService *service)
+{
+    g_return_val_if_fail (AG_IS_MANAGER (manager), 0);
+
+    if (service == NULL) return 0; /* global service */
+
+    if (service->id == 0)
+    {
+        gchar *sql;
+        gint rows;
+
+        /* We got this service name from another process; load the id from the
+         * DB - it must already exist */
+        sql = sqlite3_mprintf ("SELECT id FROM Services WHERE name = %Q",
+                               service->name);
+        rows = _ag_manager_exec_query (manager, (AgQueryCallback)got_service_id,
+                                       service, sql);
+        sqlite3_free (sql);
+        if (G_UNLIKELY (rows != 1))
+        {
+            g_warning ("%s: got %d rows when asking for service %s",
+                       G_STRFUNC, rows, service->name);
+        }
+    }
+
+    return service->id;
 }
 
 /**
