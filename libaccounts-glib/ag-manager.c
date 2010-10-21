@@ -1698,8 +1698,8 @@ ag_manager_list_services_by_type (AgManager *manager, const gchar *service_type)
     for (list = all_services; list != NULL; list = list->next)
     {
         AgService *service = list->data;
-
-        if (service->type && strcmp (service->type, service_type) == 0)
+        const gchar *serviceType = ag_service_get_service_type (service);
+        if (serviceType && strcmp (serviceType, service_type) == 0)
         {
             services = g_list_prepend (services, service);
         }
