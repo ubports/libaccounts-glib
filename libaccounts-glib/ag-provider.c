@@ -253,7 +253,7 @@ found:
     return filepath;
 }
 
-AgProvider *
+static AgProvider *
 _ag_provider_new (void)
 {
     AgProvider *provider;

@@ -52,6 +52,7 @@ enum
     PROP_ID,
     PROP_MANAGER,
     PROP_PROVIDER,
+    PROP_FOREIGN,
 };
 
 enum
@@ -101,6 +102,11 @@ struct _AgAccountPrivate {
      * AgAccountWatch-es. */
     GHashTable *watches;
 
+    /* The "foreign" flag means that the account has been created by another
+     * instance and we got informed about it from D-Bus. In this case, all the
+     * informations that we get via D-Bus will be cached in the
+     * AgServiceSetting structures. */
+    guint foreign : 1;
     guint enabled : 1;
     guint deleted : 1;
 };
@@ -468,11 +474,25 @@ update_settings (AgAccount *account, GHashTable *services)
         GValue *value;
         GHashTable *watches = NULL;
 
-        /* if the changed service doesn't have a AgServiceSettings entry it
-         * means that the service was never selected on this account, so we
-         * don't need to update its settings. */
-        if (!priv->services) continue;
-        ss = g_hash_table_lookup (priv->services, service_name);
+        if (priv->foreign)
+        {
+            /* If the account has been created from another instance
+             * (which might be in another process), the "changes" structure
+             * contains all the account settings for all services.
+             *
+             * Instead of discarding this precious information, we store all
+             * the settings in memory, to minimize future disk accesses.
+             */
+            ss = get_service_settings (priv, sc->service, TRUE);
+        }
+        else
+        {
+            /* if the changed service doesn't have a AgServiceSettings entry it
+             * means that the service was never selected on this account, so we
+             * don't need to update its settings. */
+            if (!priv->services) continue;
+            ss = g_hash_table_lookup (priv->services, service_name);
+        }
         if (!ss) continue;
 
         /* get the watches associated to this service */
@@ -722,7 +742,8 @@ ag_account_constructor (GType type, guint n_params,
         }
     }
 
-    ag_account_select_service (account, NULL);
+    if (!account->priv->foreign)
+        ag_account_select_service (account, NULL);
 
     return object;
 }
@@ -753,6 +774,9 @@ ag_account_set_property (GObject *object, guint property_id,
             AgAccountChanges *changes = account_changes_get (priv);
             changes->created = TRUE;
         }
+        break;
+    case PROP_FOREIGN:
+        priv->foreign = g_value_get_boolean (value);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -833,6 +857,13 @@ ag_account_class_init (AgAccountClass *klass)
                               G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
                               G_PARAM_STATIC_STRINGS));
 
+    g_object_class_install_property
+        (object_class, PROP_FOREIGN,
+         g_param_spec_boolean ("foreign", "foreign", "foreign",
+                               FALSE,
+                               G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+                               G_PARAM_STATIC_STRINGS));
+
     /**
      * AgAccount::enabled:
      * @account: the #AgAccount.
@@ -884,7 +915,7 @@ ag_account_class_init (AgAccountClass *klass)
 }
 
 AgAccountChanges *
-_ag_account_changes_from_dbus (DBusMessageIter *iter,
+_ag_account_changes_from_dbus (AgManager *manager, DBusMessageIter *iter,
                                gboolean created, gboolean deleted)
 {
     AgAccountChanges *changes;
@@ -927,7 +958,11 @@ _ag_account_changes_from_dbus (DBusMessageIter *iter,
         dbus_message_iter_next (&i_struct);
 
         sc = g_slice_new0 (AgServiceChanges);
-        sc->service = NULL;
+        if (service_name != NULL && strcmp (service_name, SERVICE_GLOBAL) == 0)
+            sc->service = NULL;
+        else
+            sc->service = _ag_manager_get_service_lazy (manager, service_name,
+                                                        service_type);
         sc->service_type = g_strdup (service_type);
 
         sc->settings = g_hash_table_new_full
@@ -1376,6 +1411,32 @@ add_name_to_list (sqlite3_stmt *stmt, GList **plist)
     return TRUE;
 }
 
+static inline GList *
+list_enabled_services_from_memory (AgAccountPrivate *priv,
+                                   const gchar *service_type)
+{
+    GHashTableIter iter;
+    AgServiceSettings *ss;
+    GList *list = NULL;
+
+    g_hash_table_iter_init (&iter, priv->services);
+    while (g_hash_table_iter_next (&iter, NULL, (gpointer)&ss))
+    {
+        GValue *value;
+
+        if (ss->service == NULL) continue;
+
+        if (service_type != NULL &&
+            g_strcmp0 (ag_service_get_service_type (ss->service), service_type) != 0)
+                continue;
+
+        value = g_hash_table_lookup (ss->settings, "enabled");
+        if (value != NULL && g_value_get_boolean (value))
+            list = g_list_prepend (list, ag_service_ref(ss->service));
+    }
+    return list;
+}
+
 /**
  * ag_account_list_enabled_services:
  * @account: the #AgAccount.
@@ -1390,13 +1451,17 @@ ag_account_list_enabled_services (AgAccount *account)
     GList *list = NULL;
     GList *iter;
     GList *services = NULL;
+    const gchar *service_type;
     char sql[512];
 
     g_return_val_if_fail (AG_IS_ACCOUNT (account), NULL);
     priv = account->priv;
 
-    g_return_val_if_fail (AG_IS_ACCOUNT (account), NULL);
-    const char *service_type = ag_manager_get_service_type(priv->manager);
+    service_type = ag_manager_get_service_type (priv->manager);
+
+    /* avoid accessing the DB, if possible */
+    if (priv->foreign)
+        return list_enabled_services_from_memory (priv, service_type);
 
     if (service_type != NULL)
         sqlite3_snprintf (sizeof (sql), sql,
@@ -1519,7 +1584,7 @@ ag_account_select_service (AgAccount *account, AgService *service)
 
     priv->service = service;
 
-    if ((service == NULL || service->id != 0) && account->id != 0 &&
+    if (account->id != 0 &&
         !get_service_settings (priv, service, FALSE))
     {
         /* the settings for this service are not yet loaded: do it now */
@@ -1533,7 +1598,7 @@ ag_account_select_service (AgAccount *account, AgService *service)
         guint service_id;
         gchar sql[128];
 
-        service_id = (service != NULL) ? service->id : 0;
+        service_id = _ag_manager_get_service_id (priv->manager, service);
         g_snprintf (sql, sizeof (sql),
                     "SELECT key, type, value FROM Settings "
                     "WHERE account = %u AND service = %u",

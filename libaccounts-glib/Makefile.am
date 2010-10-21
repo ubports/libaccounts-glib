@@ -3,7 +3,9 @@ lib_LTLIBRARIES = \
 
 libaccounts_glib_la_CFLAGS = $(LIBACCOUNTS_CFLAGS) -Wall -Werror
 libaccounts_glib_la_LIBADD = $(LIBACCOUNTS_LIBS) -lrt
-libaccounts_glib_la_LDFLAGS = -version-info 1:3:1
+libaccounts_glib_la_LDFLAGS = \
+	-version-info 1:3:1 \
+	-export-symbols-regex '^ag_'
 
 BUILT_SOURCES = \
 	ag-marshal.c \

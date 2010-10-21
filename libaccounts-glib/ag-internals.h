@@ -70,7 +70,8 @@ DBusMessage *_ag_account_build_signal (AgAccount *account,
                                        AgAccountChanges *changes,
                                        const struct timespec *ts);
 G_GNUC_INTERNAL
-AgAccountChanges *_ag_account_changes_from_dbus (DBusMessageIter *iter,
+AgAccountChanges *_ag_account_changes_from_dbus (AgManager *manager,
+                                                 DBusMessageIter *iter,
                                                  gboolean created,
                                                  gboolean deleted);
 
@@ -97,6 +98,13 @@ void _ag_manager_take_error (AgManager *manager, GError *error);
 G_GNUC_INTERNAL
 const GError *_ag_manager_get_last_error (AgManager *manager);
 
+G_GNUC_INTERNAL
+AgService *_ag_manager_get_service_lazy (AgManager *manager,
+                                         const gchar *service_name,
+                                         const gchar *service_type);
+G_GNUC_INTERNAL
+guint _ag_manager_get_service_id (AgManager *manager, AgService *service);
+
 struct _AgService {
     /*< private >*/
     gint ref_count;
@@ -117,6 +125,9 @@ GList *_ag_services_list (AgManager *manager);
 
 G_GNUC_INTERNAL
 AgService *_ag_service_new_from_file (const gchar *service_name);
+G_GNUC_INTERNAL
+AgService *_ag_service_new_with_type (const gchar *service_name,
+                                      const gchar *service_type);
 
 G_GNUC_INTERNAL
 GHashTable *_ag_service_load_default_settings (AgService *service);
@@ -125,7 +136,7 @@ G_GNUC_INTERNAL
 const GValue *_ag_service_get_default_setting (AgService *service,
                                                const gchar *key);
 
-inline
+G_GNUC_INTERNAL
 AgService *_ag_service_new (void);
 
 struct _AgProvider {

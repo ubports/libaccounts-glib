@@ -2085,56 +2085,182 @@ START_TEST(test_service_type)
 }
 END_TEST
 
+static void
+on_account_created_with_db_locked (AgManager *manager, AgAccountId account_id)
+{
+    AgAccount *account;
+    AgService *service;
+    const gchar *name;
+    GList *list;
+
+    g_debug ("%s called (%u)", G_STRFUNC, account_id);
+
+    account = ag_manager_get_account (manager, account_id);
+    fail_unless (account != NULL);
+
+    g_debug ("account loaded");
+    list = ag_account_list_enabled_services (account);
+    fail_unless (list != NULL);
+    fail_unless (g_list_length (list) == 1);
+
+    service = list->data;
+    fail_unless (service != NULL);
+
+    name = ag_service_get_name (service);
+    fail_unless (strcmp (name, "MyService") == 0);
+
+    ag_service_list_free (list);
+    g_main_loop_quit (main_loop);
+}
+
+START_TEST(test_db_access)
+{
+    const gchar *lock_filename;
+    gchar command[512];
+    gint timeout_ms;
+    gint fd;
+
+    /* This test is for making sure that no DB accesses occur while certain
+     * events occur.
+     *
+     * Checked scenarios:
+     *
+     * - when another process creates an account and we get the
+     *   account-created signal and call
+     *   ag_account_list_enabled_services(), we shouldn't be blocked.
+     */
+    g_type_init ();
+
+    /* first, create a lock file to synchronize the test */
+    lock_filename = "/tmp/check_ag.lock";
+    fd = open (lock_filename, O_CREAT | O_RDWR, 0666);
+
+    timeout_ms = 2000; /* two seconds */
+
+    manager = ag_manager_new ();
+    ag_manager_set_db_timeout (manager, 0);
+    ag_manager_set_abort_on_db_timeout (manager, TRUE);
+    g_signal_connect (manager, "account-created",
+                      G_CALLBACK (on_account_created_with_db_locked), NULL);
+
+    /* create an account with the e-mail service type enabled */
+    system ("test-process create3 myprovider MyAccountName");
+
+    /* lock the DB for the specified timeout */
+    sprintf (command, "test-process lock_db %d %s &",
+             timeout_ms, lock_filename);
+    system (command);
+
+    /* wait till the file is locked */
+    while (lockf (fd, F_TEST, 0) == 0)
+        sched_yield ();
+
+    /* now the DB is locked; we iterate the main loop to get the signals
+     * about the account creation and do some operations with the account.
+     * We expect to never get any error because of the locked DB, as the
+     * methods we are calling should not access it */
+
+    main_loop = g_main_loop_new (NULL, FALSE);
+    source_id = g_timeout_add_seconds (timeout_ms / 1000,
+                                       concurrency_test_failed, NULL);
+    g_debug ("Running loop");
+    g_main_loop_run (main_loop);
+
+    fail_unless (source_id != 0, "Timeout happened");
+    g_source_remove (source_id);
+
+    end_test ();
+}
+END_TEST
+
 Suite *
-ag_suite(void)
+ag_suite(const char *test_case)
 {
     Suite *s = suite_create ("accounts-glib");
 
-    /* Core test case */
-    TCase * tc_core = tcase_create("Core");
-    tcase_add_test (tc_core, test_init);
+#define IF_TEST_CASE_ENABLED(test_name) \
+    if (test_case == NULL || strcmp (test_name, test_case) == 0)
 
-    suite_add_tcase (s, tc_core);
+    TCase *tc;
 
-    TCase * tc_create = tcase_create("Create");
-    tcase_add_test (tc_create, test_object);
-    tcase_add_test (tc_create, test_provider);
-    tcase_add_test (tc_create, test_store);
-    tcase_add_test (tc_create, test_store_locked);
-    tcase_add_test (tc_create, test_store_locked_unref);
-    tcase_add_test (tc_create, test_service);
-    tcase_add_test (tc_create, test_account_services);
-    tcase_add_test (tc_create, test_signals);
-    tcase_add_test (tc_create, test_list);
-    tcase_add_test (tc_create, test_settings_iter);
-    tcase_add_test (tc_create, test_list_services);
-    tcase_add_test (tc_create, test_delete);
-    tcase_add_test (tc_create, test_watches);
-    tcase_add_test (tc_create, test_concurrency);
-    tcase_add_test (tc_create, test_service_regression);
-    tcase_add_test (tc_create, test_blocking);
-    tcase_add_test (tc_create, test_sign_verify_key);
-    tcase_add_test (tc_create, test_cache_regression);
-    tcase_add_test (tc_create, test_serviceid_regression);
-    tcase_add_test (tc_create, test_enabled_regression);
-    tcase_add_test (tc_create, test_manager_new_for_service_type);
-    tcase_add_test (tc_create, test_manager_enabled_event);
-    tcase_add_test (tc_create, test_account_list_enabled_services);
-    tcase_add_test (tc_create, test_open_locked);
-    tcase_add_test (tc_create, test_read_locked);
-    tcase_add_test (tc_create, test_service_type);
+    tc = tcase_create("Core");
+    tcase_add_test (tc, test_init);
+    IF_TEST_CASE_ENABLED("Core")
+        suite_add_tcase (s, tc);
 
-    tcase_set_timeout (tc_create, 10);
+    tc = tcase_create("Create");
+    tcase_add_test (tc, test_object);
+    tcase_add_test (tc, test_provider);
+    IF_TEST_CASE_ENABLED("Create")
+        suite_add_tcase (s, tc);
 
-    suite_add_tcase (s, tc_create);
+    tc = tcase_create("Store");
+    tcase_add_test (tc, test_store);
+    tcase_add_test (tc, test_store_locked);
+    tcase_add_test (tc, test_store_locked_unref);
+    IF_TEST_CASE_ENABLED("Store")
+        suite_add_tcase (s, tc);
+
+    tc = tcase_create("Service");
+    tcase_add_test (tc, test_service);
+    tcase_add_test (tc, test_account_services);
+    tcase_add_test (tc, test_settings_iter);
+    tcase_add_test (tc, test_service_type);
+    IF_TEST_CASE_ENABLED("Service")
+        suite_add_tcase (s, tc);
+
+    tc = tcase_create("List");
+    tcase_add_test (tc, test_list);
+    tcase_add_test (tc, test_list_services);
+    tcase_add_test (tc, test_account_list_enabled_services);
+    IF_TEST_CASE_ENABLED("List")
+        suite_add_tcase (s, tc);
+
+    tc = tcase_create("Signalling");
+    tcase_add_test (tc, test_signals);
+    tcase_add_test (tc, test_delete);
+    tcase_add_test (tc, test_watches);
+    IF_TEST_CASE_ENABLED("Signalling")
+        suite_add_tcase (s, tc);
+
+    tc = tcase_create("Concurrency");
+    tcase_add_test (tc, test_concurrency);
+    tcase_add_test (tc, test_blocking);
+    tcase_add_test (tc, test_sign_verify_key);
+    tcase_add_test (tc, test_manager_new_for_service_type);
+    tcase_add_test (tc, test_manager_enabled_event);
+    tcase_add_test (tc, test_open_locked);
+    tcase_add_test (tc, test_read_locked);
+    tcase_set_timeout (tc, 10);
+    IF_TEST_CASE_ENABLED("Concurrency")
+        suite_add_tcase (s, tc);
+
+    tc = tcase_create("Regression");
+    tcase_add_test (tc, test_service_regression);
+    tcase_add_test (tc, test_cache_regression);
+    tcase_add_test (tc, test_serviceid_regression);
+    tcase_add_test (tc, test_enabled_regression);
+    IF_TEST_CASE_ENABLED("Regression")
+        suite_add_tcase (s, tc);
+
+    tc = tcase_create("Caching");
+    tcase_add_test (tc, test_db_access);
+    tcase_set_timeout (tc, 10);
+    IF_TEST_CASE_ENABLED("Caching")
+        suite_add_tcase (s, tc);
 
     return s;
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
     int number_failed;
-    Suite * s = ag_suite();
+    const char *test_case = NULL;
+
+    if (argc > 1)
+        test_case = argv[1];
+
+    Suite * s = ag_suite(test_case);
     SRunner * sr = srunner_create(s);
 
     db_filename = g_build_filename (g_getenv ("ACCOUNTS"), "accounts.db",

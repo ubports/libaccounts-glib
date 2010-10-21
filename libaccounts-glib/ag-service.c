@@ -382,6 +382,18 @@ _ag_service_new_from_file (const gchar *service_name)
     return service;
 }
 
+AgService *
+_ag_service_new_with_type (const gchar *service_name, const gchar *service_type)
+{
+    AgService *service;
+
+    service = _ag_service_new ();
+    service->name = g_strdup (service_name);
+    service->type = g_strdup (service_type);
+
+    return service;
+}
+
 GHashTable *
 _ag_service_load_default_settings (AgService *service)
 {
@@ -440,6 +452,8 @@ const gchar *
 ag_service_get_display_name (AgService *service)
 {
     g_return_val_if_fail (service != NULL, NULL);
+    if (service->display_name == NULL && !service->file_data)
+        _ag_service_load_from_file (service);
     return service->display_name;
 }
 
@@ -453,6 +467,8 @@ const gchar *
 ag_service_get_service_type (AgService *service)
 {
     g_return_val_if_fail (service != NULL, NULL);
+    if (service->type == NULL && !service->file_data)
+        _ag_service_load_from_file (service);
     return service->type;
 }
 
@@ -466,6 +482,8 @@ const gchar *
 ag_service_get_provider (AgService *service)
 {
     g_return_val_if_fail (service != NULL, NULL);
+    if (service->provider == NULL && !service->file_data)
+        _ag_service_load_from_file (service);
     return service->provider;
 }
 
