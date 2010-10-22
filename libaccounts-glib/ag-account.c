@@ -1387,9 +1387,9 @@ ag_account_list_services_by_type (AgAccount *account,
     for (list = all_services; list != NULL; list = list->next)
     {
         AgService *service = list->data;
-
-        if (service->provider &&
-            strcmp (service->provider, priv->provider_name) == 0)
+        const gchar *provider = ag_service_get_provider (service);
+        if (provider &&
+            strcmp (provider, priv->provider_name) == 0)
         {
             services = g_list_prepend (services, service);
         }
