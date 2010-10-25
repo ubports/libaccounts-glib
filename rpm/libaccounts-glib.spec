@@ -1,76 +1,88 @@
-Name: libaccounts-glib
-Version: 0.39
-Release: 1%{?dist}
-Group: System Environment/Libraries
-Summary: Nokia Maemo Accounts base library
-License: LGPLv2.1
-URL: http://gitorious.org/accounts-sso/accounts-glib
-Source0: %{name}-%{version}.tar.gz
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires: automake
-BuildRequires: glib2-devel
-BuildRequires: pkgconfig
-BuildRequires: gtk-doc
-BuildRequires: pkgconfig(glib-2.0)
-BuildRequires: pkgconfig(sqlite3)
-BuildRequires: pkgconfig(dbus-1)
-BuildRequires: pkgconfig(dbus-glib-1)
-BuildRequires: pkgconfig(libxml-2.0)
-BuildRequires: pkgconfig(check)  >= 0.9.4
+Name:           libaccounts-glib
+Version:        0.58
+Release:        1
+License:        LGPLv2.1
+Summary:        Nokia Maemo Accounts base library
+Url:            http://gitorious.org/accounts-sso/accounts-glib
+Group:          System/Libraries
+Source0:        %{name}-%{version}.tar.gz
+Source1:        libaccounts-glib.sh
+BuildRequires:  automake
+BuildRequires:  gtk-doc
+BuildRequires:  pkgconfig
+BuildRequires:  pkgconfig(check) >= 0.9.4
+BuildRequires:  pkgconfig(dbus-1)
+BuildRequires:  pkgconfig(dbus-glib-1)
+BuildRequires:  pkgconfig(glib-2.0)
+BuildRequires:  pkgconfig(libxml-2.0)
+BuildRequires:  pkgconfig(sqlite3)
 
 %description
 %{summary}.
 
-%files
-%defattr(-,root,root,-)
-%doc README COPYING
-%{_libdir}/lib*.so.*
-%{_datadir}/backup-framework/applications/*.conf
-#exclude tests for now
-%exclude %{_bindir}/*test*
-%exclude %{_datadir}/libaccounts-glib0-test
-%exclude /usr/doc/reference
-
 %package devel
-Summary: Development files for %{name}
-Group: Development/Libraries
-Requires: %{name} = %{version}-%{release}
-Requires: glib2-devel
-Requires: pkgconfig
+Summary:        Development files for %{name}
+Group:          Development/Libraries
+Requires:       %{name} = %{version}
+Requires:       pkgconfig(glib-2.0)
+Requires:       pkgconfig
 
 %description devel
-The %{name}-devel package contains libraries and header files for
-developing applications that use %{name}.
+The %{name}-devel package contains libraries and header files for developing
+applications that use %{name}.
 
-%files devel
-%defattr(-,root,root,-)
-%{_libdir}/*.so
-%{_libdir}/*.la
-%{_libdir}/pkgconfig/*
-%{_includedir}/*
+%package tests
+Summary:        Tests for %{name}
+Group:          Development/Libraries
+Requires:       %{name} = %{version}
+
+%description tests
+This package contains %{name} tests.
 
 %prep
 %setup -q
 
 %build
 gtkdocize
-autoreconf -i --force
-
-%configure \
-        --disable-static \
-        --disable-gtk-doc
-
+autoreconf -vfi
+%configure --disable-static --disable-gtk-doc
 make %{?_smp_mflags}
 
-
 %install
-rm -rf %{buildroot}
-make install DESTDIR=%{buildroot}
-
-
-%clean
-rm -rf %{buildroot}
+%make_install
+install -D -p -m 0644 %{_sourcedir}/%{name}.sh \
+%{buildroot}%{_sysconfdir}/profile.d/%{name}.sh
 
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
+
+%files
+%defattr(-,root,root,-)
+%doc README COPYING
+%config %{_sysconfdir}/profile.d/%{name}.sh
+%{_libdir}/libaccounts-glib.so.*
+%{_datadir}/backup-framework/applications/accounts.conf
+
+%files devel
+%defattr(-,root,root,-)
+%{_includedir}/libaccounts-glib/ag-account.h
+%{_includedir}/libaccounts-glib/ag-errors.h
+%{_includedir}/libaccounts-glib/ag-manager.h
+%{_includedir}/libaccounts-glib/ag-provider.h
+%{_includedir}/libaccounts-glib/ag-service-type.h
+%{_includedir}/libaccounts-glib/ag-service.h
+%{_libdir}/libaccounts-glib.so
+%{_libdir}/pkgconfig/libaccounts-glib.pc
+
+%files tests
+%defattr(-,root,root,-)
+%{_bindir}/accounts-glib-test.sh
+%{_bindir}/accounts-glib-testsuite
+%{_bindir}/test-process
+%{_datadir}/libaccounts-glib0-test/e-mail.service-type
+%{_datadir}/libaccounts-glib0-test/MyProvider.provider
+%{_datadir}/libaccounts-glib0-test/MyService.service
+%{_datadir}/libaccounts-glib0-test/OtherService.service
+%{_datadir}/libaccounts-glib0-test/tests.xml
+%exclude %{_prefix}/doc/reference
