@@ -96,7 +96,7 @@ _ag_value_to_db (const GValue *value)
         else if (type == G_TYPE_FLAGS) n = g_value_get_flags (value);
         else g_assert_not_reached ();
 
-        snprintf (buffer, sizeof (buffer), "%llu", n);
+        snprintf (buffer, sizeof (buffer), "%" G_GUINT64_FORMAT, n);
         return buffer;
     }
 
@@ -115,7 +115,7 @@ _ag_value_to_db (const GValue *value)
         else if (type == G_TYPE_BOOLEAN) n = g_value_get_boolean (value);
         else g_assert_not_reached ();
 
-        snprintf (buffer, sizeof (buffer), "%lld", n);
+        snprintf (buffer, sizeof (buffer), "%" G_GINT64_FORMAT, n);
         return buffer;
     }
 
