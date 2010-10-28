@@ -81,7 +81,7 @@ add_providers_from_dir (AgManager *manager, const gchar *dirname,
             continue;
 
         g_snprintf (provider_name, sizeof (provider_name),
-                    "%.*s", strlen (filename) - SUFFIX_LEN, filename);
+                    "%.*s", (gint) (strlen (filename) - SUFFIX_LEN), filename);
 
         /* if there is already a provider with the same name in the list, then
          * we skip this one (we process directories in descending order of
