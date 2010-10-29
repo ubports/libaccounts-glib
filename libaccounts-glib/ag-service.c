@@ -79,7 +79,7 @@ add_services_from_dir (AgManager *manager, const gchar *dirname,
             continue;
 
         g_snprintf (service_name, sizeof (service_name),
-                    "%.*s", strlen (filename) - SUFFIX_LEN, filename);
+                    "%.*s", (gint) (strlen (filename) - SUFFIX_LEN), filename);
 
         /* if there is already a service with the same name in the list, then
          * we skip this one (we process directories in descending order of
