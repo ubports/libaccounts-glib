@@ -101,7 +101,8 @@ const GError *_ag_manager_get_last_error (AgManager *manager);
 G_GNUC_INTERNAL
 AgService *_ag_manager_get_service_lazy (AgManager *manager,
                                          const gchar *service_name,
-                                         const gchar *service_type);
+                                         const gchar *service_type,
+                                         const gint service_id);
 G_GNUC_INTERNAL
 guint _ag_manager_get_service_id (AgManager *manager, AgService *service);
 
@@ -126,8 +127,9 @@ GList *_ag_services_list (AgManager *manager);
 G_GNUC_INTERNAL
 AgService *_ag_service_new_from_file (const gchar *service_name);
 G_GNUC_INTERNAL
-AgService *_ag_service_new_with_type (const gchar *service_name,
-                                      const gchar *service_type);
+AgService *_ag_service_new_from_memory (const gchar *service_name,
+                                        const gchar *service_type,
+                                        const gint service_id);
 
 G_GNUC_INTERNAL
 GHashTable *_ag_service_load_default_settings (AgService *service);

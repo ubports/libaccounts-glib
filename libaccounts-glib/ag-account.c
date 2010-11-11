@@ -171,7 +171,7 @@ _ag_account_build_signal (AgAccount *account, AgAccountChanges *changes,
     /* Append the settings */
     dbus_message_iter_init_append (msg, &iter);
     dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
-                                      "(ssa{sv}as)", &i_serv);
+                                      "(ssua{sv}as)", &i_serv);
     if (changes->services)
     {
         GHashTableIter iter;
@@ -186,6 +186,7 @@ _ag_account_build_signal (AgAccount *account, AgAccountChanges *changes,
             GHashTableIter si;
             gchar *key;
             GValue *value;
+            guint service_id;
 
             dbus_message_iter_open_container (&i_serv, DBUS_TYPE_STRUCT,
                                               NULL, &i_struct);
@@ -195,7 +196,13 @@ _ag_account_build_signal (AgAccount *account, AgAccountChanges *changes,
             /* Append the service type */
             dbus_message_iter_append_basic (&i_struct, DBUS_TYPE_STRING,
                                             &sc->service_type);
+            /* Append the service id */
+            if (sc->service == NULL)
+                service_id = 0;
+            else
+                service_id = sc->service->id;
 
+            dbus_message_iter_append_basic (&i_struct, DBUS_TYPE_UINT32, &service_id);
             /* Append the dictionary of service settings */
             dbus_message_iter_open_container (&i_struct, DBUS_TYPE_ARRAY,
                                               "{sv}", &dict);
@@ -225,7 +232,6 @@ _ag_account_build_signal (AgAccount *account, AgAccountChanges *changes,
         }
     }
     dbus_message_iter_close_container (&iter, &i_serv);
-
     return msg;
 
 error:
@@ -923,6 +929,7 @@ _ag_account_changes_from_dbus (AgManager *manager, DBusMessageIter *iter,
     DBusMessageIter i_serv, i_struct, i_dict, i_list;
     gchar *service_name;
     gchar *service_type;
+    gint service_id;
 
     changes = g_slice_new0 (AgAccountChanges);
     changes->created = created;
@@ -956,13 +963,18 @@ _ag_account_changes_from_dbus (AgManager *manager, DBusMessageIter *iter,
         EXPECT_TYPE (&i_struct, DBUS_TYPE_STRING);
         dbus_message_iter_get_basic (&i_struct, &service_type);
         dbus_message_iter_next (&i_struct);
+        
+        EXPECT_TYPE (&i_struct, DBUS_TYPE_UINT32);
+        dbus_message_iter_get_basic (&i_struct, &service_id);
+        dbus_message_iter_next (&i_struct);
 
         sc = g_slice_new0 (AgServiceChanges);
         if (service_name != NULL && strcmp (service_name, SERVICE_GLOBAL) == 0)
             sc->service = NULL;
         else
             sc->service = _ag_manager_get_service_lazy (manager, service_name,
-                                                        service_type);
+                                                        service_type,
+                                                        service_id);
         sc->service_type = g_strdup (service_type);
 
         sc->settings = g_hash_table_new_full

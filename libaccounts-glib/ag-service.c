@@ -383,13 +383,15 @@ _ag_service_new_from_file (const gchar *service_name)
 }
 
 AgService *
-_ag_service_new_with_type (const gchar *service_name, const gchar *service_type)
+_ag_service_new_from_memory (const gchar *service_name, const gchar *service_type,
+                             const gint service_id)
 {
     AgService *service;
 
     service = _ag_service_new ();
     service->name = g_strdup (service_name);
     service->type = g_strdup (service_type);
+    service->id = service_id;
 
     return service;
 }
