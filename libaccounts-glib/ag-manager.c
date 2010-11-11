@@ -1593,7 +1593,7 @@ ag_manager_create_account (AgManager *manager, const gchar *provider_name)
  * handler: we don't want to access the Db from there */
 AgService *
 _ag_manager_get_service_lazy (AgManager *manager, const gchar *service_name,
-                              const gchar *service_type)
+                              const gchar *service_type, const gint service_id)
 {
     AgManagerPrivate *priv;
     AgService *service;
@@ -1606,7 +1606,7 @@ _ag_manager_get_service_lazy (AgManager *manager, const gchar *service_name,
     if (service)
         return ag_service_ref (service);
 
-    service = _ag_service_new_with_type (service_name, service_type);
+    service = _ag_service_new_from_memory (service_name, service_type, service_id);
 
     g_hash_table_insert (priv->services, service->name, service);
     return ag_service_ref (service);
