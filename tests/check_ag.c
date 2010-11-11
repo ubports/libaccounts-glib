@@ -2105,6 +2105,7 @@ on_account_created_with_db_locked (AgManager *manager, AgAccountId account_id)
 
     service = list->data;
     fail_unless (service != NULL);
+    fail_unless (service->id != 0);
 
     name = ag_service_get_name (service);
     fail_unless (strcmp (name, "MyService") == 0);
