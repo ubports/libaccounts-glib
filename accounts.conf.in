@@ -12,7 +12,7 @@
     </restore-script-name>
   </backup-scripts>
   <locations>
-    <location type="dir" category="settings">
+    <location type="permanent-backup-file" category="settings">
       $HOME/@DATABASE_DIR@
     </location>
   </locations>
