@@ -1604,7 +1604,11 @@ _ag_manager_get_service_lazy (AgManager *manager, const gchar *service_name,
 
     service = g_hash_table_lookup (priv->services, service_name);
     if (service)
+    {
+        if (service->id == 0)
+            service->id = service_id;
         return ag_service_ref (service);
+    }
 
     service = _ag_service_new_from_memory (service_name, service_type, service_id);
 
