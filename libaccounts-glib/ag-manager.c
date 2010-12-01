@@ -330,9 +330,11 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
     AgAccount *account;
     AgAccountChanges *changes;
     struct timespec ts;
-    gboolean deleted, created, updated, enabled;
+    gboolean deleted, created;
     gboolean ret;
     gboolean ours = FALSE;
+    gboolean updated = FALSE;
+    gboolean enabled = FALSE;
     gboolean must_instantiate = TRUE;
     DBusMessageIter iter;
     GList *list;
@@ -426,13 +428,15 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
         g_timeout_add_seconds (2, timed_unref_account, account);
     }
 
-    updated = ag_manager_must_emit_updated(manager, changes);
+    if (changes)
+    {
+        updated = ag_manager_must_emit_updated (manager, changes);
+        enabled = ag_manager_must_emit_enabled (manager, changes);
+        if (account)
+            _ag_account_done_changes (account, changes);
 
-    enabled = ag_manager_must_emit_enabled (manager, changes);
-    if (account)
-        _ag_account_done_changes (account, changes);
-
-    _ag_account_changes_free (changes);
+        _ag_account_changes_free (changes);
+    }
 
     ag_manager_emit_signals (manager, account_id,
                              updated,
