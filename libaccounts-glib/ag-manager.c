@@ -1452,8 +1452,7 @@ ag_manager_list_enabled (AgManager *manager)
 
     g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
     sqlite3_snprintf (sizeof (sql), sql,
-                      "SELECT DISTINCT account FROM Settings "
-                      "JOIN Services ON Settings.service = Services.id;");
+                      "SELECT id FROM Accounts WHERE enabled=1;");
     _ag_manager_exec_query (manager, (AgQueryCallback)add_id_to_list,
                             &list, sql);
     return list;
