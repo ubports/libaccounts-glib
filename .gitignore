@@ -27,3 +27,6 @@ missing
 stamp-h1
 *~
 patches
+*.core
+accounts.conf
+autom4te.cache
