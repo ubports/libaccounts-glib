@@ -1449,12 +1449,22 @@ ag_manager_list_enabled (AgManager *manager)
 {
     GList *list = NULL;
     char sql[512];
+    AgManagerPrivate *priv;
 
     g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
-    sqlite3_snprintf (sizeof (sql), sql,
-                      "SELECT id FROM Accounts WHERE enabled=1;");
-    _ag_manager_exec_query (manager, (AgQueryCallback)add_id_to_list,
-                            &list, sql);
+    priv = manager->priv;
+    
+    if (priv->service_type == NULL)
+    {
+        sqlite3_snprintf (sizeof (sql), sql,
+                          "SELECT id FROM Accounts WHERE enabled=1;");
+        _ag_manager_exec_query (manager, (AgQueryCallback)add_id_to_list,
+                                &list, sql);
+    }
+    else
+    {
+        list = ag_manager_list_enabled_by_service_type(manager, priv->service_type);
+    }
     return list;
 }
 
