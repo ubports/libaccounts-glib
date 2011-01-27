@@ -145,6 +145,7 @@ struct _AgProvider {
     /*< private >*/
     gint ref_count;
     gchar *i18n_domain;
+    gchar *icon_name;
     gchar *name;
     gchar *display_name;
     gchar *file_data;
