@@ -1805,6 +1805,69 @@ START_TEST(test_manager_enabled_event)
 }
 END_TEST
 
+START_TEST(test_list_enabled_account)
+{
+    GList *list = NULL;
+    AgAccount *account1 = NULL;
+    AgAccount *account2 = NULL;
+    GList *iter = NULL;
+    gboolean found = FALSE;
+    AgAccount *account3 = NULL;
+    const gchar *name = NULL;
+
+    g_type_init ();
+    manager = ag_manager_new ();
+    fail_unless (manager != NULL, "Manager should not be NULL");
+
+    account1 = ag_manager_create_account (manager, "MyProvider");
+    fail_unless (AG_IS_ACCOUNT (account1),
+                 "Failed to create the AgAccount.");
+    ag_account_set_display_name (account1, "EnabledAccount");
+    ag_account_set_enabled (account1, TRUE);
+    ag_account_store (account1, account_store_now_cb, TEST_STRING);
+
+    account2 = ag_manager_create_account (manager, "MyProvider");
+    fail_unless (AG_IS_ACCOUNT (account2),
+                 "Failed to create the AgAccount.");
+    ag_account_set_display_name (account2, "DisabledAccount");
+    ag_account_set_enabled (account2, FALSE);
+    ag_account_store (account2, account_store_now_cb, TEST_STRING);
+
+
+    list = ag_manager_list_enabled (manager);
+    fail_unless (g_list_length (list) > 0,
+                 "No enabled accounts?");
+
+    for (iter = list; iter != NULL; iter = g_list_next (iter))
+    {
+        account3 = ag_manager_get_account (manager,
+                                           GPOINTER_TO_UINT (iter->data));
+
+        name = ag_account_get_display_name (account3);
+        if (strcmp (name, "EnabledAccount") == 0)
+        {
+            found = TRUE;
+            break;
+        }
+        g_object_unref (account3);
+        account3 = NULL;
+    }
+
+    fail_unless (found == TRUE, "Required account not enabled");
+
+    if (account3)
+        g_object_unref (account3);
+    if (account2)
+        g_object_unref (account2);
+    if (account1)
+        g_object_unref (account1);
+
+    ag_manager_list_free (list);
+
+    end_test ();
+}
+END_TEST
+
 START_TEST(test_account_list_enabled_services)
 {
     GList *services;
@@ -2212,6 +2275,7 @@ ag_suite(const char *test_case)
 
     tc = tcase_create("List");
     tcase_add_test (tc, test_list);
+    tcase_add_test (tc, test_list_enabled_account);
     tcase_add_test (tc, test_list_services);
     tcase_add_test (tc, test_account_list_enabled_services);
     IF_TEST_CASE_ENABLED("List")
