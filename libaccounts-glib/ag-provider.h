@@ -34,6 +34,7 @@ typedef struct _AgProvider AgProvider;
 const gchar *ag_provider_get_name (AgProvider *provider);
 const gchar *ag_provider_get_display_name (AgProvider *provider);
 const gchar *ag_provider_get_i18n_domain (AgProvider *provider);
+const gchar *ag_provider_get_icon_name (AgProvider *provider);
 void ag_provider_get_file_contents (AgProvider *provider,
                                     const gchar **contents);
 AgProvider *ag_provider_ref (AgProvider *provider);

@@ -173,6 +173,12 @@ parse_provider (xmlTextReaderPtr reader, AgProvider *provider)
                 ok = _ag_xml_dup_element_data (reader,
                                                &provider->i18n_domain);
             }
+            else if (strcmp (name, "icon") == 0)
+            {
+                ok = _ag_xml_dup_element_data (reader,
+                                               &provider->icon_name);
+            }
+
 	    else
                 ok = TRUE;
 
@@ -345,6 +351,18 @@ ag_provider_get_i18n_domain (AgProvider *provider)
     return provider->i18n_domain;
 }
 
+/**
+ * ag_provider_get_icon_name:
+ * @provider: the #AgProvider.
+ *
+ * Returns: the icon_name.
+ */
+const gchar *
+ag_provider_get_icon_name (AgProvider *provider)
+{
+    g_return_val_if_fail (provider != NULL, NULL);
+    return provider->icon_name;
+}
 
 /**
  * ag_provider_get_display_name:
@@ -428,6 +446,7 @@ ag_provider_unref (AgProvider *provider)
     {
         g_free (provider->name);
 	g_free (provider->i18n_domain);
+        g_free (provider->icon_name);
         g_free (provider->display_name);
         g_free (provider->file_data);
         g_slice_free (AgProvider, provider);
