@@ -330,9 +330,11 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
     AgAccount *account;
     AgAccountChanges *changes;
     struct timespec ts;
-    gboolean deleted, created, updated, enabled;
+    gboolean deleted, created;
     gboolean ret;
     gboolean ours = FALSE;
+    gboolean updated = FALSE;
+    gboolean enabled = FALSE;
     gboolean must_instantiate = TRUE;
     DBusMessageIter iter;
     GList *list;
@@ -426,13 +428,15 @@ dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
         g_timeout_add_seconds (2, timed_unref_account, account);
     }
 
-    updated = ag_manager_must_emit_updated(manager, changes);
+    if (changes)
+    {
+        updated = ag_manager_must_emit_updated (manager, changes);
+        enabled = ag_manager_must_emit_enabled (manager, changes);
+        if (account)
+            _ag_account_done_changes (account, changes);
 
-    enabled = ag_manager_must_emit_enabled (manager, changes);
-    if (account)
-        _ag_account_done_changes (account, changes);
-
-    _ag_account_changes_free (changes);
+        _ag_account_changes_free (changes);
+    }
 
     ag_manager_emit_signals (manager, account_id,
                              updated,
@@ -1445,13 +1449,22 @@ ag_manager_list_enabled (AgManager *manager)
 {
     GList *list = NULL;
     char sql[512];
+    AgManagerPrivate *priv;
 
     g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
-    sqlite3_snprintf (sizeof (sql), sql,
-                      "SELECT DISTINCT account FROM Settings "
-                      "JOIN Services ON Settings.service = Services.id;");
-    _ag_manager_exec_query (manager, (AgQueryCallback)add_id_to_list,
-                            &list, sql);
+    priv = manager->priv;
+    
+    if (priv->service_type == NULL)
+    {
+        sqlite3_snprintf (sizeof (sql), sql,
+                          "SELECT id FROM Accounts WHERE enabled=1;");
+        _ag_manager_exec_query (manager, (AgQueryCallback)add_id_to_list,
+                                &list, sql);
+    }
+    else
+    {
+        list = ag_manager_list_enabled_by_service_type(manager, priv->service_type);
+    }
     return list;
 }
 
@@ -1604,7 +1617,11 @@ _ag_manager_get_service_lazy (AgManager *manager, const gchar *service_name,
 
     service = g_hash_table_lookup (priv->services, service_name);
     if (service)
+    {
+        if (service->id == 0)
+            service->id = service_id;
         return ag_service_ref (service);
+    }
 
     service = _ag_service_new_from_memory (service_name, service_type, service_id);
 

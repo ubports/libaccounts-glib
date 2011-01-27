@@ -78,4 +78,5 @@ AC_OUTPUT([
 	docs/Makefile
 	docs/reference/Makefile
 	tests/Makefile
+	tools/Makefile
 ])
