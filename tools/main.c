@@ -1259,7 +1259,7 @@ main (int argc, char **argv)
 {
     g_type_init ();
 
-    gl_app_name = (gchar *) basename (argv[0]);
+    gl_app_name = g_path_get_basename (argv[0]);
 
     if (argc < 2)
     {
