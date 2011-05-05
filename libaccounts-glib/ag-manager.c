@@ -855,10 +855,10 @@ setup_db_options (sqlite3 *db)
     }
 
     error = NULL;
-    ret = sqlite3_exec (db, "PRAGMA journal_mode = TRUNCATE", NULL, NULL, &error);
+    ret = sqlite3_exec (db, "PRAGMA journal_mode = WAL", NULL, NULL, &error);
     if (ret != SQLITE_OK)
     {
-        g_warning ("%s: couldn't set journal mode to TRUNCATE (%s)",
+        g_warning ("%s: couldn't set journal mode to WAL (%s)",
                    G_STRFUNC, error);
         sqlite3_free (error);
     }

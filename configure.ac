@@ -12,7 +12,7 @@ PKG_CHECK_MODULES(
 	glib-2.0
 	gobject-2.0
 	libxml-2.0
-	sqlite3);
+	sqlite3 >= 3.7.0);
 AC_SUBST(LIBACCOUNTS_CFLAGS)
 AC_SUBST(LIBACCOUNTS_LIBS)
 
