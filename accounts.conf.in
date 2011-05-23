@@ -13,7 +13,7 @@
   </backup-scripts>
   <locations>
     <location type="permanent-backup-file" category="settings">
-      $HOME/@DATABASE_DIR@
+      $HOME/@DATABASE_DIR@/accounts.db.bak
     </location>
   </locations>
 </backup-configuration>
