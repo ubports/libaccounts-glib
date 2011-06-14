@@ -44,6 +44,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "config.h"
+
 #define PROVIDER    "dummyprovider"
 #define TEST_STRING "Hey dude!"
 
@@ -1425,23 +1427,27 @@ START_TEST(test_blocking)
 }
 END_TEST
 
+#ifdef HAVE_AEGISCRYPTO
 START_TEST(test_sign_verify_key)
 {
-    const gchar *key = "test_key/";
     const gchar *key1 = "test_key/key1";
     const gchar *key2 = "test_key/key2";
-    const gchar *list_of_tokens[] = {"t", "tok", "token", NULL};
-    const gchar *token = "token";
+    const gchar *list_of_tokens[] = { 
+        "libaccounts-glib0::dummy", 
+        "libaccounts-glib0::toodummy", 
+        "libaccounts-glib0::accounts-glib-access", NULL };
+    const gchar *token = "libaccounts-glib0::accounts-glib-access";
+    const gchar *reply_token;
     const gchar *data = "some value 1";
     const gchar *data2 = "some value 2";
     gboolean ok;
     GValue value = { 0 };
-
+    
     /* delete the database */
     g_unlink (db_filename);
 
     g_type_init ();
-
+    
     manager = ag_manager_new ();
     account = ag_manager_create_account (manager, PROVIDER);
 
@@ -1461,6 +1467,11 @@ START_TEST(test_sign_verify_key)
     g_value_unset (&value);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    ok = ag_account_verify (account, key1, &reply_token);
+    fail_unless (!ok);
+
+    ok = ag_account_verify_with_tokens (account, key2, list_of_tokens);
+    fail_unless (!ok);
 
     ag_account_sign (account, key1, token);
     ag_account_sign (account, key2, token);
@@ -1469,8 +1480,8 @@ START_TEST(test_sign_verify_key)
     fail_unless (data_stored, "Callback not invoked immediately");
 
     fail_unless (account->id != 0, "Account ID is still 0!");
-
-    ok = ag_account_verify (account, key1, &token);
+        
+    ok = ag_account_verify (account, key1, &reply_token);
     fail_unless (ok);
 
     ok = ag_account_verify_with_tokens (account, key2, list_of_tokens);
@@ -1493,7 +1504,13 @@ START_TEST(test_sign_verify_key)
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
 
-    ag_account_sign (account, key, token);
+    ok = ag_account_verify (account, key1, &reply_token);
+    fail_unless (!ok);
+
+    ok = ag_account_verify_with_tokens (account, key2, list_of_tokens);
+    fail_unless (!ok);
+
+    ag_account_sign (account, key1, token);
     ag_account_sign (account, key2, token);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
@@ -1501,15 +1518,17 @@ START_TEST(test_sign_verify_key)
 
     fail_unless (account->id != 0, "Account ID is still 0!");
 
-    ok = ag_account_verify (account, key1, &token);
+    ok = ag_account_verify (account, key1, &reply_token);
     fail_unless (ok);
 
     ok = ag_account_verify_with_tokens (account, key2, list_of_tokens);
-    fail_unless (ok);
 
-    end_test();
+    fail_unless (ok);
+    
+    end_test ();
 }
 END_TEST
+#endif
 
 START_TEST(test_cache_regression)
 {
@@ -2176,7 +2195,9 @@ ag_suite(const char *test_case)
     tc = tcase_create("Concurrency");
     tcase_add_test (tc, test_concurrency);
     tcase_add_test (tc, test_blocking);
+#ifdef HAVE_AEGISCRYPTO
     tcase_add_test (tc, test_sign_verify_key);
+#endif
     tcase_add_test (tc, test_manager_new_for_service_type);
     tcase_add_test (tc, test_manager_enabled_event);
     /* Tests for ensuring that opening and reading from a locked DB was
