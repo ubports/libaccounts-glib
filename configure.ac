@@ -18,6 +18,15 @@ AC_SUBST(LIBACCOUNTS_LIBS)
 
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.4])
 
+dnl Check for aegis-crypto library.
+PKG_CHECK_MODULES(AEGISCRYPTO, aegis-crypto, have_aegiscrypto=yes, have_aegiscrypto=no)
+
+if test x$have_aegiscrypto = xyes; then
+        AC_DEFINE(HAVE_AEGISCRYPTO, 1, [Detect if aegis-crypto is available.])
+        AC_SUBST(AEGISCRYPTO_CFLAGS)
+        AC_SUBST(AEGISCRYPTO_LIBS)
+fi
+
 AC_ISC_POSIX
 AC_PROG_CC
 AM_PROG_CC_STDC
