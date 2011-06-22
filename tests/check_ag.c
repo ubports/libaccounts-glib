@@ -439,7 +439,7 @@ START_TEST(test_service)
     fail_unless (ag_account_get_enabled (account) == FALSE,
                  "Account enabled!");
     fail_unless (g_strcmp0 (ag_account_get_display_name (account),
-                         display_name) == 0,
+                            display_name) == 0,
                  "Display name not retained!");
 
     g_value_init (&value, G_TYPE_STRING);
