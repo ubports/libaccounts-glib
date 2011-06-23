@@ -537,13 +537,10 @@ update_settings (AgAccount *account, GHashTable *services)
                 }
             }
 
-            /* Move the key and value into the service settings (we can steal
-             * them from the hash table, as the AgServiceChanges structure is
-             * no longer needed after this */
-            g_hash_table_iter_steal (&si);
-
             if (value)
-                g_hash_table_replace (ss->settings, g_strdup (key), value);
+                g_hash_table_replace (ss->settings,
+                                      g_strdup (key),
+                                      _ag_value_slice_dup (value));
             else
                 g_hash_table_remove (ss->settings, key);
 
@@ -559,7 +556,6 @@ update_settings (AgAccount *account, GHashTable *services)
                 g_signal_emit (account, signals[ENABLED], 0,
                                service_name, enabled);
             }
-            g_free(key);
         }
     }
 
