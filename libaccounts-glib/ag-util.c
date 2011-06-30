@@ -66,6 +66,7 @@ _ag_value_slice_dup (const GValue *value)
 void
 _ag_value_slice_free (GValue *value)
 {
+    if (!value) return;
     g_value_unset (value);
     g_slice_free (GValue, value);
 }
