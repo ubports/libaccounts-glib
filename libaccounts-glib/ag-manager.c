@@ -1457,7 +1457,7 @@ ag_manager_list_enabled (AgManager *manager)
 
     g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
     priv = manager->priv;
-    
+
     if (priv->service_type == NULL)
     {
         sqlite3_snprintf (sizeof (sql), sql,

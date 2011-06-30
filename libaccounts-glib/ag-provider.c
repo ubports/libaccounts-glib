@@ -445,7 +445,7 @@ ag_provider_unref (AgProvider *provider)
     if (provider->ref_count == 0)
     {
         g_free (provider->name);
-	g_free (provider->i18n_domain);
+        g_free (provider->i18n_domain);
         g_free (provider->icon_name);
         g_free (provider->display_name);
         g_free (provider->file_data);

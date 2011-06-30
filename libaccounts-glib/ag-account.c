@@ -559,7 +559,7 @@ update_settings (AgAccount *account, GHashTable *services)
                 g_signal_emit (account, signals[ENABLED], 0,
                                service_name, enabled);
             }
-	    g_free(key);
+            g_free(key);
         }
     }
 
@@ -925,7 +925,6 @@ ag_account_class_init (AgAccountClass *klass)
         NULL, NULL,
         g_cclosure_marshal_VOID__VOID,
         G_TYPE_NONE, 0);
-
 }
 
 AgAccountChanges *
@@ -971,7 +970,7 @@ _ag_account_changes_from_dbus (AgManager *manager, DBusMessageIter *iter,
         EXPECT_TYPE (&i_struct, DBUS_TYPE_STRING);
         dbus_message_iter_get_basic (&i_struct, &service_type);
         dbus_message_iter_next (&i_struct);
-        
+
         EXPECT_TYPE (&i_struct, DBUS_TYPE_UINT32);
         dbus_message_iter_get_basic (&i_struct, &service_id);
         dbus_message_iter_next (&i_struct);
@@ -2182,12 +2181,13 @@ signature_data (AgAccount *account, const gchar *key)
 
 /**
  * ag_account_sign:
+ * @account: the #AgAccount.
  * @key: the name of the key or prefix of the keys to be signed.
  * @token: aegis token (NULL teminated string) or NULL in order to use the
-           application aegis ID token, for creating the signature. The
-           application must possess (request) the token.
+ *         application aegis ID token, for creating the signature. The
+ *         application must possess (request) the token.
  *
- * Creates signature of the @key with given @token. The account must be 
+ * Creates signature of the @key with given @token. The account must be
  * stored prior to calling this function.
  */
 void
@@ -2232,7 +2232,7 @@ ag_account_sign (AgAccount *account, const gchar *key, const gchar *token)
 
     g_hash_table_insert (sc->signatures,
                          g_strdup (key), sgn);
-                         
+
     aegis_crypto_finish ();
 #else
     g_warning ("ag_account_sign: aegis-crypto not found! Unable to sign the key.");
