@@ -592,6 +592,163 @@ START_TEST(test_account_service_settings)
 }
 END_TEST
 
+static gboolean
+account_service_in_list(GList *list, AgAccountId id, const gchar *service_name)
+{
+    while (list != NULL) {
+        AgAccountService *account_service = AG_ACCOUNT_SERVICE(list->data);
+        AgAccount *account;
+        AgService *service;
+
+        account = ag_account_service_get_account (account_service);
+        service = ag_account_service_get_service (account_service);
+        if (account->id == id &&
+            g_strcmp0(ag_service_get_name (service), service_name) == 0)
+            return TRUE;
+        list = list->next;
+    }
+
+    return FALSE;
+}
+
+START_TEST(test_account_service_list)
+{
+    const gchar *display_name = "My test account";
+#define N_ACCOUNTS  3
+    AgAccountId account_id[N_ACCOUNTS];
+    AgService *my_service, *my_service2;
+    GList *list;
+    gint i;
+
+    /* delete the database */
+    g_unlink (db_filename);
+
+    g_type_init ();
+
+    manager = ag_manager_new ();
+
+    /* create a few accounts */
+    for (i = 0; i < N_ACCOUNTS; i++)
+    {
+        account = ag_manager_create_account (manager, "maemo");
+        ag_account_set_enabled (account, TRUE);
+        ag_account_set_display_name (account, display_name);
+        ag_account_store (account, account_store_now_cb, TEST_STRING);
+        fail_unless (data_stored, "Callback not invoked immediately");
+        account_id[i] = account->id;
+        g_object_unref (account);
+        account = NULL;
+    }
+
+    list = ag_manager_get_enabled_account_services (manager);
+    fail_unless (list == NULL);
+
+    list = ag_manager_get_account_services (manager);
+    for (i = 0; i < N_ACCOUNTS; i++) {
+        fail_unless (account_service_in_list (list,
+                                              account_id[i], "MyService"));
+        fail_unless (account_service_in_list (list,
+                                              account_id[i], "MyService2"));
+    }
+    fail_unless (g_list_length (list) == N_ACCOUNTS * 2,
+                 "Got list length %d, expecting %d",
+                 g_list_length (list), N_ACCOUNTS * 2);
+    g_list_foreach (list, (GFunc)g_object_unref, NULL);
+    g_list_free (list);
+
+
+    /* Now add a few services, and play with the enabled flags */
+    my_service = ag_manager_get_service (manager, "MyService");
+    fail_unless (my_service != NULL);
+    my_service2 = ag_manager_get_service (manager, "MyService2");
+    fail_unless (my_service2 != NULL);
+
+    account = ag_manager_get_account (manager, account_id[0]);
+    fail_unless (AG_IS_ACCOUNT(account));
+    ag_account_select_service (account, my_service);
+    ag_account_set_enabled (account, TRUE);
+    ag_account_select_service (account, my_service2);
+    ag_account_set_enabled (account, FALSE);
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    fail_unless (data_stored, "Callback not invoked immediately");
+
+    account = ag_manager_get_account (manager, account_id[1]);
+    fail_unless (AG_IS_ACCOUNT(account));
+    ag_account_set_enabled (account, FALSE);
+    ag_account_select_service (account, my_service);
+    ag_account_set_enabled (account, TRUE);
+    ag_account_select_service (account, my_service2);
+    ag_account_set_enabled (account, FALSE);
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    fail_unless (data_stored, "Callback not invoked immediately");
+
+    account = ag_manager_get_account (manager, account_id[2]);
+    fail_unless (AG_IS_ACCOUNT(account));
+    ag_account_select_service (account, my_service);
+    ag_account_set_enabled (account, FALSE);
+    ag_account_select_service (account, my_service2);
+    ag_account_set_enabled (account, TRUE);
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    fail_unless (data_stored, "Callback not invoked immediately");
+
+    g_object_unref (manager);
+
+    /* Now check if the list functions return the expected results */
+    manager = ag_manager_new ();
+
+    list = ag_manager_get_account_services (manager);
+    for (i = 0; i < N_ACCOUNTS; i++) {
+        fail_unless (account_service_in_list (list,
+                                              account_id[i], "MyService"));
+        fail_unless (account_service_in_list (list,
+                                              account_id[i], "MyService2"));
+    }
+    fail_unless (g_list_length (list) == N_ACCOUNTS * 2,
+                 "Got list length %d, expecting %d",
+                 g_list_length (list), N_ACCOUNTS * 2);
+    g_list_foreach (list, (GFunc)g_object_unref, NULL);
+    g_list_free (list);
+
+    list = ag_manager_get_enabled_account_services (manager);
+    fail_unless (account_service_in_list (list, account_id[0], "MyService"));
+    fail_unless (account_service_in_list (list, account_id[2], "MyService2"));
+    fail_unless (g_list_length (list) == 2,
+                 "Got list length %d, expecting %d",
+                 g_list_length (list), 2);
+    g_list_foreach (list, (GFunc)g_object_unref, NULL);
+    g_list_free (list);
+
+    g_object_unref (manager);
+
+    /* Now try with a manager created for a specific service type */
+    manager = ag_manager_new_for_service_type ("e-mail");
+
+    list = ag_manager_get_account_services (manager);
+    for (i = 0; i < N_ACCOUNTS; i++) {
+        fail_unless (account_service_in_list (list,
+                                              account_id[i], "MyService"));
+    }
+    fail_unless (g_list_length (list) == N_ACCOUNTS,
+                 "Got list length %d, expecting %d",
+                 g_list_length (list), N_ACCOUNTS);
+    g_list_foreach (list, (GFunc)g_object_unref, NULL);
+    g_list_free (list);
+
+    list = ag_manager_get_enabled_account_services (manager);
+    fail_unless (account_service_in_list (list, account_id[0], "MyService"));
+    fail_unless (g_list_length (list) == 1,
+                 "Got list length %d, expecting %d",
+                 g_list_length (list), 1);
+    g_list_foreach (list, (GFunc)g_object_unref, NULL);
+    g_list_free (list);
+
+    ag_service_unref (my_service);
+    ag_service_unref (my_service2);
+
+    end_test ();
+}
+END_TEST
+
 START_TEST(test_service)
 {
     GValue value = { 0 };
@@ -2463,6 +2620,7 @@ ag_suite(const char *test_case)
     tcase_add_test (tc, test_account_service);
     tcase_add_test (tc, test_account_service_enabledness);
     tcase_add_test (tc, test_account_service_settings);
+    tcase_add_test (tc, test_account_service_list);
     IF_TEST_CASE_ENABLED("AccountService")
         suite_add_tcase (s, tc);
 
