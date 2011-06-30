@@ -1559,6 +1559,7 @@ START_TEST(test_concurrency)
     g_main_loop_run (main_loop);
     fail_unless (source_id != 0, "Timeout happened");
     g_source_remove (source_id);
+    g_object_unref (account);
 
     fail_unless (account_id == 0, "Account still alive");
 
@@ -2128,7 +2129,6 @@ START_TEST(test_manager_new_for_service_type)
 {
     AgAccount *account1, *account2;
     AgService *service1, *service2;
-    AgManager *manager2;
     const gchar *provider = "first_provider";
     GList *list;
 
@@ -2137,7 +2137,6 @@ START_TEST(test_manager_new_for_service_type)
 
     g_type_init ();
 
-    manager2 = ag_manager_new();
     manager = ag_manager_new_for_service_type ("e-mail");
     fail_unless (g_strcmp0 (ag_manager_get_service_type (manager),
                          "e-mail") == 0);
@@ -2201,6 +2200,7 @@ on_enabled_event (AgManager *manager, AgAccountId account_id,
 
     *id = account_id;
 
+    g_object_unref (acc);
     g_main_loop_quit (main_loop);
 }
 
@@ -2222,7 +2222,6 @@ START_TEST(test_manager_enabled_event)
 
     /* watch account enabledness */
     gchar command[512];
-    AgAccountId source_id;
     AgAccountId account_id = 0;
 
     manager = ag_manager_new_for_service_type ("e-mail");
