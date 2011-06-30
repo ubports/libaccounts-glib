@@ -1213,6 +1213,8 @@ ag_manager_dispose (GObject *object)
     if (priv->is_disposed) return;
     priv->is_disposed = TRUE;
 
+    DEBUG_REFS ("Disposing manager %p", object);
+
     while (priv->locks)
     {
         store_cb_data_free (priv->locks->data);

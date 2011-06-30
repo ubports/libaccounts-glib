@@ -153,6 +153,8 @@ ag_account_service_dispose (GObject *object)
 {
     AgAccountServicePrivate *priv = AG_ACCOUNT_SERVICE_PRIV (object);
 
+    DEBUG_REFS ("Disposing account-service %p", object);
+
     if (priv->account)
     {
         ag_account_remove_watch (priv->account, priv->watch);

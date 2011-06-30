@@ -826,6 +826,8 @@ ag_account_dispose (GObject *object)
     AgAccount *account = AG_ACCOUNT (object);
     AgAccountPrivate *priv = account->priv;
 
+    DEBUG_REFS ("Disposing account %p", object);
+
     if (priv->watches)
     {
         g_hash_table_destroy (priv->watches);
