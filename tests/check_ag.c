@@ -791,7 +791,7 @@ START_TEST(test_account_services)
                  "Failed to create the AgAccount.");
 
     services = ag_account_list_services (account);
-    fail_unless (g_list_length (services) == 1);
+    fail_unless (g_list_length (services) == 2);
 
     service = services->data;
     fail_unless (g_strcmp0 (ag_service_get_name (service), "MyService") == 0);
@@ -1102,7 +1102,7 @@ START_TEST(test_list_services)
     services = ag_manager_list_services (manager);
 
     n_services = g_list_length (services);
-    fail_unless (n_services == 2, "Got %d services, expecting 2", n_services);
+    fail_unless (n_services == 3, "Got %d services, expecting 3", n_services);
 
     for (list = services; list != NULL; list = list->next)
     {
@@ -1111,6 +1111,7 @@ START_TEST(test_list_services)
         name = ag_service_get_name (service);
         g_debug ("Service name: %s", name);
         fail_unless (g_strcmp0 (name, "MyService") == 0 ||
+                     g_strcmp0 (name, "MyService2") == 0 ||
                      g_strcmp0 (name, "OtherService") == 0,
                      "Got unexpected service `%s'", name);
     }
