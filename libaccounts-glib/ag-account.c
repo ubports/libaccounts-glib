@@ -108,6 +108,12 @@ struct _AgAccountPrivate {
      * AgAccountWatch-es. */
     GHashTable *watches;
 
+    /* Temporary pointer to the services table of the AgAccountChanges
+     * structure, to be used while invoking the watches in case some handlers
+     * want to retrieve the list of changes (AgAccountService does this).
+     */
+    GHashTable *changes_for_watches;
+
     /* The "foreign" flag means that the account has been created by another
      * instance and we got informed about it from D-Bus. In this case, all the
      * informations that we get via D-Bus will be cached in the
@@ -559,7 +565,11 @@ update_settings (AgAccount *account, GHashTable *services)
         }
     }
 
-    /* invoke all watches */
+    /* Invoke all watches
+     * While whatches are running, let the receivers retrieve the changes
+     * table with _ag_account_get_service_changes(): set it into the
+     * changes_for_watches field. */
+    priv->changes_for_watches = services;
     while (watch_list)
     {
         AgAccountWatch watch = watch_list->data;
@@ -570,6 +580,7 @@ update_settings (AgAccount *account, GHashTable *services)
             watch->callback (account, watch->prefix, watch->user_data);
         watch_list = g_list_delete_link (watch_list, watch_list);
     }
+    priv->changes_for_watches = NULL;
 }
 
 void
@@ -663,6 +674,21 @@ account_service_changes_get (AgAccountPrivate *priv, AgService *service,
              g_free, (GDestroyNotify)_ag_signatures_slice_free);
 
     return sc;
+}
+
+GHashTable *
+_ag_account_get_service_changes (AgAccount *account, AgService *service)
+{
+    GHashTable *services;
+    AgServiceChanges *sc;
+
+    services = account->priv->changes_for_watches;
+    if (!services) return NULL;
+
+    sc = g_hash_table_lookup (services,
+                              service ? service->name : SERVICE_GLOBAL);
+    if (!sc) return NULL;
+    return sc->settings;
 }
 
 static void

@@ -44,6 +44,10 @@
 static const gchar suffix[] = ".service";
 #define SUFFIX_LEN (sizeof(suffix) - 1)
 
+G_DEFINE_BOXED_TYPE (AgService, ag_service, \
+                     (GBoxedCopyFunc)(&ag_service_ref), \
+                     (GBoxedFreeFunc)(&ag_service_unref));
+
 static gint
 cmp_service_name (AgService *service, const gchar *service_name)
 {
