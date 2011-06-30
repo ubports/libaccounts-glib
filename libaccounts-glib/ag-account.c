@@ -1693,7 +1693,7 @@ ag_account_get_enabled (AgAccount *account)
         if (ss)
         {
             val = g_hash_table_lookup (ss->settings, "enabled");
-            ret = g_value_get_boolean (val);
+            ret = val ? g_value_get_boolean (val) : FALSE;
         }
     }
     return ret;
