@@ -31,6 +31,7 @@
 #include "libaccounts-glib/ag-account.h"
 #include "libaccounts-glib/ag-errors.h"
 #include "libaccounts-glib/ag-internals.h"
+#include "libaccounts-glib/ag-account-service.h"
 
 #include <glib.h>
 #include <glib/gstdio.h>
@@ -314,6 +315,282 @@ void account_store_now_cb (AgAccount *account, const GError *error,
 
     data_stored = TRUE;
 }
+
+START_TEST(test_account_service)
+{
+    GValue value = { 0 };
+    const gchar *description = "This is really a beautiful account";
+    const gchar *display_name = "My test account";
+    AgSettingSource source;
+    AgAccountService *account_service;
+
+    g_type_init ();
+
+    manager = ag_manager_new ();
+    account = ag_manager_create_account (manager, PROVIDER);
+
+    g_value_init (&value, G_TYPE_STRING);
+    g_value_set_static_string (&value, description);
+    ag_account_set_value (account, "description", &value);
+    g_value_unset (&value);
+
+    service = ag_manager_get_service (manager, "MyService");
+    fail_unless (service != NULL);
+
+    ag_account_set_enabled (account, FALSE);
+    ag_account_set_display_name (account, display_name);
+
+    account_service = ag_account_service_new (account, service);
+    fail_unless (AG_IS_ACCOUNT_SERVICE (account_service),
+                 "Failed to create AccountService");
+
+    /* test getting default setting from template */
+    g_value_init (&value, G_TYPE_INT);
+    source = ag_account_service_get_value (account_service, "parameters/port", &value);
+    fail_unless (source == AG_SETTING_SOURCE_PROFILE,
+                 "Cannot get port from profile");
+    fail_unless (g_value_get_int (&value) == 5223,
+                 "Wrong port number: %d", g_value_get_int (&value));
+
+    g_value_unset (&value);
+
+    /* test getters for account and service */
+    fail_unless (ag_account_service_get_service (account_service) == service);
+    fail_unless (ag_account_service_get_account (account_service) == account);
+
+    g_object_unref (account_service);
+    end_test ();
+}
+END_TEST
+
+static void
+on_account_service_enabled (AgAccountService *account_service,
+                            gboolean enabled,
+                            gboolean *enabled_value)
+{
+    fail_unless (ag_account_service_get_enabled (account_service) == enabled);
+    *enabled_value = enabled;
+}
+
+START_TEST(test_account_service_enabledness)
+{
+    AgAccountId account_id;
+    AgAccountService *account_service;
+    gboolean service_enabled = FALSE;
+    GError *error = NULL;
+
+    g_type_init ();
+
+    manager = ag_manager_new ();
+    account = ag_manager_create_account (manager, PROVIDER);
+
+    service = ag_manager_get_service (manager, "MyService");
+    fail_unless (service != NULL);
+
+    ag_account_set_enabled (account, FALSE);
+
+    account_service = ag_account_service_new (account, service);
+    fail_unless (AG_IS_ACCOUNT_SERVICE (account_service),
+                 "Failed to create AccountService");
+
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    fail_unless (data_stored, "Callback not invoked immediately");
+    account_id = account->id;
+
+    g_signal_connect (account_service, "enabled",
+                      G_CALLBACK (on_account_service_enabled),
+                      &service_enabled);
+
+    /* enable the service */
+    ag_account_select_service (account, service);
+    ag_account_set_enabled (account, TRUE);
+
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    fail_unless (data_stored, "Callback not invoked immediately");
+
+    /* Still disabled, because the account is disabled */
+    fail_unless (service_enabled == FALSE);
+
+    /* enable the account */
+    ag_account_select_service (account, NULL);
+    ag_account_set_enabled (account, TRUE);
+
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    fail_unless (data_stored, "Callback not invoked immediately");
+
+    fail_unless (service_enabled == TRUE);
+
+    g_object_unref (account_service);
+
+    ag_service_unref (service);
+    g_object_unref (account);
+    g_object_unref (manager);
+
+    manager = ag_manager_new ();
+
+    /* reload the account and see that it's enabled */
+    account = ag_manager_load_account (manager, account_id, &error);
+    fail_unless (AG_IS_ACCOUNT (account),
+                 "Couldn't load account %u", account_id);
+    fail_unless (error == NULL, "Error is not NULL");
+
+    service = ag_manager_get_service (manager, "MyService");
+    fail_unless (service != NULL);
+
+    /* load the global account, and check that it's enabled */
+    account_service = ag_account_service_new (account, NULL);
+    fail_unless (AG_IS_ACCOUNT_SERVICE (account_service));
+
+    fail_unless (ag_account_service_get_enabled (account_service) == TRUE);
+    g_object_unref (account_service);
+
+    /* load the service, and check that it's enabled */
+    account_service = ag_account_service_new (account, service);
+    fail_unless (AG_IS_ACCOUNT_SERVICE (account_service),
+                 "Failed to create AccountService");
+
+    g_signal_connect (account_service, "enabled",
+                      G_CALLBACK (on_account_service_enabled),
+                      &service_enabled);
+
+    fail_unless (ag_account_service_get_enabled (account_service) == TRUE);
+
+    /* disable the service */
+    ag_account_select_service (account, service);
+    ag_account_set_enabled (account, FALSE);
+
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    fail_unless (data_stored, "Callback not invoked immediately");
+
+    fail_unless (service_enabled == FALSE);
+
+    g_object_unref (account_service);
+    end_test ();
+}
+END_TEST
+
+static void
+on_account_service_changed (AgAccountService *account_service,
+                            gchar ***fields)
+{
+    *fields = ag_account_service_get_changed_fields (account_service);
+}
+
+static gboolean
+string_in_array (gchar **array, const gchar *string)
+{
+    gint i;
+    gboolean found = FALSE;
+
+    for (i = 0; array[i] != NULL; i++)
+        if (g_strcmp0 (string, array[i]) == 0)
+        {
+            found = TRUE;
+            break;
+        }
+
+    return found;
+}
+
+START_TEST(test_account_service_settings)
+{
+    GValue value = { 0 };
+    const gchar *username = "me@myhome.com";
+    const gboolean check_automatically = TRUE;
+    const gchar *display_name = "My test account";
+    AgAccountService *account_service;
+    AgSettingSource source;
+    gchar **changed_fields = NULL;
+
+    g_type_init ();
+
+    manager = ag_manager_new ();
+    account = ag_manager_create_account (manager, PROVIDER);
+
+    service = ag_manager_get_service (manager, "MyService");
+    fail_unless (service != NULL);
+
+    ag_account_set_enabled (account, FALSE);
+    ag_account_set_display_name (account, display_name);
+
+    account_service = ag_account_service_new (account, service);
+    fail_unless (AG_IS_ACCOUNT_SERVICE (account_service),
+                 "Failed to create AccountService");
+
+    g_signal_connect (account_service, "changed",
+                      G_CALLBACK (on_account_service_changed),
+                      &changed_fields);
+
+    /* enable the service */
+    ag_account_set_enabled (account, TRUE);
+
+    g_value_init (&value, G_TYPE_STRING);
+    g_value_set_static_string (&value, username);
+    ag_account_service_set_value (account_service, "username", &value);
+    g_value_unset (&value);
+
+    g_value_init (&value, G_TYPE_BOOLEAN);
+    g_value_set_boolean (&value, check_automatically);
+    ag_account_service_set_value (account_service, "check_automatically", &value);
+    g_value_unset (&value);
+
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    fail_unless (data_stored, "Callback not invoked immediately");
+
+    /* The callback for the "changed" signal should have been emitted.
+     * Let's check what changed fields were reported, and what their value
+     * is now.
+     */
+    fail_unless (changed_fields != NULL);
+    fail_unless (string_in_array (changed_fields, "username"));
+    g_value_init (&value, G_TYPE_STRING);
+    source = ag_account_service_get_value (account_service, "username", &value);
+    fail_unless (source == AG_SETTING_SOURCE_ACCOUNT);
+    fail_unless (strcmp (g_value_get_string (&value), username) == 0);
+    g_value_unset (&value);
+
+    fail_unless (string_in_array (changed_fields, "check_automatically"));
+    g_strfreev (changed_fields);
+
+    /* Let's repeat the test, now that the settings are stored in the DB */
+    g_value_init (&value, G_TYPE_BOOLEAN);
+    g_value_set_boolean (&value, check_automatically);
+    ag_account_service_set_value (account_service, "check_automatically", &value);
+    g_value_unset (&value);
+
+    g_value_init (&value, G_TYPE_STRING);
+    g_value_set_static_string (&value, "Wednesday");
+    ag_account_service_set_value (account_service, "day", &value);
+    g_value_unset (&value);
+
+    g_value_init (&value, G_TYPE_BOOLEAN);
+    g_value_set_boolean (&value, TRUE);
+    ag_account_service_set_value (account_service, "ForReal", &value);
+    g_value_unset (&value);
+
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    fail_unless (data_stored, "Callback not invoked immediately");
+
+    /* The callback for the "changed" signal should have been emitted.
+     * Let's check what changed fields were reported, and what their value
+     * is now.
+     */
+    fail_unless (string_in_array (changed_fields, "check_automatically"));
+    g_value_init (&value, G_TYPE_BOOLEAN);
+    source = ag_account_service_get_value (account_service,
+                                           "check_automatically", &value);
+    fail_unless (source == AG_SETTING_SOURCE_ACCOUNT);
+    fail_unless (g_value_get_boolean (&value) == check_automatically);
+    g_value_unset (&value);
+
+    fail_unless (string_in_array (changed_fields, "day"));
+    fail_unless (string_in_array (changed_fields, "ForReal"));
+    g_strfreev (changed_fields);
+
+    g_object_unref (account_service);
+    end_test ();
+}
+END_TEST
 
 START_TEST(test_service)
 {
@@ -2179,6 +2456,13 @@ ag_suite(const char *test_case)
     tcase_add_test (tc, test_settings_iter);
     tcase_add_test (tc, test_service_type);
     IF_TEST_CASE_ENABLED("Service")
+        suite_add_tcase (s, tc);
+
+    tc = tcase_create("AccountService");
+    tcase_add_test (tc, test_account_service);
+    tcase_add_test (tc, test_account_service_enabledness);
+    tcase_add_test (tc, test_account_service_settings);
+    IF_TEST_CASE_ENABLED("AccountService")
         suite_add_tcase (s, tc);
 
     tc = tcase_create("List");
