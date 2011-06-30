@@ -317,6 +317,7 @@ gboolean test_enabled_event2 (TestArgs *args)
 gboolean unlock_and_exit()
 {
     lock_db(FALSE);
+    end_test ();
     return FALSE;
 }
 
