@@ -1493,8 +1493,8 @@ static gboolean
 concurrency_test_failed (gpointer userdata)
 {
     g_debug ("Timeout");
-    g_main_loop_quit (main_loop);
     source_id = 0;
+    g_main_loop_quit (main_loop);
     return FALSE;
 }
 
@@ -2208,8 +2208,8 @@ static gboolean
 enabled_event_test_failed (gpointer userdata)
 {
     g_debug ("Timeout");
-    g_main_loop_quit (main_loop);
     source_id = 0;
+    g_main_loop_quit (main_loop);
     return FALSE;
 }
 
