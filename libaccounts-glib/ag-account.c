@@ -581,7 +581,7 @@ _ag_account_store_completed (AgAccount *account, AgAccountChanges *changes,
                              AgAccountStoreCb callback, const GError *error,
                              gpointer user_data)
 {
-    if (callback)
+    if (callback && error)
         callback (account, error, user_data);
 
     _ag_account_changes_free (changes);
