@@ -1648,8 +1648,6 @@ ag_manager_get_service (AgManager *manager, const gchar *service_name)
     AgManagerPrivate *priv;
     AgService *service;
     gchar *sql;
-    gint rows;
-
 
     g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
     g_return_val_if_fail (service_name != NULL, NULL);
@@ -1662,8 +1660,8 @@ ag_manager_get_service (AgManager *manager, const gchar *service_name)
     /* First, check if the service is in the DB */
     sql = sqlite3_mprintf ("SELECT id, display, provider, type "
                            "FROM Services WHERE name = %Q", service_name);
-    rows = _ag_manager_exec_query (manager, (AgQueryCallback)got_service,
-                                   &service, sql);
+    _ag_manager_exec_query (manager, (AgQueryCallback)got_service,
+                            &service, sql);
     sqlite3_free (sql);
 
     if (service)
