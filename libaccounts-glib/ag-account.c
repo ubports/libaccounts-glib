@@ -108,6 +108,12 @@ struct _AgAccountPrivate {
      * AgAccountWatch-es. */
     GHashTable *watches;
 
+    /* Temporary pointer to the services table of the AgAccountChanges
+     * structure, to be used while invoking the watches in case some handlers
+     * want to retrieve the list of changes (AgAccountService does this).
+     */
+    GHashTable *changes_for_watches;
+
     /* The "foreign" flag means that the account has been created by another
      * instance and we got informed about it from D-Bus. In this case, all the
      * informations that we get via D-Bus will be cached in the
@@ -537,13 +543,10 @@ update_settings (AgAccount *account, GHashTable *services)
                 }
             }
 
-            /* Move the key and value into the service settings (we can steal
-             * them from the hash table, as the AgServiceChanges structure is
-             * no longer needed after this */
-            g_hash_table_iter_steal (&si);
-
             if (value)
-                g_hash_table_replace (ss->settings, g_strdup (key), value);
+                g_hash_table_replace (ss->settings,
+                                      g_strdup (key),
+                                      _ag_value_slice_dup (value));
             else
                 g_hash_table_remove (ss->settings, key);
 
@@ -559,11 +562,14 @@ update_settings (AgAccount *account, GHashTable *services)
                 g_signal_emit (account, signals[ENABLED], 0,
                                service_name, enabled);
             }
-	    g_free(key);
         }
     }
 
-    /* invoke all watches */
+    /* Invoke all watches
+     * While whatches are running, let the receivers retrieve the changes
+     * table with _ag_account_get_service_changes(): set it into the
+     * changes_for_watches field. */
+    priv->changes_for_watches = services;
     while (watch_list)
     {
         AgAccountWatch watch = watch_list->data;
@@ -574,6 +580,7 @@ update_settings (AgAccount *account, GHashTable *services)
             watch->callback (account, watch->prefix, watch->user_data);
         watch_list = g_list_delete_link (watch_list, watch_list);
     }
+    priv->changes_for_watches = NULL;
 }
 
 void
@@ -667,6 +674,21 @@ account_service_changes_get (AgAccountPrivate *priv, AgService *service,
              g_free, (GDestroyNotify)_ag_signatures_slice_free);
 
     return sc;
+}
+
+GHashTable *
+_ag_account_get_service_changes (AgAccount *account, AgService *service)
+{
+    GHashTable *services;
+    AgServiceChanges *sc;
+
+    services = account->priv->changes_for_watches;
+    if (!services) return NULL;
+
+    sc = g_hash_table_lookup (services,
+                              service ? service->name : SERVICE_GLOBAL);
+    if (!sc) return NULL;
+    return sc->settings;
 }
 
 static void
@@ -804,6 +826,8 @@ ag_account_dispose (GObject *object)
     AgAccount *account = AG_ACCOUNT (object);
     AgAccountPrivate *priv = account->priv;
 
+    DEBUG_REFS ("Disposing account %p", object);
+
     if (priv->watches)
     {
         g_hash_table_destroy (priv->watches);
@@ -925,7 +949,6 @@ ag_account_class_init (AgAccountClass *klass)
         NULL, NULL,
         g_cclosure_marshal_VOID__VOID,
         G_TYPE_NONE, 0);
-
 }
 
 AgAccountChanges *
@@ -971,7 +994,7 @@ _ag_account_changes_from_dbus (AgManager *manager, DBusMessageIter *iter,
         EXPECT_TYPE (&i_struct, DBUS_TYPE_STRING);
         dbus_message_iter_get_basic (&i_struct, &service_type);
         dbus_message_iter_next (&i_struct);
-        
+
         EXPECT_TYPE (&i_struct, DBUS_TYPE_UINT32);
         dbus_message_iter_get_basic (&i_struct, &service_id);
         dbus_message_iter_next (&i_struct);
@@ -1670,7 +1693,7 @@ ag_account_get_enabled (AgAccount *account)
         if (ss)
         {
             val = g_hash_table_lookup (ss->settings, "enabled");
-            ret = g_value_get_boolean (val);
+            ret = val ? g_value_get_boolean (val) : FALSE;
         }
     }
     return ret;
@@ -2182,12 +2205,13 @@ signature_data (AgAccount *account, const gchar *key)
 
 /**
  * ag_account_sign:
+ * @account: the #AgAccount.
  * @key: the name of the key or prefix of the keys to be signed.
  * @token: aegis token (NULL teminated string) or NULL in order to use the
-           application aegis ID token, for creating the signature. The
-           application must possess (request) the token.
+ *         application aegis ID token, for creating the signature. The
+ *         application must possess (request) the token.
  *
- * Creates signature of the @key with given @token. The account must be 
+ * Creates signature of the @key with given @token. The account must be
  * stored prior to calling this function.
  */
 void
@@ -2232,7 +2256,7 @@ ag_account_sign (AgAccount *account, const gchar *key, const gchar *token)
 
     g_hash_table_insert (sc->signatures,
                          g_strdup (key), sgn);
-                         
+
     aegis_crypto_finish ();
 #else
     g_warning ("ag_account_sign: aegis-crypto not found! Unable to sign the key.");

@@ -17,6 +17,7 @@ CLEANFILES = $(BUILT_SOURCES)
 libaccounts_glib_la_SOURCES = \
 	ag-account.h \
 	ag-account.c \
+	ag-account-service.c \
 	ag-debug.h \
 	ag-debug.c \
 	ag-errors.h \
@@ -36,11 +37,12 @@ libaccounts_glib_la_SOURCES = \
 libaccounts_glib_includedir = $(includedir)/libaccounts-glib
 libaccounts_glib_include_HEADERS = \
 	ag-account.h \
+	ag-account-service.h \
 	ag-errors.h \
+	ag-manager.h \
 	ag-provider.h \
 	ag-service.h \
-	ag-service-type.h \
-	ag-manager.h
+	ag-service-type.h
 
 %-marshal.h: %-marshal.list Makefile
 	glib-genmarshal --header --prefix=$(subst -,_,$*)_marshal $< > $*-marshal.h

@@ -78,6 +78,9 @@ GList *ag_manager_list_by_service_type (AgManager *manager,
                                         const gchar *service_type);
 void ag_manager_list_free (GList *list);
 
+GList *ag_manager_get_account_services (AgManager *manager);
+GList *ag_manager_get_enabled_account_services (AgManager *manager);
+
 AgAccount *ag_manager_get_account (AgManager *manager,
                                    AgAccountId account_id);
 AgAccount *ag_manager_load_account (AgManager *manager,

@@ -75,6 +75,10 @@ AgAccountChanges *_ag_account_changes_from_dbus (AgManager *manager,
                                                  gboolean created,
                                                  gboolean deleted);
 
+G_GNUC_INTERNAL
+GHashTable *_ag_account_get_service_changes (AgAccount *account,
+                                             AgService *service);
+
 void _ag_manager_exec_transaction (AgManager *manager, const gchar *sql,
                                    AgAccountChanges *changes,
                                    AgAccount *account,

@@ -33,11 +33,13 @@ testdata_DATA = \
 	e-mail.service-type \
 	MyProvider.provider \
 	MyService.service \
+	MyService2.service \
 	OtherService.service
 
 EXTRA_DIST = \
 	e-mail.service-type \
 	MyProvider.provider \
 	MyService.service \
+	MyService2.service \
 	OtherService.service
 

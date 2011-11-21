@@ -287,8 +287,6 @@ gboolean test_change (TestArgs *args)
 
 gboolean test_enabled_event (TestArgs *args)
 {
-    GValue value = { 0 };
-
     AgAccountId id;
 
     manager = ag_manager_new ();
@@ -304,8 +302,6 @@ gboolean test_enabled_event (TestArgs *args)
 
 gboolean test_enabled_event2 (TestArgs *args)
 {
-    GValue value = { 0 };
-
     AgAccountId id;
 
     manager = ag_manager_new ();
@@ -321,6 +317,7 @@ gboolean test_enabled_event2 (TestArgs *args)
 gboolean unlock_and_exit()
 {
     lock_db(FALSE);
+    end_test ();
     return FALSE;
 }
 
