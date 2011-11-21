@@ -26,10 +26,13 @@
 #define _AG_SERVICE_H_
 
 #include <glib.h>
+#include <glib-object.h>
 
 G_BEGIN_DECLS
 
 typedef struct _AgService AgService;
+
+GType ag_service_get_type (void) G_GNUC_CONST;
 
 const gchar *ag_service_get_name (AgService *service);
 const gchar *ag_service_get_display_name (AgService *service);
@@ -43,6 +46,7 @@ void ag_service_get_file_contents (AgService *service,
 AgService *ag_service_ref (AgService *service);
 void ag_service_unref (AgService *service);
 void ag_service_list_free (GList *list);
+
 
 G_END_DECLS
 

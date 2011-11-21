@@ -32,6 +32,7 @@
 
 #include "ag-manager.h"
 
+#include "ag-account-service.h"
 #include "ag-errors.h"
 #include "ag-internals.h"
 #include "ag-util.h"
@@ -128,6 +129,49 @@ G_DEFINE_TYPE (AgManager, ag_manager, G_TYPE_OBJECT);
 
 static void store_cb_data_free (StoreCbData *sd);
 static void account_weak_notify (gpointer userdata, GObject *dead_account);
+
+static GList *
+get_account_services_from_accounts (AgManager *manager,
+                                    GList *account_ids,
+                                    gboolean enabled_only)
+{
+    GList *ret = NULL, *account_list;
+
+    for (account_list = account_ids;
+         account_list != NULL;
+         account_list = account_list->next)
+    {
+        AgAccount *account;
+        GList *service_ids, *service_elem;
+
+        account = ag_manager_get_account (manager,
+                                          (AgAccountId)account_list->data);
+        if (G_UNLIKELY (account == NULL))
+            continue;
+
+        service_ids = enabled_only ?
+            ag_account_list_enabled_services (account) :
+            ag_account_list_services (account);
+        for (service_elem = service_ids;
+             service_elem != NULL;
+             service_elem = service_elem->next)
+        {
+            AgService *service = (AgService *) service_elem->data;
+            AgAccountService *account_service;
+
+            account_service = ag_account_service_new (account, service);
+            if (G_UNLIKELY (account_service == NULL))
+                continue;
+
+            ret = g_list_prepend (ret, account_service);
+        }
+
+        ag_service_list_free (service_ids);
+        g_object_unref (account);
+    }
+
+    return ret;
+}
 
 static void
 set_error_from_db (AgManager *manager)
@@ -1169,6 +1213,8 @@ ag_manager_dispose (GObject *object)
     if (priv->is_disposed) return;
     priv->is_disposed = TRUE;
 
+    DEBUG_REFS ("Disposing manager %p", object);
+
     while (priv->locks)
     {
         store_cb_data_free (priv->locks->data);
@@ -1457,7 +1503,7 @@ ag_manager_list_enabled (AgManager *manager)
 
     g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
     priv = manager->priv;
-    
+
     if (priv->service_type == NULL)
     {
         sqlite3_snprintf (sizeof (sql), sql,
@@ -1512,6 +1558,74 @@ void
 ag_manager_list_free (GList *list)
 {
     g_list_free (list);
+}
+
+/**
+ * ag_manager_get_enabled_account_services:
+ * @manager: the #AgManager.
+ *
+ * Gets all the enabled account services. If the @manager was created for a
+ * specific service type, only services with that type will be returned.
+ * <note>
+ *   <para>
+ *   This method causes the loading of all the service settings for all the
+ *   returned accounts (unless they have been loaded previously). If you are
+ *   interested in a specific account/service, consider using
+ *   ag_manager_load_account() to first load the the account, and then create
+ *   the AgAccountService for that account only.
+ *   </para>
+ * </note>
+ *
+ * Returns: a list of #AgAccountService objects. When done with it, call
+ * g_object_unref() on the list elements.
+ */
+GList *
+ag_manager_get_enabled_account_services (AgManager *manager)
+{
+    GList *account_ids, *account_services;
+
+    g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
+
+    account_ids = ag_manager_list_enabled (manager);
+    account_services = get_account_services_from_accounts (manager,
+                                                           account_ids,
+                                                           TRUE);
+    ag_manager_list_free (account_ids);
+    return account_services;
+}
+
+/**
+ * ag_manager_get_account_services:
+ * @manager: the #AgManager.
+ *
+ * Gets all the account services. If the @manager was created for a
+ * specific service type, only services with that type will be returned.
+ * <note>
+ *   <para>
+ *   This method causes the loading of all the service settings for all the
+ *   returned accounts (unless they have been loaded previously). If you are
+ *   interested in a specific account/service, consider using
+ *   ag_manager_load_account() to first load the the account, and then create
+ *   the AgAccountService for that account only.
+ *   </para>
+ * </note>
+ *
+ * Returns: a list of #AgAccountService objects. When done with it, call
+ * g_object_unref() on the list elements.
+ */
+GList *
+ag_manager_get_account_services (AgManager *manager)
+{
+    GList *account_ids, *account_services;
+
+    g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
+
+    account_ids = ag_manager_list (manager);
+    account_services = get_account_services_from_accounts (manager,
+                                                           account_ids,
+                                                           FALSE);
+    ag_manager_list_free (account_ids);
+    return account_services;
 }
 
 /**
