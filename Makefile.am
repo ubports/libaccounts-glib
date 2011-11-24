@@ -1,5 +1,7 @@
 SUBDIRS = libaccounts-glib docs tests tools
 
+DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc
+
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libaccounts-glib.pc
 
@@ -10,7 +12,12 @@ backupconfdir = ${prefix}/share/backup-framework/applications
 backupconf_in_files = accounts.conf.in 
 backupconf_DATA= accounts.conf
 
-EXTRA_DIST = $(libaccountsdoc_DATA) $(backupconf_DATA)
+CLEANFILES = \
+	$(backupconf_DATA)
+
+EXTRA_DIST = \
+	$(backupconf_in_files) \
+	$(libaccountsdoc_DATA)
 
 $(backupconf_DATA): $(backupconf_in_files) 
 	@sed -e "s|\@DATABASE_DIR\@|$(DATABASE_DIR)|" $< > $@ 

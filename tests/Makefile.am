@@ -37,6 +37,7 @@ testdata_DATA = \
 	OtherService.service
 
 EXTRA_DIST = \
+	tests.xml \
 	e-mail.service-type \
 	MyProvider.provider \
 	MyService.service \
