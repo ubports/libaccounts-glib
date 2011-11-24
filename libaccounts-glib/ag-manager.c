@@ -145,7 +145,8 @@ get_account_services_from_accounts (AgManager *manager,
         GList *service_ids, *service_elem;
 
         account = ag_manager_get_account (manager,
-                                          (AgAccountId)account_list->data);
+                                          (AgAccountId)
+                                          GPOINTER_TO_INT(account_list->data));
         if (G_UNLIKELY (account == NULL))
             continue;
 
