@@ -935,6 +935,20 @@ START_TEST(test_service)
 }
 END_TEST
 
+static gboolean
+service_in_list(GList *list, const gchar *service_name)
+{
+    while (list != NULL) {
+        AgService *service = list->data;
+
+        if (g_strcmp0(ag_service_get_name (service), service_name) == 0)
+            return TRUE;
+        list = list->next;
+    }
+
+    return FALSE;
+}
+
 START_TEST(test_account_services)
 {
     GList *services;
@@ -950,8 +964,9 @@ START_TEST(test_account_services)
     services = ag_account_list_services (account);
     fail_unless (g_list_length (services) == 2);
 
-    service = services->data;
-    fail_unless (g_strcmp0 (ag_service_get_name (service), "MyService") == 0);
+    /* These should be MyService and Myservice2; the order is random */
+    fail_unless (service_in_list(services, "MyService"));
+    fail_unless (service_in_list(services, "MyService2"));
 
     ag_service_list_free (services);
 
@@ -960,8 +975,7 @@ START_TEST(test_account_services)
     services = ag_account_list_services_by_type (account, "e-mail");
     fail_unless (g_list_length (services) == 1);
 
-    service = services->data;
-    fail_unless (g_strcmp0 (ag_service_get_name (service), "MyService") == 0);
+    fail_unless (service_in_list(services, "MyService"));
 
     ag_service_list_free (services);
 
