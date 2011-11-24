@@ -2,7 +2,10 @@ lib_LTLIBRARIES = \
 	libaccounts-glib.la
 
 libaccounts_glib_la_CFLAGS = \
-	$(LIBACCOUNTS_CFLAGS) $(AEGISCRYPTO_CFLAGS) -Wall -Werror
+	$(LIBACCOUNTS_CFLAGS) \
+	$(AEGISCRYPTO_CFLAGS) \
+	-I$(top_srcdir) \
+	-Wall -Werror
 libaccounts_glib_la_LIBADD = $(LIBACCOUNTS_LIBS) $(AEGISCRYPTO_LIBS) -lrt
 libaccounts_glib_la_LDFLAGS = \
 	-version-info 1:3:1 \
@@ -31,7 +34,9 @@ libaccounts_glib_la_SOURCES = \
 	ag-service-type.h \
 	ag-service-type.c \
 	ag-util.h \
-	ag-util.c \
+	ag-util.c
+
+nodist_libaccounts_glib_la_SOURCES = \
 	$(BUILT_SOURCES)
 
 libaccounts_glib_includedir = $(includedir)/libaccounts-glib
