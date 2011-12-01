@@ -26,6 +26,8 @@
 #define _AG_ACCOUNT_SERVICE_H_
 
 #include <glib-object.h>
+#include <libaccounts-glib/ag-account.h>
+#include <libaccounts-glib/ag-service.h>
 
 G_BEGIN_DECLS
 
@@ -49,9 +51,6 @@ typedef struct _AgAccountService AgAccountService;
 
 typedef void (*AgAccountServiceNotifyCb) (AgAccountService *self, const gchar *key,
                                    gpointer user_data);
-
-#include <libaccounts-glib/ag-account.h>
-#include <libaccounts-glib/ag-service.h>
 
 struct _AgAccountServiceClass
 {

@@ -26,6 +26,10 @@
 #define _AG_MANAGER_H_
 
 #include <glib-object.h>
+#include <libaccounts-glib/ag-provider.h>
+#include <libaccounts-glib/ag-service.h>
+#include <libaccounts-glib/ag-service-type.h>
+#include <libaccounts-glib/ag-types.h>
 
 G_BEGIN_DECLS
 
@@ -39,13 +43,6 @@ G_BEGIN_DECLS
 typedef struct _AgManagerClass AgManagerClass;
 typedef struct _AgManagerPrivate AgManagerPrivate;
 typedef struct _AgManager AgManager;
-
-typedef guint AgAccountId;
-
-#include <libaccounts-glib/ag-provider.h>
-#include <libaccounts-glib/ag-service.h>
-#include <libaccounts-glib/ag-service-type.h>
-#include <libaccounts-glib/ag-account.h>
 
 struct _AgManagerClass
 {
