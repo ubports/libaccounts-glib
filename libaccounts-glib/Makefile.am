@@ -33,6 +33,7 @@ libaccounts_glib_la_SOURCES = \
 	ag-service.c \
 	ag-service-type.h \
 	ag-service-type.c \
+	ag-types.h \
 	ag-util.h \
 	ag-util.c
 
@@ -47,7 +48,8 @@ libaccounts_glib_include_HEADERS = \
 	ag-manager.h \
 	ag-provider.h \
 	ag-service.h \
-	ag-service-type.h
+	ag-service-type.h \
+	ag-types.h
 
 %-marshal.h: %-marshal.list Makefile
 	glib-genmarshal --header --prefix=$(subst -,_,$*)_marshal $< > $*-marshal.h

@@ -25,6 +25,7 @@
 #ifndef _AG_INTERNALS_H_
 #define _AG_INTERNALS_H_
 
+#include "ag-account.h"
 #include "ag-debug.h"
 #include "ag-manager.h"
 #include <dbus/dbus.h>

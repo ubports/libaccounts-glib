@@ -26,6 +26,8 @@
 #define _AG_ACCOUNT_H_
 
 #include <glib-object.h>
+#include <libaccounts-glib/ag-service.h>
+#include <libaccounts-glib/ag-types.h>
 
 G_BEGIN_DECLS
 
@@ -39,8 +41,6 @@ G_BEGIN_DECLS
 typedef struct _AgAccountClass AgAccountClass;
 typedef struct _AgAccountPrivate AgAccountPrivate;
 typedef struct _AgAccount AgAccount;
-
-#include <libaccounts-glib/ag-manager.h>
 
 struct _AgAccountClass
 {
