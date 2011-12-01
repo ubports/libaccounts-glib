@@ -615,7 +615,8 @@ ag_service_unref (AgService *service)
 
 /**
  * ag_service_list_free:
- * @list: a #GList of services returned by some function of this library.
+ * @list: (element-type AgService): a #GList of services returned by some
+ * function of this library.
  *
  * Frees the list @list.
  */

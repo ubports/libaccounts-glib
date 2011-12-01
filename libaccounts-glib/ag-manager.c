@@ -1442,8 +1442,9 @@ _ag_manager_get_last_error (AgManager *manager)
  * Lists the accounts. If the #AgManager is created with specified service_type
  * it will return only the accounts supporting this service_type.
  *
- * Returns: a #GList of #AgAccountId representing the accounts. Must
- * be free'd with ag_manager_list_free().
+ * Returns: (transfer full) (element-type AgAccountId): a #GList of
+ * #AgAccountId representing the accounts. Must be free'd with
+ * ag_manager_list_free().
  */
 GList *
 ag_manager_list (AgManager *manager)
@@ -1465,8 +1466,9 @@ ag_manager_list (AgManager *manager)
  *
  * Lists the accounts supporting the given service type.
  *
- * Returns: a #GList of #AgAccountId representing the accounts. Must
- * be free'd with ag_manager_list_free().
+ * Returns: (transfer full) (element-type AgAccountId): a #GList of
+ * #AgAccountId representing the accounts. Must be free'd with
+ * ag_manager_list_free().
  */
 GList *
 ag_manager_list_by_service_type (AgManager *manager,
@@ -1492,8 +1494,9 @@ ag_manager_list_by_service_type (AgManager *manager,
  *
  * Lists the enabled accounts.
  *
- * Returns: a #GList of the enabled #AgAccountId representing the accounts. Must
- * be free'd with ag_manager_list_free().
+ * Returns: (transfer full) (element-type AgAccountId): a #GList of the enabled
+ * #AgAccountId representing the accounts. Must be free'd with
+ * ag_manager_list_free().
  */
 GList *
 ag_manager_list_enabled (AgManager *manager)
@@ -1525,8 +1528,9 @@ ag_manager_list_enabled (AgManager *manager)
  *
  * Lists the enabled accounts supporting the given service type.
  *
- * Returns: a #GList of the enabled #AgAccountId representing the accounts. Must
- * be free'd with ag_manager_list_free().
+ * Returns: (transfer full) (element-type AgAccountId): a #GList of the enabled
+ * #AgAccountId representing the accounts. Must be free'd with
+ * ag_manager_list_free().
  */
 GList *
 ag_manager_list_enabled_by_service_type (AgManager *manager,
@@ -1551,7 +1555,8 @@ ag_manager_list_enabled_by_service_type (AgManager *manager,
 
 /**
  * ag_manager_list_free:
- * @list: a #GList returned from some #AgManager method.
+ * @list: (element-type AgAccountId): a #GList returned from some #AgManager
+ * method.
  *
  * Frees the memory taken by a #GList allocated by #AgManager.
  */
@@ -1577,8 +1582,9 @@ ag_manager_list_free (GList *list)
  *   </para>
  * </note>
  *
- * Returns: a list of #AgAccountService objects. When done with it, call
- * g_object_unref() on the list elements.
+ * Returns: (transfer full) (element-type AgAccountService): a list of
+ * #AgAccountService objects. When done with it, call g_object_unref() on the
+ * list elements.
  */
 GList *
 ag_manager_get_enabled_account_services (AgManager *manager)
@@ -1611,8 +1617,9 @@ ag_manager_get_enabled_account_services (AgManager *manager)
  *   </para>
  * </note>
  *
- * Returns: a list of #AgAccountService objects. When done with it, call
- * g_object_unref() on the list elements.
+ * Returns: (transfer full) (element-type AgAccountService): a list of
+ * #AgAccountService objects. When done with it, call g_object_unref() on the
+ * list elements.
  */
 GList *
 ag_manager_get_account_services (AgManager *manager)
@@ -1637,8 +1644,8 @@ ag_manager_get_account_services (AgManager *manager)
  * Instantiates the object representing the account identified by
  * @account_id.
  *
- * Returns: an #AgAccount, on which the client must call g_object_unref()
- * when it's done with it, or %NULL if an error occurs.
+ * Returns: (transfer full): an #AgAccount, on which the client must call
+ * g_object_unref() when it's done with it, or %NULL if an error occurs.
  */
 AgAccount *
 ag_manager_get_account (AgManager *manager, AgAccountId account_id)
@@ -1655,8 +1662,8 @@ ag_manager_get_account (AgManager *manager, AgAccountId account_id)
  * Instantiates the object representing the account identified by
  * @account_id.
  *
- * Returns: an #AgAccount, on which the client must call g_object_unref()
- * when it's done with it, or %NULL if an error occurs.
+ * Returns: (transfer full): an #AgAccount, on which the client must call
+ * g_object_unref() when it's done with it, or %NULL if an error occurs.
  */
 AgAccount *
 ag_manager_load_account (AgManager *manager, AgAccountId account_id,
@@ -1705,7 +1712,7 @@ ag_manager_load_account (AgManager *manager, AgAccountId account_id,
  * #AgAccount structure is also not meant to be valid till the account has been
  * stored.
  *
- * Returns: a new #AgAccount.
+ * Returns: (transfer full): a new #AgAccount.
  */
 AgAccount *
 ag_manager_create_account (AgManager *manager, const gchar *provider_name)
@@ -1841,8 +1848,8 @@ _ag_manager_get_service_id (AgManager *manager, AgService *service)
  * If the #AgManager is created with specified service_type
  * it will return only the installed services supporting this service_type.
  *
- * Returns: a list of #AgService, which must be then free'd with
- * ag_service_list_free().
+ * Returns: (transfer full) (element-type AgService): a list of #AgService,
+ * which must be then free'd with ag_service_list_free().
  */
 GList *
 ag_manager_list_services (AgManager *manager)
@@ -1865,8 +1872,8 @@ ag_manager_list_services (AgManager *manager)
  *
  * Gets a list of all the installed services of type @service_type.
  *
- * Returns: a list of #AgService, which must be then free'd with
- * ag_service_list_free().
+ * Returns: (transfer full) (element-type AgService): a list of #AgService,
+ * which must be then free'd with ag_service_list_free().
  */
 GList *
 ag_manager_list_services_by_type (AgManager *manager, const gchar *service_type)
@@ -2105,8 +2112,8 @@ ag_manager_get_provider (AgManager *manager, const gchar *provider_name)
  *
  * Gets a list of all the installed providers.
  *
- * Returns: a list of #AgProvider, which must be then free'd with
- * ag_provider_list_free().
+ * Returns: (transfer full) (element-type AgProvider): a list of #AgProvider,
+ * which must be then free'd with ag_provider_list_free().
  */
 GList *
 ag_manager_list_providers (AgManager *manager)
@@ -2209,7 +2216,7 @@ ag_manager_get_abort_on_db_timeout (AgManager *manager)
  *
  * Instantiate the service type @service_type.
  *
- * Returns: an #AgServiceType, which must be then free'd with
+ * Returns: (transfer full): an #AgServiceType, which must be then free'd with
  * ag_service_type_unref().
  */
 AgServiceType *
