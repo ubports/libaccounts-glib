@@ -459,7 +459,8 @@ ag_provider_unref (AgProvider *provider)
 
 /**
  * ag_provider_list_free:
- * @list: a #GList of providers returned by some function of this library.
+ * @list: (element-type AgProvider): a #GList of providers returned by some
+ * function of this library.
  *
  * Frees the list @list.
  */
