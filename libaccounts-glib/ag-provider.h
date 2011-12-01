@@ -26,10 +26,13 @@
 #define _AG_PROVIDER_H_
 
 #include <glib.h>
+#include <glib-object.h>
 
 G_BEGIN_DECLS
 
 typedef struct _AgProvider AgProvider;
+
+GType ag_provider_get_type (void) G_GNUC_CONST;
 
 const gchar *ag_provider_get_name (AgProvider *provider);
 const gchar *ag_provider_get_display_name (AgProvider *provider);

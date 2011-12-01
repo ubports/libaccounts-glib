@@ -26,10 +26,13 @@
 #define _AG_SERVICE_TYPE_H_
 
 #include <glib.h>
+#include <glib-object.h>
 
 G_BEGIN_DECLS
 
 typedef struct _AgServiceType AgServiceType;
+
+GType ag_service_type_get_type (void) G_GNUC_CONST;
 
 const gchar *ag_service_type_get_name (AgServiceType *service_type);
 const gchar *ag_service_type_get_i18n_domain (AgServiceType *service_type);

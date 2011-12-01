@@ -46,6 +46,10 @@
 static const gchar suffix[] = ".provider";
 #define SUFFIX_LEN (sizeof(suffix) - 1)
 
+G_DEFINE_BOXED_TYPE (AgProvider, ag_provider,
+                     (GBoxedCopyFunc)ag_provider_ref,
+                     (GBoxedFreeFunc)ag_provider_unref);
+
 static gint
 cmp_provider_name (AgProvider *provider, const gchar *provider_name)
 {
