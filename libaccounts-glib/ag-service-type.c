@@ -53,6 +53,10 @@ struct _AgServiceType {
     gsize file_data_len;
 };
 
+G_DEFINE_BOXED_TYPE (AgServiceType, ag_service_type,
+                     (GBoxedCopyFunc)ag_service_type_ref,
+                     (GBoxedFreeFunc)ag_service_type_unref);
+
 static gboolean
 parse_service_type (xmlTextReaderPtr reader, AgServiceType *service_type)
 {
