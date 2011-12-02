@@ -3,7 +3,7 @@
 /*
  * This file is part of libaccounts-glib
  *
- * Copyright (C) 2010 Nokia Corporation.
+ * Copyright (C) 2009-2010 Nokia Corporation.
  *
  * Contact: Alberto Mardegan <alberto.mardegan@nokia.com>
  *
@@ -22,28 +22,16 @@
  * 02110-1301 USA
  */
 
-#ifndef _AG_SERVICE_TYPE_H_
-#define _AG_SERVICE_TYPE_H_
-
-#include <glib.h>
-#include <glib-object.h>
+#ifndef _AG_TYPES_H_
+#define _AG_TYPES_H_
 
 G_BEGIN_DECLS
 
-typedef struct _AgServiceType AgServiceType;
+typedef struct _AgAccount AgAccount;
+typedef struct _AgManager AgManager;
 
-GType ag_service_type_get_type (void) G_GNUC_CONST;
-
-const gchar *ag_service_type_get_name (AgServiceType *service_type);
-const gchar *ag_service_type_get_i18n_domain (AgServiceType *service_type);
-const gchar *ag_service_type_get_display_name (AgServiceType *service_type);
-const gchar *ag_service_type_get_icon_name (AgServiceType *service_type);
-void ag_service_type_get_file_contents (AgServiceType *service_type,
-                                        const gchar **contents,
-                                        gsize *len);
-AgServiceType *ag_service_type_ref (AgServiceType *service_type);
-void ag_service_type_unref (AgServiceType *service_type);
+typedef guint AgAccountId;
 
 G_END_DECLS
 
-#endif /* _AG_SERVICE_TYPE_H_ */
+#endif /* _AG_TYPES_H_ */

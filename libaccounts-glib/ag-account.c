@@ -1365,9 +1365,10 @@ ag_account_supports_service (AgAccount *account, const gchar *service_type)
  * ag_account_list_services:
  * @account: the #AgAccount.
  *
- * Returns: a #GList of #AgService items representing all the services
- * supported by this account. If the #AgManager was created with specified
- * service_type this will return only services with this service_type.
+ * Returns: (transfer full) (element-type AgService): a #GList of #AgService
+ * items representing all the services supported by this account. If the
+ * #AgManager was created with specified service_type this will return only
+ * services with this service_type.
  * Must be free'd with ag_service_list_free().
  */
 GList *
@@ -1407,9 +1408,9 @@ ag_account_list_services (AgAccount *account)
  * @service_type: the service type which all the returned services should
  * provide.
  *
- * Returns: a #GList of #AgService items representing all the services
- * supported by this account which provide @service_type. Must be free'd with
- * ag_service_list_free().
+ * Returns: (transfer full) (element-type AgService): a #GList of #AgService
+ * items representing all the services supported by this account which provide
+ * @service_type. Must be free'd with ag_service_list_free().
  */
 GList *
 ag_account_list_services_by_type (AgAccount *account,
@@ -1484,8 +1485,9 @@ list_enabled_services_from_memory (AgAccountPrivate *priv,
  * ag_account_list_enabled_services:
  * @account: the #AgAccount.
  *
- * Returns: a #GList of #AgService items representing all the services
- * which are enabled. Must be free'd with ag_service_list_free().
+ * Returns: (transfer full) (element-type AgService): a #GList of #AgService
+ * items representing all the services which are enabled. Must be free'd with
+ * ag_service_list_free().
  */
 GList *
 ag_account_list_enabled_services (AgAccount *account)
@@ -1549,7 +1551,7 @@ ag_account_list_enabled_services (AgAccount *account)
  * ag_account_get_manager:
  * @account: the #AgAccount.
  *
- * Returns: the #AccountManager.
+ * Returns: (transfer none): the #AccountManager.
  */
 AgManager *
 ag_account_get_manager (AgAccount *account)
@@ -1929,13 +1931,14 @@ ag_account_settings_iter_next (AgAccountSettingIter *iter,
  * ag_account_watch_key:
  * @account: the #AgAccount.
  * @key: the name of the key to watch.
- * @callback: a #AgAccountNotifyCb callback to be called.
+ * @callback: (scope async): a #AgAccountNotifyCb callback to be called.
  * @user_data: pointer to user data, to be passed to @callback.
  *
  * Installs a watch on @key: @callback will be invoked whenever the value of
  * @key changes (or the key is removed).
  *
- * Returns: a #AgAccountWatch, which can then be used to remove this watch.
+ * Returns: (transfer none): a #AgAccountWatch, which can then be used to
+ * remove this watch.
  */
 AgAccountWatch
 ag_account_watch_key (AgAccount *account, const gchar *key,
@@ -1953,14 +1956,15 @@ ag_account_watch_key (AgAccount *account, const gchar *key,
  * ag_account_watch_dir:
  * @account: the #AgAccount.
  * @key_prefix: the prefix of the keys to watch.
- * @callback: a #AgAccountNotifyCb callback to be called.
+ * @callback: (scope async): a #AgAccountNotifyCb callback to be called.
  * @user_data: pointer to user data, to be passed to @callback.
  *
  * Installs a watch on all the keys under @key_prefix: @callback will be
  * invoked whenever the value of any of these keys changes (or a key is
  * removed).
  *
- * Returns: a #AgAccountWatch, which can then be used to remove this watch.
+ * Returns: (transfer none): a #AgAccountWatch, which can then be used to
+ * remove this watch.
  */
 AgAccountWatch
 ag_account_watch_dir (AgAccount *account, const gchar *key_prefix,
@@ -2016,7 +2020,8 @@ ag_account_remove_watch (AgAccount *account, AgAccountWatch watch)
 /**
  * ag_account_store:
  * @account: the #AgAccount.
- * @callback: function to be called when the settings have been written.
+ * @callback: (scope async): function to be called when the settings have been
+ * written.
  * @user_data: pointer to user data, to be passed to @callback.
  *
  * Store the account settings which have been changed into the account

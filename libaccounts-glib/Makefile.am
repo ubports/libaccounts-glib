@@ -33,6 +33,7 @@ libaccounts_glib_la_SOURCES = \
 	ag-service.c \
 	ag-service-type.h \
 	ag-service-type.c \
+	ag-types.h \
 	ag-util.h \
 	ag-util.c
 
@@ -47,7 +48,8 @@ libaccounts_glib_include_HEADERS = \
 	ag-manager.h \
 	ag-provider.h \
 	ag-service.h \
-	ag-service-type.h
+	ag-service-type.h \
+	ag-types.h
 
 %-marshal.h: %-marshal.list Makefile
 	glib-genmarshal --header --prefix=$(subst -,_,$*)_marshal $< > $*-marshal.h
@@ -58,3 +60,43 @@ libaccounts_glib_include_HEADERS = \
 
 EXTRA_DIST = ag-marshal.list
 
+-include $(INTROSPECTION_MAKEFILE)
+INTROSPECTION_GIRS =
+INTROSPECTION_SCANNER_ARGS = --add-include-path=$(srcdir)
+INTROSPECTION_COMPILER_ARGS = --includedir=$(srcdir)
+
+if HAVE_INTROSPECTION
+introspection_sources = \
+	ag-account.c \
+	ag-account.h \
+	ag-account-service.c \
+	ag-account-service.h \
+	ag-errors.h \
+	ag-manager.c \
+	ag-manager.h \
+	ag-provider.c \
+	ag-provider.h \
+	ag-service.c \
+	ag-service.h \
+	ag-service-type.c \
+	ag-service-type.h \
+	ag-types.h
+
+Accounts-1.0.gir: libaccounts-glib.la
+Accounts_1_0_gir_INCLUDES = GObject-2.0
+Accounts_1_0_gir_SCANNERFLAGS = --identifier-prefix=Ag --symbol-prefix=ag
+Accounts_1_0_gir_CFLAGS = \
+	$(LIBACCOUNTS_CFLAGS) \
+	-I$(top_srcdir)
+Accounts_1_0_gir_LIBS = libaccounts-glib.la
+Accounts_1_0_gir_FILES = $(introspection_sources)
+INTROSPECTION_GIRS += Accounts-1.0.gir
+
+girdir = $(datadir)/gir-1.0
+gir_DATA = $(INTROSPECTION_GIRS)
+
+typelibdir = $(libdir)/girepository-1.0
+typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
+
+CLEANFILES += $(gir_DATA) $(typelib_DATA)
+endif

@@ -5,11 +5,15 @@ AC_INIT(libaccounts-glib, 1.0)
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 AM_CONFIG_HEADER(config.h)
 
+# Gobject Introspection
+AC_CONFIG_MACRO_DIR([m4])
+GOBJECT_INTROSPECTION_CHECK([1.30.0])
+
 PKG_CHECK_MODULES(
 	LIBACCOUNTS,
 	dbus-1
 	dbus-glib-1
-	glib-2.0
+	glib-2.0 >= 2.26
 	gobject-2.0
 	libxml-2.0
 	sqlite3 >= 3.7.0);
