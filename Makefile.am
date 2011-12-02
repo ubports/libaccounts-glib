@@ -1,6 +1,10 @@
 SUBDIRS = libaccounts-glib docs tests tools
 
-DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc
+ACLOCAL_AMFLAGS = -I m4
+
+DISTCHECK_CONFIGURE_FLAGS = \
+	--enable-gtk-doc \
+	--enable-introspection=yes
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libaccounts-glib.pc
@@ -17,7 +21,8 @@ CLEANFILES = \
 
 EXTRA_DIST = \
 	$(backupconf_in_files) \
-	$(libaccountsdoc_DATA)
+	$(libaccountsdoc_DATA) \
+	m4/introspection.m4
 
 $(backupconf_DATA): $(backupconf_in_files) 
 	@sed -e "s|\@DATABASE_DIR\@|$(DATABASE_DIR)|" $< > $@ 

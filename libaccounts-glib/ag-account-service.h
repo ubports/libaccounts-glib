@@ -26,6 +26,8 @@
 #define _AG_ACCOUNT_SERVICE_H_
 
 #include <glib-object.h>
+#include <libaccounts-glib/ag-account.h>
+#include <libaccounts-glib/ag-service.h>
 
 G_BEGIN_DECLS
 
@@ -49,9 +51,6 @@ typedef struct _AgAccountService AgAccountService;
 
 typedef void (*AgAccountServiceNotifyCb) (AgAccountService *self, const gchar *key,
                                    gpointer user_data);
-
-#include <libaccounts-glib/ag-account.h>
-#include <libaccounts-glib/ag-service.h>
 
 struct _AgAccountServiceClass
 {
@@ -179,9 +178,9 @@ AgAccountService *ag_account_service_new (AgAccount *account,
  * ag_account_service_get_account:
  * @self: the #AgAccountService.
  *
- * Returns: the underlying #AgAccount. The reference count on it is not
- * incremented, so if you need to use it beyond the lifetime of @self, you need
- * to call g_object_ref() on it yourself.
+ * Returns: (transfer none): the underlying #AgAccount. The reference count on
+ * it is not incremented, so if you need to use it beyond the lifetime of
+ * @self, you need to call g_object_ref() on it yourself.
  */
 AgAccount *ag_account_service_get_account (AgAccountService *self);
 
@@ -189,9 +188,9 @@ AgAccount *ag_account_service_get_account (AgAccountService *self);
  * ag_account_service_get_service:
  * @self: the #AgAccountService.
  *
- * Returns: the underlying #AgService. The reference count on it is not
- * incremented, so if you need to use it beyond the lifetime of @self, you need
- * to call ag_service_ref() on it yourself.
+ * Returns: (transfer none): the underlying #AgService. The reference count on
+ * it is not incremented, so if you need to use it beyond the lifetime of
+ * @self, you need to call ag_service_ref() on it yourself.
  */
 AgService *ag_account_service_get_service (AgAccountService *self);
 
@@ -277,8 +276,9 @@ gboolean ag_account_service_settings_iter_next (AgAccountSettingIter *iter,
  * AgAccountService::changed signal, and can be used to retrieve the set of
  * changes.
  *
- * Returns: a newly allocated array of strings describing the keys of the
- * fields which have been altered. It must be free'd with g_strfreev().
+ * Returns: (transfer full): a newly allocated array of strings describing the
+ * keys of the fields which have been altered. It must be free'd with
+ * g_strfreev().
  */
 gchar **ag_account_service_get_changed_fields (AgAccountService *self);
 

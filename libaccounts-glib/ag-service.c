@@ -44,26 +44,9 @@
 static const gchar suffix[] = ".service";
 #define SUFFIX_LEN (sizeof(suffix) - 1)
 
-#ifdef G_DEFINE_BOXED_TYPE
 G_DEFINE_BOXED_TYPE (AgService, ag_service,
                      (GBoxedCopyFunc)ag_service_ref,
                      (GBoxedFreeFunc)ag_service_unref);
-#else
-GType
-ag_service_get_type (void)
-{
-    static volatile gsize g_define_type_id__volatile = 0;
-    if (g_once_init_enter (&g_define_type_id__volatile))
-    {
-        GType g_define_type_id =
-            g_boxed_type_register_static (g_intern_static_string ("AgService"),
-                                          (GBoxedCopyFunc) ag_service_ref,
-                                          (GBoxedFreeFunc) ag_service_unref);
-        g_once_init_leave (&g_define_type_id__volatile, g_define_type_id);
-    }
-    return g_define_type_id__volatile;
-}
-#endif
 
 static gint
 cmp_service_name (AgService *service, const gchar *service_name)
@@ -632,7 +615,8 @@ ag_service_unref (AgService *service)
 
 /**
  * ag_service_list_free:
- * @list: a #GList of services returned by some function of this library.
+ * @list: (element-type AgService): a #GList of services returned by some
+ * function of this library.
  *
  * Frees the list @list.
  */
