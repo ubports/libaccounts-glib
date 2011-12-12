@@ -42,6 +42,7 @@ nodist_libaccounts_glib_la_SOURCES = \
 
 libaccounts_glib_includedir = $(includedir)/libaccounts-glib
 libaccounts_glib_include_HEADERS = \
+	accounts-glib.h \
 	ag-account.h \
 	ag-account-service.h \
 	ag-errors.h \
@@ -84,7 +85,11 @@ introspection_sources = \
 
 Accounts-1.0.gir: libaccounts-glib.la
 Accounts_1_0_gir_INCLUDES = GObject-2.0
-Accounts_1_0_gir_SCANNERFLAGS = --identifier-prefix=Ag --symbol-prefix=ag
+Accounts_1_0_gir_SCANNERFLAGS = \
+	--identifier-prefix=Ag \
+	--symbol-prefix=ag \
+	--c-include="libaccounts-glib/accounts-glib.h" \
+	--warn-all
 Accounts_1_0_gir_CFLAGS = \
 	$(LIBACCOUNTS_CFLAGS) \
 	-I$(top_srcdir)
