@@ -1481,6 +1481,16 @@ list_enabled_services_from_memory (AgAccountPrivate *priv,
     return list;
 }
 
+static AgAccountSettingIter *
+ag_account_setting_iter_copy(const AgAccountSettingIter *orig)
+{
+    return g_memdup (orig, sizeof (AgAccountSettingIter));
+}
+
+G_DEFINE_BOXED_TYPE (AgAccountSettingIter, ag_account_settings_iter,
+                     (GBoxedCopyFunc)ag_account_setting_iter_copy,
+                     (GBoxedFreeFunc)g_free);
+
 /**
  * ag_account_list_enabled_services:
  * @account: the #AgAccount.
