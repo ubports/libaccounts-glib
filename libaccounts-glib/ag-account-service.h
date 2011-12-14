@@ -163,8 +163,8 @@ GType ag_account_service_get_type (void) G_GNUC_CONST;
 
 /**
  * ag_account_service_new:
- * @account: an #AgAccount.
- * @service: an #AgService supported by @account.
+ * @account: (transfer full): an #AgAccount.
+ * @service: (transfer full): an #AgService supported by @account.
  *
  * Constructor.
  *
@@ -228,7 +228,7 @@ AgSettingSource ag_account_service_get_value (AgAccountService *self,
  * ag_account_service_set_value:
  * @self: the #AgAccountService.
  * @key: the name of the setting to change.
- * @value: a #GValue holding the new setting's value.
+ * @value: (allow-none): a #GValue holding the new setting's value.
  *
  * Sets the value of the configuration setting @key to the value @value.
  * If @value is %NULL, then the setting is unset.
@@ -240,7 +240,8 @@ void ag_account_service_set_value (AgAccountService *self, const gchar *key,
  * ag_account_service_settings_iter_init:
  * @self: the #AgAccountService.
  * @iter: an uninitialized #AgAccountSettingIter structure.
- * @key_prefix: enumerate only the settings whose key starts with @key_prefix.
+ * @key_prefix: (allow-none): enumerate only the settings whose key starts with
+ * @key_prefix.
  *
  * Initializes @iter to iterate over the account settings. If @key_prefix is
  * not %NULL, only keys whose names start with @key_prefix will be iterated
@@ -255,8 +256,10 @@ void ag_account_service_settings_iter_init (AgAccountService *self,
 /**
  * ag_account_service_settings_iter_next:
  * @iter: an initialized #AgAccountSettingIter structure.
- * @key: a pointer to a string receiving the key name.
- * @value: a pointer to a pointer to a #GValue, to receive the key value.
+ * @key: (out callee-allocates) (transfer none): a pointer to a string
+ * receiving the key name.
+ * @value: (out callee-allocates) (transfer none): a pointer to a pointer to a
+ * #GValue, to receive the key value.
  *
  * Iterates over the account keys. @iter must be an iterator previously
  * initialized with ag_account_service_settings_iter_init().
