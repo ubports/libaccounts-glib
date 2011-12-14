@@ -1896,7 +1896,12 @@ ag_account_settings_iter_next (AgAccountSettingIter *iter,
         ri->stage = AG_ITER_STAGE_UNSET;
     }
 
-    if (!priv->service) return FALSE;
+    if (!priv->service)
+    {
+        *key = NULL;
+        *value = NULL;
+        return FALSE;
+    }
 
     if (ri->stage == AG_ITER_STAGE_UNSET)
     {
@@ -1924,6 +1929,8 @@ ag_account_settings_iter_next (AgAccountSettingIter *iter,
         return TRUE;
     }
 
+    *key = NULL;
+    *value = NULL;
     return FALSE;
 }
 
