@@ -163,8 +163,8 @@ GType ag_account_service_get_type (void) G_GNUC_CONST;
 
 /**
  * ag_account_service_new:
- * @account: an #AgAccount.
- * @service: an #AgService supported by @account.
+ * @account: (transfer full): an #AgAccount.
+ * @service: (transfer full): an #AgService supported by @account.
  *
  * Constructor.
  *

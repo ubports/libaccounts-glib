@@ -1618,7 +1618,7 @@ ag_account_set_display_name (AgAccount *account, const gchar *display_name)
 /**
  * ag_account_select_service:
  * @account: the #AgAccount.
- * @service: the #AgService to select.
+ * @service: (allow-none): the #AgService to select.
  *
  * Selects the configuration of service @service: from now on, all the
  * subsequent calls on the #AgAccount configuration will act on the @service.
