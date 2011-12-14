@@ -1481,6 +1481,16 @@ list_enabled_services_from_memory (AgAccountPrivate *priv,
     return list;
 }
 
+static AgAccountSettingIter *
+ag_account_setting_iter_copy(const AgAccountSettingIter *orig)
+{
+    return g_memdup (orig, sizeof (AgAccountSettingIter));
+}
+
+G_DEFINE_BOXED_TYPE (AgAccountSettingIter, ag_account_settings_iter,
+                     (GBoxedCopyFunc)ag_account_setting_iter_copy,
+                     (GBoxedFreeFunc)g_free);
+
 /**
  * ag_account_list_enabled_services:
  * @account: the #AgAccount.
@@ -1608,7 +1618,7 @@ ag_account_set_display_name (AgAccount *account, const gchar *display_name)
 /**
  * ag_account_select_service:
  * @account: the #AgAccount.
- * @service: the #AgService to select.
+ * @service: (allow-none): the #AgService to select.
  *
  * Selects the configuration of service @service: from now on, all the
  * subsequent calls on the #AgAccount configuration will act on the @service.
@@ -1793,7 +1803,7 @@ ag_account_get_value (AgAccount *account, const gchar *key,
  * ag_account_set_value:
  * @account: the #AgAccount.
  * @key: the name of the setting to change.
- * @value: a #GValue holding the new setting's value.
+ * @value: (allow-none): a #GValue holding the new setting's value.
  *
  * Sets the value of the configuration setting @key to the value @value.
  * If @value is %NULL, then the setting is unset.
@@ -1814,7 +1824,8 @@ ag_account_set_value (AgAccount *account, const gchar *key,
  * ag_account_settings_iter_init:
  * @account: the #AgAccount.
  * @iter: an uninitialized #AgAccountSettingIter structure.
- * @key_prefix: enumerate only the settings whose key starts with @key_prefix.
+ * @key_prefix: (allow-none): enumerate only the settings whose key starts with
+ * @key_prefix.
  *
  * Initializes @iter to iterate over the account settings. If @key_prefix is
  * not %NULL, only keys whose names start with @key_prefix will be iterated
@@ -1848,8 +1859,10 @@ ag_account_settings_iter_init (AgAccount *account,
 /**
  * ag_account_settings_iter_next:
  * @iter: an initialized #AgAccountSettingIter structure.
- * @key: a pointer to a string receiving the key name.
- * @value: a pointer to a pointer to a #GValue, to receive the key value.
+ * @key: (out callee-allocates) (transfer none): a pointer to a string
+ * receiving the key name.
+ * @value: (out callee-allocates) (transfer none): a pointer to a pointer to a
+ * #GValue, to receive the key value.
  *
  * Iterates over the account keys. @iter must be an iterator previously
  * initialized with ag_account_settings_iter_init().
@@ -1883,7 +1896,12 @@ ag_account_settings_iter_next (AgAccountSettingIter *iter,
         ri->stage = AG_ITER_STAGE_UNSET;
     }
 
-    if (!priv->service) return FALSE;
+    if (!priv->service)
+    {
+        *key = NULL;
+        *value = NULL;
+        return FALSE;
+    }
 
     if (ri->stage == AG_ITER_STAGE_UNSET)
     {
@@ -1911,6 +1929,8 @@ ag_account_settings_iter_next (AgAccountSettingIter *iter,
         return TRUE;
     }
 
+    *key = NULL;
+    *value = NULL;
     return FALSE;
 }
 

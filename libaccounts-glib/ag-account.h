@@ -112,6 +112,8 @@ struct _AgAccountSettingIter {
     gint idx2;
 };
 
+GType ag_account_settings_iter_get_type (void) G_GNUC_CONST;
+
 void ag_account_settings_iter_init (AgAccount *account,
                                     AgAccountSettingIter *iter,
                                     const gchar *key_prefix);
