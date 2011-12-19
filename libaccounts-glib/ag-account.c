@@ -135,10 +135,10 @@ struct _AgAccountWatch {
 typedef struct {
     AgAccount *account;
     GHashTableIter iter;
-    const gchar *key_prefix;
+    gchar *key_prefix;
     gpointer ptr2;
     gint stage;
-    gint idx2;
+    gint must_free_prefix;
 } RealIter;
 
 typedef struct _AgSignature {
@@ -1482,14 +1482,49 @@ list_enabled_services_from_memory (AgAccountPrivate *priv,
 }
 
 static AgAccountSettingIter *
-ag_account_setting_iter_copy(const AgAccountSettingIter *orig)
+ag_account_settings_iter_copy(const AgAccountSettingIter *orig)
 {
-    return g_memdup (orig, sizeof (AgAccountSettingIter));
+    return g_slice_dup (AgAccountSettingIter, orig);
 }
 
 G_DEFINE_BOXED_TYPE (AgAccountSettingIter, ag_account_settings_iter,
-                     (GBoxedCopyFunc)ag_account_setting_iter_copy,
-                     (GBoxedFreeFunc)g_free);
+                     (GBoxedCopyFunc)ag_account_settings_iter_copy,
+                     (GBoxedFreeFunc)ag_account_settings_iter_free);
+
+void
+_ag_account_settings_iter_init (AgAccount *account,
+                                AgAccountSettingIter *iter,
+                                const gchar *key_prefix,
+                                gboolean copy_string)
+{
+    AgAccountPrivate *priv;
+    AgServiceSettings *ss;
+    RealIter *ri = (RealIter *)iter;
+
+    g_return_if_fail (AG_IS_ACCOUNT (account));
+    g_return_if_fail (iter != NULL);
+    priv = account->priv;
+
+    ri->account = account;
+    if (copy_string)
+    {
+        ri->key_prefix = g_strdup (key_prefix);
+        ri->must_free_prefix = TRUE;
+    }
+    else
+    {
+        ri->key_prefix = (gchar *)key_prefix;
+        ri->must_free_prefix = FALSE;
+    }
+    ri->stage = AG_ITER_STAGE_UNSET;
+
+    ss = get_service_settings (priv, priv->service, FALSE);
+    if (ss)
+    {
+        g_hash_table_iter_init (&ri->iter, ss->settings);
+        ri->stage = AG_ITER_STAGE_ACCOUNT;
+    }
+}
 
 /**
  * ag_account_list_enabled_services:
@@ -1821,6 +1856,42 @@ ag_account_set_value (AgAccount *account, const gchar *key,
 }
 
 /**
+ * ag_account_get_settings_iter:
+ * @account: the #AgAccount.
+ * @key_prefix: (allow-none): enumerate only the settings whose key starts with
+ * @key_prefix.
+ *
+ * Creates a new iterator. This method is useful for language bindings only.
+ *
+ * Returns: (transfer full): an #AgAccountSettingsIter.
+ */
+AgAccountSettingIter *
+ag_account_get_settings_iter (AgAccount *account,
+                              const gchar *key_prefix)
+{
+    AgAccountSettingIter *iter = g_slice_new (AgAccountSettingIter);
+    _ag_account_settings_iter_init (account, iter, key_prefix, TRUE);
+    return iter;
+}
+
+/**
+ * ag_account_settings_iter_free:
+ * @iter: a #AgAccountSettingIter.
+ *
+ * Frees the memory associated with an #AgAccountSettingIter.
+ */
+void
+ag_account_settings_iter_free (AgAccountSettingIter *iter)
+{
+    if (iter == NULL) return;
+
+    RealIter *ri = (RealIter *)iter;
+    if (ri->must_free_prefix)
+        g_free (ri->key_prefix);
+    g_slice_free (AgAccountSettingIter, iter);
+}
+
+/**
  * ag_account_settings_iter_init:
  * @account: the #AgAccount.
  * @iter: an uninitialized #AgAccountSettingIter structure.
@@ -1836,24 +1907,7 @@ ag_account_settings_iter_init (AgAccount *account,
                                AgAccountSettingIter *iter,
                                const gchar *key_prefix)
 {
-    AgAccountPrivate *priv;
-    AgServiceSettings *ss;
-    RealIter *ri = (RealIter *)iter;
-
-    g_return_if_fail (AG_IS_ACCOUNT (account));
-    g_return_if_fail (iter != NULL);
-    priv = account->priv;
-
-    ri->account = account;
-    ri->key_prefix = key_prefix;
-    ri->stage = AG_ITER_STAGE_UNSET;
-
-    ss = get_service_settings (priv, priv->service, FALSE);
-    if (ss)
-    {
-        g_hash_table_iter_init (&ri->iter, ss->settings);
-        ri->stage = AG_ITER_STAGE_ACCOUNT;
-    }
+    _ag_account_settings_iter_init (account, iter, key_prefix, FALSE);
 }
 
 /**

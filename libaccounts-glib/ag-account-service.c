@@ -295,6 +295,22 @@ ag_account_service_settings_iter_init (AgAccountService *self,
     ag_account_settings_iter_init (priv->account, iter, key_prefix);
 }
 
+AgAccountSettingIter *
+ag_account_service_get_settings_iter (AgAccountService *self,
+                                      const gchar *key_prefix)
+{
+    AgAccountSettingIter *iter;
+    AgAccountServicePrivate *priv;
+
+    g_return_val_if_fail (AG_IS_ACCOUNT_SERVICE (self), NULL);
+    priv = self->priv;
+
+    ag_account_select_service (priv->account, priv->service);
+    iter = g_slice_new (AgAccountSettingIter);
+    _ag_account_settings_iter_init (priv->account, iter, key_prefix, TRUE);
+    return iter;
+}
+
 gboolean
 ag_account_service_settings_iter_next (AgAccountSettingIter *iter,
                                        const gchar **key,
