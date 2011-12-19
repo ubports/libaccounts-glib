@@ -1877,11 +1877,14 @@ ag_account_settings_iter_next (AgAccountSettingIter *iter,
     RealIter *ri = (RealIter *)iter;
     AgServiceSettings *ss;
     AgAccountPrivate *priv;
+    gint prefix_length;
 
     g_return_val_if_fail (iter != NULL, FALSE);
     g_return_val_if_fail (AG_IS_ACCOUNT (iter->account), FALSE);
     g_return_val_if_fail (key != NULL && value != NULL, FALSE);
     priv = iter->account->priv;
+
+    prefix_length = ri->key_prefix ? strlen(ri->key_prefix) : 0;
 
     if (ri->stage == AG_ITER_STAGE_ACCOUNT)
     {
@@ -1891,6 +1894,7 @@ ag_account_settings_iter_next (AgAccountSettingIter *iter,
             if (ri->key_prefix && !g_str_has_prefix (*key, ri->key_prefix))
                 continue;
 
+            *key = *key + prefix_length;
             return TRUE;
         }
         ri->stage = AG_ITER_STAGE_UNSET;
@@ -1926,6 +1930,7 @@ ag_account_settings_iter_next (AgAccountSettingIter *iter,
         if (ss && g_hash_table_lookup (ss->settings, *key) != NULL)
             continue;
 
+        *key = *key + prefix_length;
         return TRUE;
     }
 
