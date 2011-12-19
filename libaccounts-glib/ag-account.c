@@ -1821,20 +1821,6 @@ ag_account_set_value (AgAccount *account, const gchar *key,
 }
 
 /**
- * ag_account_settings_iter_new:
- *
- * Creates a new uninitialized iterator. This method is useful for language
- * bindings only.
- *
- * Returns: (transfer full): an #AgAccountSettingIter.
- */
-AgAccountSettingIter *
-ag_account_settings_iter_new ()
-{
-    return g_new(AgAccountSettingIter, 1);
-}
-
-/**
  * ag_account_settings_iter_init:
  * @account: the #AgAccount.
  * @iter: an uninitialized #AgAccountSettingIter structure.
