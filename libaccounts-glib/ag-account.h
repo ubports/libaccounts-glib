@@ -114,12 +114,17 @@ struct _AgAccountSettingIter {
 
 GType ag_account_settings_iter_get_type (void) G_GNUC_CONST;
 
+void ag_account_settings_iter_free (AgAccountSettingIter *iter);
+
 void ag_account_settings_iter_init (AgAccount *account,
                                     AgAccountSettingIter *iter,
                                     const gchar *key_prefix);
 gboolean ag_account_settings_iter_next (AgAccountSettingIter *iter,
                                         const gchar **key,
                                         const GValue **value);
+
+AgAccountSettingIter *ag_account_get_settings_iter (AgAccount *account,
+                                                    const gchar *key_prefix);
 
 typedef struct _AgAccountWatch *AgAccountWatch;
 

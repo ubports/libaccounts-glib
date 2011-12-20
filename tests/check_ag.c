@@ -1177,11 +1177,14 @@ START_TEST(test_settings_iter)
     while (ag_account_settings_iter_next (&iter, &key, &val))
     {
         gboolean found = FALSE;
-        fail_unless (strncmp (key, "param/", 6) == 0,
-                     "Got key %s, wrong prefix", key);
+        gchar *full_key;
+        fail_unless (strncmp (key, "param/", 6) != 0,
+                     "Got key with unstripped prefix (%s)", key);
+
+        full_key = g_strconcat ("param/", key, NULL);
         for (i = 0; keys[i] != NULL; i++)
         {
-            if (g_strcmp0 (key, keys[i]) == 0)
+            if (g_strcmp0 (full_key, keys[i]) == 0)
             {
                 const gchar *text;
                 found = TRUE;
@@ -1192,6 +1195,7 @@ START_TEST(test_settings_iter)
                 break;
             }
         }
+        g_free (full_key);
 
         fail_unless (found, "Unknown setting %s", key);
 
@@ -1235,10 +1239,11 @@ START_TEST(test_settings_iter)
     ag_account_settings_iter_init (account, &iter, "parameters/");
     while (ag_account_settings_iter_next (&iter, &key, &val))
     {
-        fail_unless (g_str_has_prefix (key, "parameters/"),
-                     "Got key %s, wrong prefix", key);
+        fail_unless (strncmp (key, "parameters/", 6) != 0,
+                     "Got key with unstripped prefix (%s)", key);
+
         g_debug ("Got key %s of type %s", key, G_VALUE_TYPE_NAME (val));
-        if (g_strcmp0 (key, "parameters/port") == 0)
+        if (g_strcmp0 (key, "port") == 0)
         {
             gint port;
 
