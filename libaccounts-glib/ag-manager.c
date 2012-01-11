@@ -342,7 +342,7 @@ check_signal_processed (AgManagerPrivate *priv, struct timespec *ts)
     return FALSE;
 }
 
-/**
+/*
  * checks whether the sender of the message is listed in the object_paths array
  */
 static gboolean
