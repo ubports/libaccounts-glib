@@ -73,7 +73,7 @@ struct _AgAccountService
 GType ag_account_service_get_type (void) G_GNUC_CONST;
 
 /**
- * SECTION:ag-service
+ * SECTION:ag-account-service
  * @title: AgAccountService
  * @short_description: Account settings for a specific service
  *
