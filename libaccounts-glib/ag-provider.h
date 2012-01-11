@@ -30,6 +30,11 @@
 
 G_BEGIN_DECLS
 
+/**
+ * AgProvider:
+ *
+ * Use the accessor functions below.
+ */
 typedef struct _AgProvider AgProvider;
 
 GType ag_provider_get_type (void) G_GNUC_CONST;

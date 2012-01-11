@@ -44,6 +44,11 @@ typedef struct _AgManagerClass AgManagerClass;
 typedef struct _AgManagerPrivate AgManagerPrivate;
 typedef struct _AgManager AgManager;
 
+/**
+ * AgManagerClass:
+ *
+ * Use the accessor functions below.
+ */
 struct _AgManagerClass
 {
     GObjectClass parent_class;
@@ -56,6 +61,11 @@ struct _AgManagerClass
     void (*_ag_reserved7) (void);
 };
 
+/**
+ * AgManager:
+ *
+ * Use the accessor functions below.
+ */
 struct _AgManager
 {
     GObject parent_instance;

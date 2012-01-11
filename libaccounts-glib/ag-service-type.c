@@ -24,8 +24,8 @@
 
 /**
  * SECTION:ag-service-type
- * @title: AgServiceType
  * @short_description: A description of a service type.
+ * @include: libaccounts-glib/ag-service-type.h
  *
  * The #AgServiceType structure represents a service type. The structure is
  * not directly exposed to applications, but its fields are accessible via
@@ -246,6 +246,8 @@ _ag_service_type_new_from_file (const gchar *service_type_name)
  * ag_service_type_get_name:
  * @service_type: the #AgServiceType.
  *
+ * Get the name of the #AgServiceType.
+ *
  * Returns: the name of @service_type.
  */
 const gchar *
@@ -258,6 +260,8 @@ ag_service_type_get_name (AgServiceType *service_type)
 /**
  * ag_service_type_get_i18n_domain:
  * @service_type: the #AgServiceType.
+ *
+ * Get the translation domain of the #AgServiceType.
  *
  * Returns: the translation domain.
  */
@@ -272,6 +276,8 @@ ag_service_type_get_i18n_domain (AgServiceType *service_type)
  * ag_service_type_get_display_name:
  * @service_type: the #AgServiceType.
  *
+ * Get the display name of the #AgServiceType.
+ *
  * Returns: the display name of @service_type.
  */
 const gchar *
@@ -284,6 +290,8 @@ ag_service_type_get_display_name (AgServiceType *service_type)
 /**
  * ag_service_type_get_icon_name:
  * @service_type: the #AgServiceType.
+ *
+ * Get the icon name of the #AgServiceType.
  *
  * Returns: the name of the icon of @service_type.
  */
