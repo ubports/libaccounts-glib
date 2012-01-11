@@ -29,6 +29,7 @@ stamp-h1
 /docs/reference/html/
 /docs/reference/libaccounts-glib*txt
 /docs/reference/libaccounts-glib.*
+!/docs/reference/libaccounts-glib-sections.txt
 /docs/reference/tmpl/
 /docs/reference/xml/
 /libaccounts-glib/ag-marshal.c
