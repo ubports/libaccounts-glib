@@ -237,6 +237,20 @@ void ag_account_service_set_value (AgAccountService *self, const gchar *key,
                                    const GValue *value);
 
 /**
+ * ag_account_service_get_settings_iter:
+ * @self: the #AgAccountService.
+ * @key_prefix: (allow-none): enumerate only the settings whose key starts with
+ * @key_prefix.
+ *
+ * Creates a new iterator. This method is useful for language bindings only.
+ *
+ * Returns: (transfer full): an #AgAccountSettingsIter.
+ */
+AgAccountSettingIter *
+ag_account_service_get_settings_iter (AgAccountService *self,
+                                      const gchar *key_prefix);
+
+/**
  * ag_account_service_settings_iter_init:
  * @self: the #AgAccountService.
  * @iter: an uninitialized #AgAccountSettingIter structure.
