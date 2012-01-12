@@ -155,6 +155,12 @@ gboolean test_delete (TestArgs *args)
 gboolean test_create2 (TestArgs *args)
 {
     GValue value = { 0 };
+    const gchar *numbers[] = {
+        "one",
+        "two",
+        "three",
+        NULL
+    };
 
     manager = ag_manager_new ();
 
@@ -173,6 +179,11 @@ gboolean test_create2 (TestArgs *args)
     g_value_init (&value, G_TYPE_STRING);
     g_value_set_static_string (&value, "a string");
     ag_account_set_value (account, "string", &value);
+    g_value_unset (&value);
+
+    g_value_init (&value, G_TYPE_STRV);
+    g_value_set_boxed (&value, numbers);
+    ag_account_set_value (account, "numbers", &value);
     g_value_unset (&value);
 
     ag_account_set_enabled (account, TRUE);
