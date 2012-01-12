@@ -24,8 +24,8 @@
 
 /**
  * SECTION:ag-account
- * @title: AgAccount
  * @short_description: A representation of an account.
+ * @include: libaccounts-glib/ag-account.h
  *
  * An #AgAccount is an object which represents an account. It provides a
  * method for enabling/disabling the account and methods for editing the
@@ -1342,9 +1342,12 @@ ag_account_get_store_sql (AgAccount *account, GError **error)
 /**
  * ag_account_supports_service:
  * @account: the #AgAccount.
+ * @service_type: the name of the service type to check for
  *
- * Returns: a #gboolean which tells whether @account supports the service type
- * @service_type.
+ * Get whether @service_type is supported on @account.
+ *
+ * Returns: %TRUE if @account supports the service type @service_type, %FALSE
+ * otherwise.
  */
 gboolean
 ag_account_supports_service (AgAccount *account, const gchar *service_type)
@@ -1365,11 +1368,12 @@ ag_account_supports_service (AgAccount *account, const gchar *service_type)
  * ag_account_list_services:
  * @account: the #AgAccount.
  *
+ * Get the list of services for @account. If the #AgManager was created with
+ * specified service_type this will return only services with this service_type.
+ *
  * Returns: (transfer full) (element-type AgService): a #GList of #AgService
- * items representing all the services supported by this account. If the
- * #AgManager was created with specified service_type this will return only
- * services with this service_type.
- * Must be free'd with ag_service_list_free().
+ * items representing all the services supported by this account. Must be
+ * free'd with ag_service_list_free().
  */
 GList *
 ag_account_list_services (AgAccount *account)
@@ -1407,6 +1411,8 @@ ag_account_list_services (AgAccount *account)
  * @account: the #AgAccount.
  * @service_type: the service type which all the returned services should
  * provide.
+ *
+ * Get the list of services supported by @account, filtered by @service_type.
  *
  * Returns: (transfer full) (element-type AgService): a #GList of #AgService
  * items representing all the services supported by this account which provide
@@ -1530,6 +1536,8 @@ _ag_account_settings_iter_init (AgAccount *account,
  * ag_account_list_enabled_services:
  * @account: the #AgAccount.
  *
+ * Gets a list of services that are enabled for @account.
+ *
  * Returns: (transfer full) (element-type AgService): a #GList of #AgService
  * items representing all the services which are enabled. Must be free'd with
  * ag_service_list_free().
@@ -1596,7 +1604,9 @@ ag_account_list_enabled_services (AgAccount *account)
  * ag_account_get_manager:
  * @account: the #AgAccount.
  *
- * Returns: (transfer none): the #AccountManager.
+ * Get the #AgManager for @account.
+ *
+ * Returns: (transfer none): the #AgManager.
  */
 AgManager *
 ag_account_get_manager (AgAccount *account)
@@ -1609,7 +1619,9 @@ ag_account_get_manager (AgAccount *account)
  * ag_account_get_provider_name:
  * @account: the #AgAccount.
  *
- * Returns: the name of the provider of @account.
+ * Get the name of the provider of @account.
+ *
+ * Returns: the name of the provider.
  */
 const gchar *
 ag_account_get_provider_name (AgAccount *account)
@@ -1622,7 +1634,9 @@ ag_account_get_provider_name (AgAccount *account)
  * ag_account_get_display_name:
  * @account: the #AgAccount.
  *
- * Returns: the display name for @account.
+ * Get the display name of @account.
+ *
+ * Returns: the display name.
  */
 const gchar *
 ag_account_get_display_name (AgAccount *account)
@@ -1703,6 +1717,8 @@ ag_account_select_service (AgAccount *account, AgService *service)
  * ag_account_get_selected_service:
  * @account: the #AgAccount.
  *
+ * Gets the selected #AgService for @account.
+ *
  * Returns: the selected service, or %NULL if no service is selected.
  */
 AgService *
@@ -1716,8 +1732,10 @@ ag_account_get_selected_service (AgAccount *account)
  * ag_account_get_enabled:
  * @account: the #AgAccount.
  *
- * Returns: a #gboolean which tells whether the selected service for @account is
- * enabled.
+ * Gets whether the selected service is enabled for @account.
+ *
+ * Returns: %TRUE if the selected service for @account is enabled, %FALSE
+ * otherwise.
  */
 gboolean
 ag_account_get_enabled (AgAccount *account)
@@ -1792,7 +1810,7 @@ ag_account_delete (AgAccount *account)
  * Gets the value of the configuration setting @key: @value must be a
  * #GValue initialized to the type of the setting.
  *
- * Returns: one of <type>#AgSettingSource</type>: %AG_SETTING_SOURCE_NONE if the setting is
+ * Returns: one of #AgSettingSource: %AG_SETTING_SOURCE_NONE if the setting is
  * not present, %AG_SETTING_SOURCE_ACCOUNT if the setting comes from the
  * account configuration, or %AG_SETTING_SOURCE_PROFILE if the value comes as
  * predefined in the profile.
@@ -2349,6 +2367,7 @@ ag_account_sign (AgAccount *account, const gchar *key, const gchar *token)
 
 /**
  * ag_account_verify:
+ * @account: the #AgAccount.
  * @key: the name of the key or prefix of the keys to be verified.
  * @token: location to receive the pointer to aegis token.
  *
@@ -2442,6 +2461,7 @@ ag_account_verify (AgAccount *account, const gchar *key, const gchar **token)
 
 /**
  * ag_account_verify_with_tokens:
+ * @account: the #AgAccount.
  * @key: the name of the key or prefix of the keys to be verified.
  * @tokens: array of aegis tokens.
  *

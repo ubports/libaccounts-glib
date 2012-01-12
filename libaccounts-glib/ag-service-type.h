@@ -30,6 +30,11 @@
 
 G_BEGIN_DECLS
 
+/**
+ * AgServiceType:
+ *
+ * Use the accessor functions below.
+ */
 typedef struct _AgServiceType AgServiceType;
 
 GType ag_service_type_get_type (void) G_GNUC_CONST;

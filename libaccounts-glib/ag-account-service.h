@@ -49,9 +49,24 @@ typedef struct _AgAccountServiceClass AgAccountServiceClass;
 typedef struct _AgAccountServicePrivate AgAccountServicePrivate;
 typedef struct _AgAccountService AgAccountService;
 
+/**
+ * AgAccountServiceNotifyCb:
+ * @self: a #AgAccountService.
+ * @key: the key that was changed
+ * @user_data: user data set when the signal was connected
+ *
+ * Notification callback for when @self is modified.
+ *
+ * @see_also: account_watch_cb
+ */
 typedef void (*AgAccountServiceNotifyCb) (AgAccountService *self, const gchar *key,
                                    gpointer user_data);
 
+/**
+ * AgAccountServiceClass:
+ *
+ * Use the accessor functions below.
+ */
 struct _AgAccountServiceClass
 {
     GObjectClass parent_class;
@@ -64,6 +79,11 @@ struct _AgAccountServiceClass
     void (*_ag_reserved7) (void);
 };
 
+/**
+ * AgAccountService:
+ *
+ * Use the accessor functions below.
+ */
 struct _AgAccountService
 {
     GObject parent_instance;
@@ -74,8 +94,8 @@ GType ag_account_service_get_type (void) G_GNUC_CONST;
 
 /**
  * SECTION:ag-account-service
- * @title: AgAccountService
  * @short_description: Account settings for a specific service
+ * @include: libaccounts-glib/ag-account-service.h
  *
  * The #AgAccountService object provides access to the account settings for a
  * specific service type. It is meant to be easier to use than the AgAccount

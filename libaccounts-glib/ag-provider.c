@@ -24,8 +24,8 @@
 
 /**
  * SECTION:ag-provider
- * @title: AgProvider
  * @short_description: A representation of a provider.
+ * @include: libaccounts-glib/ag-provider.h
  *
  * The #AgProvider structure represents a provider. The structure is not
  * directly exposed to applications, but its fields are accessible via getter
@@ -333,6 +333,8 @@ _ag_provider_new_from_file (const gchar *provider_name)
  * ag_provider_get_name:
  * @provider: the #AgProvider.
  *
+ * Get the name of the #AgProvider.
+ *
  * Returns: the name of @provider.
  */
 const gchar *
@@ -345,6 +347,8 @@ ag_provider_get_name (AgProvider *provider)
 /**
  * ag_provider_get_i18n_domain:
  * @provider: the #AgProvider.
+ *
+ * Get the translation domain of the #AgProvider.
  *
  * Returns: the translation domain.
  */
@@ -359,6 +363,8 @@ ag_provider_get_i18n_domain (AgProvider *provider)
  * ag_provider_get_icon_name:
  * @provider: the #AgProvider.
  *
+ * Get the icon name of the #AgProvider.
+ *
  * Returns: the icon_name.
  */
 const gchar *
@@ -371,6 +377,8 @@ ag_provider_get_icon_name (AgProvider *provider)
 /**
  * ag_provider_get_display_name:
  * @provider: the #AgProvider.
+ *
+ * Get the display name of the #AgProvider.
  *
  * Returns: the display name of @provider.
  */

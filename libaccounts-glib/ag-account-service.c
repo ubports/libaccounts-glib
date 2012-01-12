@@ -231,6 +231,12 @@ ag_account_service_new(AgAccount *account, AgService *service)
                          NULL);
 }
 
+/**
+ * ag_account_service_get_account:
+ * @self: the #AgAccountService.
+ *
+ * Get the #AgAccount associated with @self.
+ */
 AgAccount *
 ag_account_service_get_account (AgAccountService *self)
 {
@@ -239,6 +245,12 @@ ag_account_service_get_account (AgAccountService *self)
     return self->priv->account;
 }
 
+/**
+ * ag_account_service_get_service:
+ * @self: the #AgAccountService.
+ *
+ * Get the #AgService associated with @self.
+ */
 AgService *
 ag_account_service_get_service (AgAccountService *self)
 {
