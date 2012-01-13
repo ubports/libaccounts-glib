@@ -24,8 +24,8 @@
 
 /**
  * SECTION:ag-service
- * @title: AgService
  * @short_description: A representation of a service.
+ * @include: libaccounts-glib/ag-service.h
  *
  * The #AgService structure represents a service. The structure is not directly
  * exposed to applications, but its fields are accessible via getter methods.
@@ -439,6 +439,8 @@ _ag_service_get_default_setting (AgService *service, const gchar *key)
  * ag_service_get_name:
  * @service: the #AgService.
  *
+ * Gets the name of the #AgService.
+ *
  * Returns: the name of @service.
  */
 const gchar *
@@ -451,6 +453,8 @@ ag_service_get_name (AgService *service)
 /**
  * ag_service_get_display_name:
  * @service: the #AgService.
+ *
+ * Gets the display name of the #AgService.
  *
  * Returns: the display name of @service.
  */
@@ -467,6 +471,8 @@ ag_service_get_display_name (AgService *service)
  * ag_service_get_service_type:
  * @service: the #AgService.
  *
+ * Gets the service type of the #AgService.
+ *
  * Returns: the type of @service.
  */
 const gchar *
@@ -482,6 +488,8 @@ ag_service_get_service_type (AgService *service)
  * ag_service_get_provider:
  * @service: the #AgService.
  *
+ * Gets the provider name of the #AgService.
+ *
  * Returns: the name of the provider of @service.
  */
 const gchar *
@@ -496,6 +504,8 @@ ag_service_get_provider (AgService *service)
 /**
  * ag_service_get_icon_name:
  * @service: the #AgService.
+ *
+ * Gets the icon name of the #AgService.
  *
  * Returns: the name of the icon of @service.
  */
@@ -513,6 +523,8 @@ ag_service_get_icon_name (AgService *service)
 /**
  * ag_service_get_i18n_domain:
  * @service: the #AgService.
+ *
+ * Gets the translation domain of the #AgService.
  *
  * Returns: the name of the translation catalog.
  */

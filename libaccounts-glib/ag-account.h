@@ -42,6 +42,11 @@ typedef struct _AgAccountClass AgAccountClass;
 typedef struct _AgAccountPrivate AgAccountPrivate;
 typedef struct _AgAccount AgAccount;
 
+/**
+ * AgAccountClass:
+ *
+ * Use the accessor functions below.
+ */
 struct _AgAccountClass
 {
     GObjectClass parent_class;
@@ -54,6 +59,11 @@ struct _AgAccountClass
     void (*_ag_reserved7) (void);
 };
 
+/**
+ * AgAccount:
+ *
+ * Use the accessor functions below.
+ */
 struct _AgAccount
 {
     GObject parent_instance;
@@ -89,6 +99,15 @@ void ag_account_set_enabled (AgAccount *account, gboolean enabled);
 
 void ag_account_delete (AgAccount *account);
 
+/**
+ * AgSettingSource:
+ * @AG_SETTING_SOURCE_NONE: the setting is not present
+ * @AG_SETTING_SOURCE_ACCOUNT: the setting comes from the current account
+ * configuration
+ * @AG_SETTING_SOURCE_PROFILE: the setting comes from the predefined profile
+ *
+ * The source of a setting on a #AgAccount.
+ */
 typedef enum {
     AG_SETTING_SOURCE_NONE = 0,
     AG_SETTING_SOURCE_ACCOUNT,
@@ -102,6 +121,12 @@ void ag_account_set_value (AgAccount *account, const gchar *key,
 
 typedef struct _AgAccountSettingIter AgAccountSettingIter;
 
+/**
+ * AgAccountSettingIter:
+ * @account: the AgAccount to iterate over
+ *
+ * Iterator for account settings.
+ */
 struct _AgAccountSettingIter {
     AgAccount *account;
     /*< private >*/
@@ -126,6 +151,12 @@ gboolean ag_account_settings_iter_next (AgAccountSettingIter *iter,
 AgAccountSettingIter *ag_account_get_settings_iter (AgAccount *account,
                                                     const gchar *key_prefix);
 
+/**
+ * AgAccountWatch:
+ *
+ * An opaque struct returned from ag_account_watch_dir() and
+ * ag_account_watch_key().
+ */
 typedef struct _AgAccountWatch *AgAccountWatch;
 
 typedef void (*AgAccountNotifyCb) (AgAccount *account, const gchar *key,

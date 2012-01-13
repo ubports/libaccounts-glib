@@ -30,6 +30,11 @@ G_BEGIN_DECLS
 typedef struct _AgAccount AgAccount;
 typedef struct _AgManager AgManager;
 
+/**
+ * AgAccountId:
+ *
+ * ID of an account.
+ */
 typedef guint AgAccountId;
 
 G_END_DECLS

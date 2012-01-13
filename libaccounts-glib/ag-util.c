@@ -109,7 +109,11 @@ _ag_value_to_db (const GValue *value)
     {
         gint64 n;
 
+#if GLIB_CHECK_VERSION (2, 31, 0)
+        if (type == G_TYPE_CHAR) n = g_value_get_schar (value);
+#else
         if (type == G_TYPE_CHAR) n = g_value_get_char (value);
+#endif
         else if (type == G_TYPE_INT) n = g_value_get_int (value);
         else if (type == G_TYPE_INT64) n = g_value_get_int64 (value);
         else if (type == G_TYPE_ENUM) n = g_value_get_enum (value);
@@ -352,7 +356,11 @@ ag_value_append (DBusMessageIter *iter, const GValue *value)
         break;
     case G_TYPE_CHAR:
         dbus_type = DBUS_TYPE_INT32;
+#if GLIB_CHECK_VERSION (2, 31, 0)
+        val_int = g_value_get_schar (value);
+#else
         val_int = g_value_get_char (value);
+#endif
         val = &val_int;
         basic_type = TRUE;
         break;
@@ -445,7 +453,11 @@ _ag_iter_get_value (DBusMessageIter *iter, GValue *value)
         break;
     case G_TYPE_CHAR:
         dbus_message_iter_get_basic (&var, &val_int);
+#if GLIB_CHECK_VERSION (2, 31, 0)
+        g_value_set_schar (value, val_int);
+#else
         g_value_set_char (value, val_int);
+#endif
         break;
     case G_TYPE_UINT:
         dbus_message_iter_get_basic (&var, &val_uint);
