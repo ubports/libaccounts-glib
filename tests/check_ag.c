@@ -66,6 +66,24 @@ typedef struct {
     gboolean enabled;
 } EnabledCbData;
 
+static gboolean
+test_strv_equal (const gchar **s1, const gchar **s2)
+{
+    gint i;
+
+    if (s1 == NULL) return s2 == NULL;
+    if (s1 != NULL && s2 == NULL) return FALSE;
+
+    for (i = 0; s1[i] != NULL; i++)
+        if (strcmp(s1[i], s2[i]) != 0) {
+            g_debug ("s1: %s, s2: %s", s1[i], s2[i]);
+            return FALSE;
+        }
+    if (s2[i] != NULL) return FALSE;
+
+    return TRUE;
+}
+
 static guint
 time_diff(struct timespec *start_time, struct timespec *end_time)
 {
@@ -760,6 +778,20 @@ START_TEST(test_service)
     const gint interval = 30;
     const gboolean check_automatically = TRUE;
     const gchar *display_name = "My test account";
+    const gchar **string_list;
+    const gchar *capabilities[] = {
+        "chat",
+        "file",
+        "smileys",
+        NULL
+    };
+    const gchar *animals[] = {
+        "cat",
+        "dog",
+        "monkey",
+        "snake",
+        NULL
+    };
     AgSettingSource source;
     GError *error = NULL;
 
@@ -809,6 +841,16 @@ START_TEST(test_service)
                  "Wrong port number: %d", g_value_get_int (&value));
     g_value_unset (&value);
 
+    /* test getting a string list */
+    g_value_init (&value, G_TYPE_STRV);
+    source = ag_account_get_value (account, "parameters/capabilities", &value);
+    fail_unless (source == AG_SETTING_SOURCE_PROFILE,
+                 "Cannot get capabilities from profile");
+    string_list = g_value_get_boxed (&value);
+    fail_unless (test_strv_equal (capabilities, string_list),
+                 "Wrong capabilties");
+    g_value_unset (&value);
+
     /* enable the service */
     ag_account_set_enabled (account, TRUE);
 
@@ -825,6 +867,11 @@ START_TEST(test_service)
     g_value_init (&value, G_TYPE_INT);
     g_value_set_int (&value, interval);
     ag_account_set_value (account, "interval", &value);
+    g_value_unset (&value);
+
+    g_value_init (&value, G_TYPE_STRV);
+    g_value_set_boxed (&value, animals);
+    ag_account_set_value (account, "pets", &value);
     g_value_unset (&value);
 
     service2 = ag_manager_get_service (manager, "OtherService");
@@ -907,6 +954,14 @@ START_TEST(test_service)
     source = ag_account_get_value (account, "interval", &value);
     fail_unless (source == AG_SETTING_SOURCE_ACCOUNT, "Wrong source");
     fail_unless (g_value_get_int (&value) == interval, "Wrong value");
+    g_value_unset (&value);
+
+    g_value_init (&value, G_TYPE_STRV);
+    source = ag_account_get_value (account, "pets", &value);
+    fail_unless (source == AG_SETTING_SOURCE_ACCOUNT, "Wrong source");
+    string_list = g_value_get_boxed (&value);
+    fail_unless (test_strv_equal (string_list, animals),
+                 "Wrong animals :-)");
     g_value_unset (&value);
 
     /* check also value conversion */
@@ -1537,6 +1592,13 @@ START_TEST(test_concurrency)
     AgSettingSource source;
     EnabledCbData ecd;
     gint ret;
+    const gchar **string_list;
+    const gchar *numbers[] = {
+        "one",
+        "two",
+        "three",
+        NULL
+    };
 
     g_type_init ();
 
@@ -1609,6 +1671,14 @@ START_TEST(test_concurrency)
     g_value_init (&value, G_TYPE_STRING);
     ag_account_get_value (account, "string", &value);
     fail_unless (g_strcmp0 (g_value_get_string (&value), "a string") == 0);
+    g_value_unset (&value);
+
+    g_value_init (&value, G_TYPE_STRV);
+    source = ag_account_get_value (account, "numbers", &value);
+    fail_unless (source == AG_SETTING_SOURCE_ACCOUNT, "Wrong source");
+    string_list = g_value_get_boxed (&value);
+    fail_unless (test_strv_equal (string_list, numbers),
+                 "Wrong numbers");
     g_value_unset (&value);
 
     /* we expect more keys in MyService */
