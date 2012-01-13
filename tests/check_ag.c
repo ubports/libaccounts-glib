@@ -767,6 +767,134 @@ START_TEST(test_account_service_list)
 }
 END_TEST
 
+static void
+write_strings_to_account (AgAccount *account, const gchar *key_prefix,
+                          const gchar **strings)
+{
+    GValue value = { 0, };
+    gint i;
+
+    /* first string is the key, second the value */
+    for (i = 0; strings[i] != NULL; i += 2)
+    {
+        gchar *key = g_strdup_printf ("%s/%s", key_prefix, strings[i]);
+        g_value_init (&value, G_TYPE_STRING);
+        g_value_set_static_string (&value, strings[i + 1]);
+        ag_account_set_value (account, key, &value);
+        g_value_unset (&value);
+        g_free (key);
+    }
+}
+
+static void
+check_string_in_params (GHashTable *params,
+                        const gchar *key, const gchar *expected)
+{
+    GValue *value;
+    const gchar *actual;
+    gboolean equal;
+
+    value = g_hash_table_lookup (params, key);
+    if (value == NULL)
+    {
+        if (expected == NULL) return;
+        fail ("Key %s is missing", key);
+    }
+
+    actual = g_value_get_string (value);
+    equal = (g_strcmp0 (actual, expected) == 0);
+    if (!equal)
+    {
+        g_warning ("Values differ! Expected %s, actual %s", expected, actual);
+    }
+
+    fail_unless (equal);
+}
+
+START_TEST(test_auth_data)
+{
+    AgAccountId account_id;
+    AgAccountService *account_service;
+    AgService *my_service;
+    const gchar *method = "dummy-method";
+    const gchar *mechanism = "dummy-mechanism";
+    const gchar *global_params[] = {
+        "id", "123",
+        "service", "contacts",
+        NULL
+    };
+    const gchar *service_params[] = {
+        "display", "mobile",
+        "service", "calendar",
+        NULL
+    };
+    gchar *key_prefix;
+    AgAuthData *data;
+    GHashTable *params;
+    GValue value = { 0, };
+
+    /* delete the database */
+    g_unlink (db_filename);
+
+    g_type_init ();
+
+    manager = ag_manager_new ();
+
+    key_prefix = g_strdup_printf ("auth/%s/%s", method, mechanism);
+
+    /* create a new account */
+    account = ag_manager_create_account (manager, "maemo");
+    ag_account_set_enabled (account, TRUE);
+    write_strings_to_account (account, key_prefix, global_params);
+
+    my_service = ag_manager_get_service (manager, "MyService");
+    fail_unless (my_service != NULL);
+    ag_account_select_service (account, my_service);
+    ag_account_set_enabled (account, TRUE);
+    write_strings_to_account (account, key_prefix, service_params);
+
+    g_value_init (&value, G_TYPE_STRING);
+    g_value_set_static_string (&value, method);
+    ag_account_set_value (account, "auth/method", &value);
+    g_value_unset (&value);
+
+    g_value_init (&value, G_TYPE_STRING);
+    g_value_set_static_string (&value, mechanism);
+    ag_account_set_value (account, "auth/mechanism", &value);
+    g_value_unset (&value);
+
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    fail_unless (data_stored, "Callback not invoked immediately");
+    account_id = account->id;
+    g_object_unref (account);
+    account = NULL;
+
+    /* reload the account and get the AccountService */
+    account = ag_manager_get_account (manager, account_id);
+    fail_unless (AG_IS_ACCOUNT (account));
+    account_service = ag_account_service_new (account, my_service);
+    fail_unless (AG_IS_ACCOUNT_SERVICE (account_service));
+
+    /* get the auth data and check its contents */
+    data = ag_account_service_get_auth_data (account_service);
+    fail_unless (data != NULL);
+    fail_unless (strcmp (ag_auth_data_get_method (data), method) == 0);
+    fail_unless (strcmp (ag_auth_data_get_mechanism (data), mechanism) == 0);
+    params = ag_auth_data_get_parameters (data);
+    fail_unless (params != NULL);
+
+    check_string_in_params (params, "id", "123");
+    check_string_in_params (params, "display", "mobile");
+    check_string_in_params (params, "service", "calendar");
+
+    ag_auth_data_unref (data);
+    g_object_unref (account_service);
+    ag_service_unref (my_service);
+
+    end_test ();
+}
+END_TEST
+
 START_TEST(test_service)
 {
     GValue value = { 0 };
@@ -2724,6 +2852,11 @@ ag_suite(const char *test_case)
     tcase_add_test (tc, test_account_service_settings);
     tcase_add_test (tc, test_account_service_list);
     IF_TEST_CASE_ENABLED("AccountService")
+        suite_add_tcase (s, tc);
+
+    tc = tcase_create("AuthData");
+    tcase_add_test (tc, test_auth_data);
+    IF_TEST_CASE_ENABLED("AuthData")
         suite_add_tcase (s, tc);
 
     tc = tcase_create("List");
