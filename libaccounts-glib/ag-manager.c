@@ -24,8 +24,8 @@
 
 /**
  * SECTION:ag-manager
- * @title: AgManager
  * @short_description: The account manager object
+ * @include: libaccounts-glib/ag-manager.h
  *
  * The #AgManager is the main object in this library.
  */
@@ -342,7 +342,7 @@ check_signal_processed (AgManagerPrivate *priv, struct timespec *ts)
     return FALSE;
 }
 
-/**
+/*
  * checks whether the sender of the message is listed in the object_paths array
  */
 static gboolean
@@ -1329,7 +1329,7 @@ ag_manager_class_init (AgManagerClass *klass)
         1, G_TYPE_UINT);
 
     /**
-     * AgManager::account-enabled:
+     * AgManager::enabled-event:
      * @manager: the #AgManager.
      * @account_id: the #AgAccountId of the account that has been enabled.
      *
@@ -1392,6 +1392,8 @@ ag_manager_class_init (AgManagerClass *klass)
 
 /**
  * ag_manager_new:
+ *
+ * Create a new #AgManager.
  *
  * Returns: an instance of an #AgManager.
  */
@@ -1463,6 +1465,7 @@ ag_manager_list (AgManager *manager)
 /**
  * ag_manager_list_by_service_type:
  * @manager: the #AgManager.
+ * @service_type: the name of the service type to check for.
  *
  * Lists the accounts supporting the given service type.
  *
@@ -1525,6 +1528,7 @@ ag_manager_list_enabled (AgManager *manager)
 /**
  * ag_manager_list_enabled_by_service_type:
  * @manager: the #AgManager.
+ * @service_type: the name of the service type to check for.
  *
  * Lists the enabled accounts supporting the given service type.
  *
@@ -2127,6 +2131,8 @@ ag_manager_list_providers (AgManager *manager)
  * ag_manager_new_for_service_type:
  * @service_type: the name of a service type
  *
+ * Create a new #AgManager with the @service_type service type.
+ *
  * Returns: an instance of an #AgManager with specified service type.
  */
 AgManager *
@@ -2142,6 +2148,14 @@ ag_manager_new_for_service_type (const gchar *service_type)
     return manager;
 }
 
+/**
+ * ag_manager_get_service_type:
+ * @manager: the #AgManager.
+ *
+ * Get the service type for @manager.
+ *
+ * Returns: the name of the service type for the supplied @manager.
+ */
 const gchar *
 ag_manager_get_service_type (AgManager *manager)
 {
@@ -2172,6 +2186,8 @@ ag_manager_set_db_timeout (AgManager *manager, guint timeout_ms)
  * ag_manager_get_db_timeout:
  * @manager: the #AgManager.
  *
+ * Get the timeout of database operations for @manager, in milliseconds.
+ *
  * Returns: the timeout (in milliseconds) for database operations.
  */
 guint
@@ -2200,7 +2216,10 @@ ag_manager_set_abort_on_db_timeout (AgManager *manager, gboolean abort)
  * ag_manager_get_abort_on_db_timeout:
  * @manager: the #AgManager.
  *
- * Returns: whether the library will abort when a timeout error occurs.
+ * Get whether the library will abort when a timeout error occurs.
+ *
+ * Returns: %TRUE is the library will abort when a timeout error occurs, %FALSE
+ * otherwise.
  */
 gboolean
 ag_manager_get_abort_on_db_timeout (AgManager *manager)
