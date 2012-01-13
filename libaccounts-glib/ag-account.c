@@ -43,10 +43,6 @@
 
 #include "config.h"
 
-#ifdef HAVE_AEGISCRYPTO
-  #include <aegis_crypto.h>
-#endif
-
 #include <string.h>
 
 #define SERVICE_GLOBAL "global"
@@ -314,17 +310,6 @@ ag_account_watch_int (AgAccount *account, gchar *key, gchar *prefix,
 
     return watch;
 }
-
-#ifdef HAVE_AEGISCRYPTO
-static gboolean
-got_account_signature (sqlite3_stmt *stmt, AgSignature *sgn)
-{
-    sgn->signature = g_strdup ((gchar *)sqlite3_column_text (stmt, 0));
-    sgn->token = g_strdup ((gchar *)sqlite3_column_text (stmt, 1));
-
-    return TRUE;
-}
-#endif
 
 static gboolean
 got_account_setting (sqlite3_stmt *stmt, GHashTable *settings)
@@ -2218,100 +2203,12 @@ ag_account_store_blocking (AgAccount *account, GError **error)
     return TRUE;
 }
 
-#ifdef HAVE_AEGISCRYPTO
-static gboolean
-store_data (gpointer key, gpointer value, gpointer data)
-{
-    const gchar *str;
-    str = _ag_value_to_db ((GValue *)value);
-    g_string_append (data, (gchar *)key);
-    g_string_append (data, str);
-    return TRUE;
-}
-
-static gchar*
-signature_data (AgAccount *account, const gchar *key)
-{
-    GString *data;
-    AgServiceChanges *sc;
-    gboolean key_is_prefix = FALSE;
-
-    data = g_string_sized_new (512);
-    sc = account_service_changes_get (account->priv, account->priv->service, FALSE);
-
-    g_string_append (data, key);
-
-    if (g_str_has_suffix (key, "/"))
-        key_is_prefix = TRUE;
-
-    if (key_is_prefix)
-    {
-        AgAccountSettingIter iter;
-        const gchar *str;
-        const GValue *val;
-
-        GTree *tree;
-        tree = g_tree_new ((GCompareFunc)g_strcmp0);
-
-        ag_account_settings_iter_init (account, &iter, key);
-        while (ag_account_settings_iter_next (&iter, &str, &val))
-        {
-            g_tree_insert (tree, (gpointer)str, (gpointer)val);
-        }
-
-        if (sc->settings)
-        {
-            gpointer p_key, p_val;
-            GHashTableIter i_settings;
-            g_hash_table_iter_init (&i_settings, sc->settings);
-            while (g_hash_table_iter_next (&i_settings, &p_key, &p_val))
-            {
-                g_tree_insert (tree, p_key, p_val);
-            }
-        }
-
-        g_tree_foreach (tree, store_data, data);
-        g_tree_destroy (tree);
-    }
-    else
-    {
-        const gchar *val_str = NULL;
-
-        if (sc->settings)
-        {
-            gpointer value;
-            value = g_hash_table_lookup (sc->settings, key);
-            if (value)
-            {
-                val_str = _ag_value_to_db ((GValue *)value);
-                g_string_append (data, val_str);
-            }
-        }
-
-        if (!val_str)
-        {
-            GValue val = { 0 };
-
-            g_value_init (&val, G_TYPE_STRING);
-            ag_account_get_value (account, key, &val);
-            val_str = _ag_value_to_db (&val);
-            if (val_str)
-                g_string_append (data, val_str);
-            g_value_unset (&val);
-        }
-    }
-
-    return g_string_free (data, FALSE);
-}
-#endif
-
 /**
  * ag_account_sign:
  * @account: the #AgAccount.
  * @key: the name of the key or prefix of the keys to be signed.
- * @token: aegis token (NULL teminated string) or NULL in order to use the
- *         application aegis ID token, for creating the signature. The
- *         application must possess (request) the token.
+ * @token: a signing token (NULL teminated string) for creating the signature.
+ * The application must possess (request) the token.
  *
  * Creates signature of the @key with given @token. The account must be
  * stored prior to calling this function.
@@ -2319,50 +2216,7 @@ signature_data (AgAccount *account, const gchar *key)
 void
 ag_account_sign (AgAccount *account, const gchar *key, const gchar *token)
 {
-#ifdef HAVE_AEGISCRYPTO
-    AgSignature *sgn;
-    AgAccountPrivate *priv;
-    AgServiceChanges *sc;
-    gchar *data;
-    struct aegis_signature_t signature;
-    gchar *signature_string;
-
-    g_return_if_fail (key != NULL);
-    g_return_if_fail (token != NULL);
-    g_return_if_fail (AG_IS_ACCOUNT (account));
-
-    data = signature_data (account, key);
-
-    g_return_if_fail (data != NULL);
-
-    aegis_crypto_result result_sign =
-            aegis_crypto_sign (data,
-                               strlen (data),
-                               token,
-                               &signature);
-    g_free (data);
-    g_return_if_fail (result_sign == aegis_crypto_ok);
-
-    aegis_crypto_signature_to_string (&signature,
-                                      aegis_as_base64,
-                                      token,
-                                      &signature_string);
-
-    sgn = g_slice_new (AgSignature);
-    sgn->signature = g_strdup (signature_string);
-    aegis_crypto_free (signature_string);
-    sgn->token = g_strdup (token);
-
-    priv = account->priv;
-    sc = account_service_changes_get (priv, priv->service, TRUE);
-
-    g_hash_table_insert (sc->signatures,
-                         g_strdup (key), sgn);
-
-    aegis_crypto_finish ();
-#else
-    g_warning ("ag_account_sign: aegis-crypto not found! Unable to sign the key.");
-#endif
+    g_warning ("ag_account_sign: no encryptor supported.");
 }
 
 /**
@@ -2380,83 +2234,8 @@ ag_account_sign (AgAccount *account, const gchar *key, const gchar *token)
 gboolean
 ag_account_verify (AgAccount *account, const gchar *key, const gchar **token)
 {
-#ifdef HAVE_AEGISCRYPTO
-    AgAccountPrivate *priv;
-    AgServiceSettings *ss;
-    guint service_id;
-    gchar *data;
-    gchar *sql;
-    AgSignature sgn;
-    GString *sql_str;
-    aegis_system_mode_t made_in_mode;
-    aegis_crypto_result result_verify;
-    aegis_crypto_result result_convert;
-    struct aegis_signature_t signature;
-    char *token_name;
-
-    g_return_val_if_fail (AG_IS_ACCOUNT (account), FALSE);
-
-    priv = account->priv;
-
-    ss = get_service_settings (priv, priv->service, FALSE);
-    g_return_val_if_fail (ss != NULL, FALSE);
-
-    service_id = (priv->service != NULL) ? priv->service->id : 0;
-
-    sql_str = g_string_sized_new (512);
-    _ag_string_append_printf (sql_str,
-                              "SELECT signature, token FROM Signatures "
-                              "WHERE account = %u AND service = %u AND key = %Q",
-                              account->id, service_id, key);
-    sql = g_string_free (sql_str, FALSE);
-    _ag_manager_exec_query (priv->manager,
-                            (AgQueryCallback)got_account_signature,
-                            &sgn, sql);
-
-    g_free (sql);
-    data = signature_data (account, key);
-
-    aegis_crypto_init();
-
-    token_name = NULL;
-    result_convert =  aegis_crypto_string_to_signature (sgn.signature,
-                                                        &signature,
-                                                        &token_name);
-
-    if (result_convert != aegis_crypto_ok) {
-        *token = NULL;
-        aegis_crypto_finish ();
-        g_free (data);
-        return FALSE;
-    }
-
-    result_verify = aegis_crypto_verify (&signature,
-                                         token_name,
-                                         data,
-                                         strlen (data),
-                                         &made_in_mode);
-
-    if (result_verify != aegis_crypto_ok) {
-        *token = NULL;
-        aegis_crypto_free (token_name);
-        aegis_crypto_finish ();
-        g_free (data);
-        return FALSE;
-    }
-
-    *token = g_strdup (token_name);
-    if (token_name)
-        aegis_crypto_free (token_name);
-
-    aegis_crypto_finish ();
-
-    g_free (data);
-
-    return TRUE;
-#else
-    g_warning ("ag_account_verify: aegis-crypto not found! Unable to verify the key.");
+    g_warning ("ag_account_verify: no encryptor supported.");
     return FALSE;
-#endif
 }
 
 /**
