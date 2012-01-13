@@ -66,6 +66,24 @@ typedef struct {
     gboolean enabled;
 } EnabledCbData;
 
+static gboolean
+test_strv_equal (const gchar **s1, const gchar **s2)
+{
+    gint i;
+
+    if (s1 == NULL) return s2 == NULL;
+    if (s1 != NULL && s2 == NULL) return FALSE;
+
+    for (i = 0; s1[i] != NULL; i++)
+        if (strcmp(s1[i], s2[i]) != 0) {
+            g_debug ("s1: %s, s2: %s", s1[i], s2[i]);
+            return FALSE;
+        }
+    if (s2[i] != NULL) return FALSE;
+
+    return TRUE;
+}
+
 static guint
 time_diff(struct timespec *start_time, struct timespec *end_time)
 {
@@ -760,6 +778,20 @@ START_TEST(test_service)
     const gint interval = 30;
     const gboolean check_automatically = TRUE;
     const gchar *display_name = "My test account";
+    const gchar **string_list;
+    const gchar *capabilities[] = {
+        "chat",
+        "file",
+        "smileys",
+        NULL
+    };
+    const gchar *animals[] = {
+        "cat",
+        "dog",
+        "monkey",
+        "snake",
+        NULL
+    };
     AgSettingSource source;
     GError *error = NULL;
 
@@ -809,6 +841,16 @@ START_TEST(test_service)
                  "Wrong port number: %d", g_value_get_int (&value));
     g_value_unset (&value);
 
+    /* test getting a string list */
+    g_value_init (&value, G_TYPE_STRV);
+    source = ag_account_get_value (account, "parameters/capabilities", &value);
+    fail_unless (source == AG_SETTING_SOURCE_PROFILE,
+                 "Cannot get capabilities from profile");
+    string_list = g_value_get_boxed (&value);
+    fail_unless (test_strv_equal (capabilities, string_list),
+                 "Wrong capabilties");
+    g_value_unset (&value);
+
     /* enable the service */
     ag_account_set_enabled (account, TRUE);
 
@@ -825,6 +867,11 @@ START_TEST(test_service)
     g_value_init (&value, G_TYPE_INT);
     g_value_set_int (&value, interval);
     ag_account_set_value (account, "interval", &value);
+    g_value_unset (&value);
+
+    g_value_init (&value, G_TYPE_STRV);
+    g_value_set_boxed (&value, animals);
+    ag_account_set_value (account, "pets", &value);
     g_value_unset (&value);
 
     service2 = ag_manager_get_service (manager, "OtherService");
@@ -907,6 +954,14 @@ START_TEST(test_service)
     source = ag_account_get_value (account, "interval", &value);
     fail_unless (source == AG_SETTING_SOURCE_ACCOUNT, "Wrong source");
     fail_unless (g_value_get_int (&value) == interval, "Wrong value");
+    g_value_unset (&value);
+
+    g_value_init (&value, G_TYPE_STRV);
+    source = ag_account_get_value (account, "pets", &value);
+    fail_unless (source == AG_SETTING_SOURCE_ACCOUNT, "Wrong source");
+    string_list = g_value_get_boxed (&value);
+    fail_unless (test_strv_equal (string_list, animals),
+                 "Wrong animals :-)");
     g_value_unset (&value);
 
     /* check also value conversion */
@@ -1536,6 +1591,14 @@ START_TEST(test_concurrency)
     gboolean unsigned_changed;
     AgSettingSource source;
     EnabledCbData ecd;
+    gint ret;
+    const gchar **string_list;
+    const gchar *numbers[] = {
+        "one",
+        "two",
+        "three",
+        NULL
+    };
 
     g_type_init ();
 
@@ -1545,7 +1608,8 @@ START_TEST(test_concurrency)
                       G_CALLBACK (on_account_created), &account_id);
 
     account_id = 0;
-    system ("test-process create myprovider MyAccountName");
+    ret = system ("test-process create myprovider MyAccountName");
+    fail_unless (ret != -1);
 
     main_loop = g_main_loop_new (NULL, FALSE);
     source_id = g_timeout_add_seconds (2, concurrency_test_failed, NULL);
@@ -1572,7 +1636,8 @@ START_TEST(test_concurrency)
     g_signal_connect (manager, "account-deleted",
                       G_CALLBACK (on_account_deleted), &account_id);
     sprintf (command, "test-process delete %d", account_id);
-    system (command);
+    ret = system (command);
+    fail_unless (ret != -1);
 
     source_id = g_timeout_add_seconds (2, concurrency_test_failed, NULL);
     g_main_loop_run (main_loop);
@@ -1583,7 +1648,8 @@ START_TEST(test_concurrency)
     fail_unless (account_id == 0, "Account still alive");
 
     /* check a more complex creation */
-    system ("test-process create2 myprovider MyAccountName");
+    ret = system ("test-process create2 myprovider MyAccountName");
+    fail_unless (ret != -1);
 
     source_id = g_timeout_add_seconds (2, concurrency_test_failed, NULL);
     g_main_loop_run (main_loop);
@@ -1605,6 +1671,14 @@ START_TEST(test_concurrency)
     g_value_init (&value, G_TYPE_STRING);
     ag_account_get_value (account, "string", &value);
     fail_unless (g_strcmp0 (g_value_get_string (&value), "a string") == 0);
+    g_value_unset (&value);
+
+    g_value_init (&value, G_TYPE_STRV);
+    source = ag_account_get_value (account, "numbers", &value);
+    fail_unless (source == AG_SETTING_SOURCE_ACCOUNT, "Wrong source");
+    string_list = g_value_get_boxed (&value);
+    fail_unless (test_strv_equal (string_list, numbers),
+                 "Wrong numbers");
     g_value_unset (&value);
 
     /* we expect more keys in MyService */
@@ -1657,7 +1731,8 @@ START_TEST(test_concurrency)
 
     /* make changes remotely */
     sprintf (command, "test-process change %d", account_id);
-    system (command);
+    ret = system (command);
+    fail_unless (ret != -1);
 
     source_id = g_timeout_add_seconds (2, concurrency_test_failed, NULL);
     g_main_loop_run (main_loop);
@@ -1815,6 +1890,7 @@ START_TEST(test_blocking)
     gboolean ok;
     struct timespec start_time, end_time;
     gint fd;
+    gint ret;
 
     g_type_init ();
 
@@ -1848,7 +1924,8 @@ START_TEST(test_blocking)
 
     sprintf (command, "test-process lock_db %d %s &",
              timeout_ms, lock_filename);
-    system (command);
+    ret = system (command);
+    fail_unless (ret != -1);
 
     /* wait till the file is locked */
     while (lockf(fd, F_TEST, 0) == 0)
@@ -2234,6 +2311,8 @@ enabled_event_test_failed (gpointer userdata)
 
 START_TEST(test_manager_enabled_event)
 {
+    gint ret;
+
     g_type_init();
 
     /* delete the database */
@@ -2259,7 +2338,8 @@ START_TEST(test_manager_enabled_event)
 
     /* this command will enable MyService (which is of type e-mail) */
     sprintf (command, "test-process enabled_event %d", account->id);
-    system (command);
+    ret = system (command);
+    fail_unless (ret != -1);
 
     source_id = g_timeout_add_seconds (2, enabled_event_test_failed, NULL);
     g_main_loop_run (main_loop);
@@ -2272,7 +2352,8 @@ START_TEST(test_manager_enabled_event)
 
     /* now disable the account. This also should trigger the enabled-event. */
     sprintf (command, "test-process enabled_event2 %d", account->id);
-    system (command);
+    ret = system (command);
+    fail_unless (ret != -1);
 
     source_id = g_timeout_add_seconds (2, enabled_event_test_failed, NULL);
     g_main_loop_run (main_loop);
@@ -2544,6 +2625,7 @@ START_TEST(test_db_access)
     gchar command[512];
     gint timeout_ms;
     gint fd;
+    gint ret;
 
     /* This test is for making sure that no DB accesses occur while certain
      * events occur.
@@ -2569,12 +2651,14 @@ START_TEST(test_db_access)
                       G_CALLBACK (on_account_created_with_db_locked), NULL);
 
     /* create an account with the e-mail service type enabled */
-    system ("test-process create3 myprovider MyAccountName");
+    ret = system ("test-process create3 myprovider MyAccountName");
+    fail_unless (ret != -1);
 
     /* lock the DB for the specified timeout */
     sprintf (command, "test-process lock_db %d %s &",
              timeout_ms, lock_filename);
-    system (command);
+    ret = system (command);
+    fail_unless (ret != -1);
 
     /* wait till the file is locked */
     while (lockf (fd, F_TEST, 0) == 0)
