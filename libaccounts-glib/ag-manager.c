@@ -1548,7 +1548,7 @@ ag_manager_list_enabled_by_service_type (AgManager *manager,
     sqlite3_snprintf (sizeof (sql), sql,
                       "SELECT Settings.account FROM Settings "
                       "INNER JOIN Services ON Settings.service = Services.id "
-                      "WHERE Settings.key='enabled' AND Settings.value='1' "
+                      "WHERE Settings.key='enabled' AND Settings.value='true' "
                       "AND Services.type = %Q AND Settings.account IN "
                       "(SELECT id FROM Accounts WHERE enabled=1);",
                       service_type);
