@@ -49,6 +49,7 @@
 
 #define PROVIDER    "dummyprovider"
 #define TEST_STRING "Hey dude!"
+#define TEST_SERVICE_VALUE  "calendar"
 
 static gchar *db_filename;
 static GMainLoop *main_loop = NULL;
@@ -825,7 +826,7 @@ START_TEST(test_auth_data)
     };
     const gchar *service_params[] = {
         "display", "mobile",
-        "service", "calendar",
+        "service", TEST_SERVICE_VALUE,
         NULL
     };
     gchar *key_prefix;
@@ -885,7 +886,67 @@ START_TEST(test_auth_data)
 
     check_string_in_params (params, "id", "123");
     check_string_in_params (params, "display", "mobile");
-    check_string_in_params (params, "service", "calendar");
+    check_string_in_params (params, "service", TEST_SERVICE_VALUE);
+
+    ag_auth_data_unref (data);
+    g_object_unref (account_service);
+    ag_service_unref (my_service);
+
+    end_test ();
+}
+END_TEST
+
+START_TEST(test_auth_data_insert_parameters)
+{
+    GList *account_services;
+    AgAccountService *account_service;
+    AgService *my_service;
+    AgAuthData *data;
+    GHashTable *params;
+    GValue v_display = { 0, };
+    GValue v_animal = { 0, };
+    const gchar *display = "desktop";
+    const gchar *animal = "cat";
+
+    g_type_init ();
+
+    manager = ag_manager_new ();
+
+    my_service = ag_manager_get_service (manager, "MyService");
+    fail_unless (my_service != NULL);
+
+    /* reload the account and get the AccountService */
+    account_services = ag_manager_get_account_services (manager);
+    fail_unless (account_services != NULL);
+    account_service = AG_ACCOUNT_SERVICE (account_services->data);
+    fail_unless (AG_IS_ACCOUNT_SERVICE (account_service));
+
+    /* get the auth data */
+    data = ag_account_service_get_auth_data (account_service);
+    fail_unless (data != NULL);
+
+    /* add an application setting */
+    params = g_hash_table_new (g_str_hash, g_str_equal);
+
+    g_value_init (&v_display, G_TYPE_STRING);
+    g_value_set_static_string (&v_display, display);
+    g_hash_table_insert (params, "display", &v_display);
+
+    g_value_init (&v_animal, G_TYPE_STRING);
+    g_value_set_static_string (&v_animal, animal);
+    g_hash_table_insert (params, "animal", &v_animal);
+
+    ag_auth_data_insert_parameters (data, params);
+    g_hash_table_unref (params);
+
+    /* now check that the values are what we expect them to be */
+    params = ag_auth_data_get_parameters (data);
+    fail_unless (params != NULL);
+
+    check_string_in_params (params, "animal", animal);
+    check_string_in_params (params, "display", display);
+    /* check the the other values are retained */
+    check_string_in_params (params, "service", TEST_SERVICE_VALUE);
 
     ag_auth_data_unref (data);
     g_object_unref (account_service);
@@ -2856,6 +2917,7 @@ ag_suite(const char *test_case)
 
     tc = tcase_create("AuthData");
     tcase_add_test (tc, test_auth_data);
+    tcase_add_test (tc, test_auth_data_insert_parameters);
     IF_TEST_CASE_ENABLED("AuthData")
         suite_add_tcase (s, tc);
 
