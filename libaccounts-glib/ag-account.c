@@ -1292,9 +1292,10 @@ ag_account_get_store_sql (AgAccount *account, GError **error)
 
                 if (value)
                 {
-                    const gchar *value_str, *type_str;
+                    const gchar *type_str;
+                    gchar *value_str;
 
-                    value_str = _ag_value_to_db (value);
+                    value_str = _ag_value_to_db (value, FALSE);
                     type_str = _ag_type_from_g_type (G_VALUE_TYPE (value));
                     _ag_string_append_printf
                         (sql,
@@ -1303,6 +1304,7 @@ ag_account_get_store_sql (AgAccount *account, GError **error)
                          "VALUES (%s, %s, %Q, %Q, %Q);",
                          account_id_str, service_id_str, key,
                          type_str, value_str);
+                    g_free (value_str);
                 }
                 else if (account->id != 0)
                 {
@@ -1551,7 +1553,7 @@ ag_account_list_enabled_services (AgAccount *account)
                           "SELECT DISTINCT Services.name FROM Services "
                           "JOIN Settings ON Settings.service = Services.id "
                           "WHERE Settings.key='enabled' "
-                          "AND Settings.value='1' "
+                          "AND Settings.value='true' "
                           "AND Settings.account='%d' "
                           "AND Services.type = '%s';",
                            account->id,
@@ -1561,7 +1563,7 @@ ag_account_list_enabled_services (AgAccount *account)
                           "SELECT DISTINCT Services.name FROM Services "
                           "JOIN Settings ON Settings.service = Services.id "
                           "WHERE Settings.key='enabled' "
-                          "AND Settings.value='1' "
+                          "AND Settings.value='true' "
                           "AND Settings.account='%d';",
                            account->id);
 

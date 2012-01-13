@@ -14,6 +14,7 @@ PKG_CHECK_MODULES(
 	dbus-1
 	dbus-glib-1
 	glib-2.0 >= 2.26
+	gio-2.0 >= 2.30
 	gobject-2.0
 	libxml-2.0
 	sqlite3 >= 3.7.0);
