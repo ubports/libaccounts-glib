@@ -44,7 +44,7 @@ G_GNUC_INTERNAL
 void _ag_value_slice_free (GValue *value);
 
 G_GNUC_INTERNAL
-const gchar *_ag_value_to_db (const GValue *value);
+gchar *_ag_value_to_db (const GValue *value, gboolean type_annotate);
 
 G_GNUC_INTERNAL
 GValue *_ag_value_from_db (sqlite3_stmt *stmt, gint col_type, gint col_value);
@@ -54,9 +54,6 @@ const gchar *_ag_type_from_g_type (GType type);
 
 G_GNUC_INTERNAL
 GType _ag_type_to_g_type (const gchar *type_str);
-
-G_GNUC_INTERNAL
-gboolean _ag_value_set_from_string (GValue *value, const gchar *string);
 
 G_GNUC_INTERNAL
 void _ag_iter_append_dict_entry (DBusMessageIter *iter, const gchar *key,
