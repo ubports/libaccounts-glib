@@ -4,8 +4,10 @@
  * This file is part of libaccounts-glib
  *
  * Copyright (C) 2010 Nokia Corporation.
+ * Copyright (C) 2012 Intel Corporation.
  *
  * Contact: Alberto Mardegan <alberto.mardegan@nokia.com>
+ * Contact: Jussi Laako <jussi.laako@linux.intel.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -331,3 +333,16 @@ ag_service_type_unref (AgServiceType *service_type)
     }
 }
 
+/**
+ * ag_service_type_list_free:
+ * @list: (element-type AgServiceType): a #GList of service types returned by some
+ * function of this library.
+ *
+ * Frees the list @list.
+ */
+void
+ag_service_type_list_free (GList *list)
+{
+    g_list_foreach (list, (GFunc)ag_service_type_unref, NULL);
+    g_list_free (list);
+}
