@@ -4,8 +4,10 @@
  * This file is part of libaccounts-glib
  *
  * Copyright (C) 2009-2010 Nokia Corporation.
+ * Copyright (C) 2012 Intel Corporation.
  *
  * Contact: Alberto Mardegan <alberto.mardegan@nokia.com>
+ * Contact: Jussi Laako <jussi.laako@linux.intel.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -264,6 +266,14 @@ _ag_services_list (AgManager *self)
     return list_data_files (self, ".service",
                             "AG_SERVICES", SERVICE_FILES_DIR,
                             (AgDataFileLoadFunc)ag_manager_get_service);
+}
+
+static inline GList *
+_ag_service_types_list (AgManager *self)
+{
+    return list_data_files (self, ".service-type",
+                           "AG_SERVICE_TYPES", SERVICE_TYPE_FILES_DIR,
+                           (AgDataFileLoadFunc)ag_manager_load_service_type);
 }
 
 static GList *
@@ -2362,6 +2372,22 @@ ag_manager_get_abort_on_db_timeout (AgManager *manager)
 {
     g_return_val_if_fail (AG_IS_MANAGER (manager), FALSE);
     return manager->priv->abort_on_db_timeout;
+}
+
+/**
+ * ag_manager_list_service_types:
+ * @manager: the #AgManager.
+ *
+ * Gets a list of all the installed service types.
+ *
+ * Returns: (transfer full) (element-type AgServiceType): a list of #AgServiceType,
+ * which must be then free'd with ag_service_type_list_free().
+ */
+GList *
+ag_manager_list_service_types (AgManager *manager)
+{
+    g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
+    return _ag_service_types_list (manager);
 }
 
 /**

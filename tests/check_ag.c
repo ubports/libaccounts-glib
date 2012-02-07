@@ -4,8 +4,10 @@
  * This file is part of libaccounts-glib
  *
  * Copyright (C) 2009-2010 Nokia Corporation.
+ * Copyright (C) 2012 Intel Corporation.
  *
  * Contact: Alberto Mardegan <alberto.mardegan@nokia.com>
+ * Contact: Jussi Laako <jussi.laako@linux.intel.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -1420,6 +1422,39 @@ START_TEST(test_list_services)
 }
 END_TEST
 
+START_TEST(test_list_service_types)
+{
+    GList *service_types, *list;
+    gint n_service_types;
+    AgServiceType *service_type;
+    const gchar *name;
+
+    g_type_init ();
+    manager = ag_manager_new ();
+
+    service_types = ag_manager_list_service_types (manager);
+
+    n_service_types = g_list_length (service_types);
+    fail_unless (n_service_types == 1,
+                 "Got %d service types, expecting 1",
+                 n_service_types);
+
+    for (list = service_types; list != NULL; list = list->next)
+    {
+        service_type = list->data;
+
+        name = ag_service_type_get_name (service_type);
+        g_debug ("Service type name: %s", name);
+        fail_unless (g_strcmp0 (name, "e-mail") == 0,
+                     "Got unexpected service type `%s'", name);
+    }
+    ag_service_type_list_free (service_types);
+
+    end_test ();
+}
+END_TEST
+
+
 START_TEST(test_delete)
 {
     AgAccountId id;
@@ -2791,6 +2826,7 @@ ag_suite(const char *test_case)
     tcase_add_test (tc, test_list_enabled_account);
     tcase_add_test (tc, test_list_services);
     tcase_add_test (tc, test_account_list_enabled_services);
+    tcase_add_test (tc, test_list_service_types);
     IF_TEST_CASE_ENABLED("List")
         suite_add_tcase (s, tc);
 
