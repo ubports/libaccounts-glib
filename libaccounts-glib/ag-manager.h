@@ -122,6 +122,8 @@ GList *ag_manager_list_service_types (AgManager *manager);
 AgServiceType *ag_manager_load_service_type (AgManager *manager,
                                              const gchar *service_type);
 
+AgApplication *ag_manager_get_application (AgManager *self,
+                                           const gchar *application_name);
 GList *ag_manager_list_applications_by_service (AgManager *manager,
                                                 AgService *service);
 

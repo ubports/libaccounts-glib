@@ -236,8 +236,18 @@ finish:
     return file_list;
 }
 
-static AgApplication *
-_ag_manager_get_application (AgManager *self, const gchar *application_name)
+/**
+ * ag_manager_get_application:
+ * @self: an #AgManager
+ * @application_name: the name of an application to search for
+ *
+ * Search for @application_name in the list of applications, and return a new
+ * #AgApplication if a matching application was found.
+ *
+ * Returns: a new #AgApplication if one was found, %NULL otherwise
+ */
+AgApplication *
+ag_manager_get_application (AgManager *self, const gchar *application_name)
 {
     g_return_val_if_fail (AG_IS_MANAGER (self), NULL);
 
@@ -249,7 +259,7 @@ _ag_applications_list (AgManager *self)
 {
     return list_data_files (self, ".application",
                             "AG_APPLICATIONS", APPLICATION_FILES_DIR,
-                            (AgDataFileLoadFunc)_ag_manager_get_application);
+                            (AgDataFileLoadFunc)ag_manager_get_application);
 }
 
 static inline GList *
