@@ -828,6 +828,7 @@ START_TEST(test_service)
 {
     GValue value = { 0 };
     AgService *service2;
+    GList *tag_list, *list;
     AgAccountId account_id;
     const gchar *provider_name, *service_type, *service_name, *icon_name;
     const gchar *description = "This is really a beautiful account";
@@ -883,7 +884,20 @@ START_TEST(test_service)
     icon_name = ag_service_get_icon_name (service);
     fail_unless (g_strcmp0 (icon_name, "general_myservice") == 0,
                  "Wrong service icon name: %s", icon_name);
-
+    
+    tag_list = ag_service_get_tags (service);
+    fail_unless (tag_list != NULL);
+    for (list = tag_list; list != NULL; list = list->next)
+    {
+        g_debug(" Service tag: %s", list->data);
+        fail_unless (g_strcmp0 (list->data, "e-mail") == 0 ||
+                     g_strcmp0 (list->data, "messaging") == 0,
+                     "Wrong service tag: %s", list->data);
+    }
+    g_list_free (tag_list);
+    fail_unless (ag_service_has_tag (service, "e-mail"),
+                 "Missing service tag");
+    
     ag_account_set_enabled (account, FALSE);
     ag_account_set_display_name (account, display_name);
 
@@ -932,6 +946,20 @@ START_TEST(test_service)
     g_value_unset (&value);
 
     service2 = ag_manager_get_service (manager, "OtherService");
+
+    tag_list = ag_service_get_tags (service2);
+    fail_unless (tag_list != NULL);
+    for (list = tag_list; list != NULL; list = list->next)
+    {
+        g_debug(" Service tag: %s", list->data);
+        fail_unless (g_strcmp0 (list->data, "video") == 0 ||
+                     g_strcmp0 (list->data, "sharing") == 0,
+                     "Wrong service tag: %s", list->data);
+    }
+    g_list_free (tag_list);
+    fail_unless (ag_service_has_tag (service2, "sharing"),
+                 "Missing service tag");
+    
     ag_account_select_service (account, service2);
 
     g_value_init (&value, G_TYPE_STRING);
@@ -1424,10 +1452,10 @@ END_TEST
 
 START_TEST(test_list_service_types)
 {
-    GList *service_types, *list;
+    GList *service_types, *list, *tags, *tag_list;
     gint n_service_types;
     AgServiceType *service_type;
-    const gchar *name;
+    const gchar *name, *tag;
 
     g_type_init ();
     manager = ag_manager_new ();
@@ -1447,6 +1475,19 @@ START_TEST(test_list_service_types)
         g_debug ("Service type name: %s", name);
         fail_unless (g_strcmp0 (name, "e-mail") == 0,
                      "Got unexpected service type `%s'", name);
+        
+        tags = ag_service_type_get_tags (service_type);
+        for (tag_list = tags; tag_list != NULL; tag_list = tag_list->next)
+        {
+            tag = (gchar *) tag_list->data;
+            g_debug (" Service type tag: %s", tag);
+            fail_unless ((g_strcmp0 (tag, "e-mail") == 0 ||
+                          g_strcmp0 (tag, "messaging") == 0),
+                         "Got unexpected service type tag `%s'", tag);
+        }
+        g_list_free (tags);
+        fail_unless (ag_service_type_has_tag (service_type, "messaging"),
+                     "Missing service type tag");
     }
     ag_service_type_list_free (service_types);
 
