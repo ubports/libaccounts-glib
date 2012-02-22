@@ -780,6 +780,10 @@ START_TEST(test_application)
 
     manager = ag_manager_new ();
 
+    application = ag_manager_get_application (manager, "Mailer");
+    fail_unless (application != NULL);
+    ag_application_unref (application);
+
     email_service = ag_manager_get_service (manager, "MyService");
     fail_unless (email_service != NULL);
 

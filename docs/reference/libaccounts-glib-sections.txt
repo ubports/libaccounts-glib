@@ -99,6 +99,7 @@ ag_manager_create_account
 ag_manager_get_abort_on_db_timeout
 ag_manager_get_account
 ag_manager_get_account_services
+ag_manager_get_application
 ag_manager_get_db_timeout
 ag_manager_get_enabled_account_services
 ag_manager_get_provider
