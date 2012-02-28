@@ -460,7 +460,7 @@ gboolean ag_service_has_tag (AgService *service, const gchar *tag)
  * Get list of tags specified for the #AgService. If the service has not
  * defined tags, tags from the service type will be returned.
  * 
- * Returns: (transfer container) (element-type string): #Glist of tags for @service.
+ * Returns: (transfer container) (element-type string): #GList of tags for @service.
  * List must be freed with g_list_free(). Entries are owned by the #AgService type,
  * do not free.
  */
