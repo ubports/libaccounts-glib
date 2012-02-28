@@ -291,7 +291,7 @@ gboolean ag_service_type_has_tag (AgServiceType *service_type,
  * 
  * Get list of tags specified for the #AgServiceType.
  * 
- * Returns: (transfer container) (element-type string): #Glist of tags for @service_type.
+ * Returns: (transfer container) (element-type string): #GList of tags for @service_type.
  * List must be freed with g_list_free(). Entries are owned by the #AgServiceType type,
  * do not free.
  */
