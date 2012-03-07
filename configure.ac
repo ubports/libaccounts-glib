@@ -82,11 +82,6 @@ if test "x$coverage" = "xyes"; then
     CFLAGS="$CFLAGS -g -fprofile-arcs -ftest-coverage"
 fi
 
-testdatadir=${datadir}/libaccounts-glib0-test
-AC_SUBST(testdatadir)
-
-AC_CONFIG_FILES([tests/accounts-glib-test.sh], [chmod +x tests/accounts-glib-test.sh])
-
 AC_OUTPUT([
 	Makefile
 	libaccounts-glib/Makefile
