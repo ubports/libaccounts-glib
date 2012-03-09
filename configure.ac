@@ -32,10 +32,10 @@ AC_PROG_LIBTOOL
 
 GTK_DOC_CHECK([1.14], [--flavour no-tmpl])
 
-DATABASE_DIR=".accounts"
+DATABASE_DIR="libaccounts-glib"
 AC_SUBST(DATABASE_DIR)
 AC_DEFINE_UNQUOTED(DATABASE_DIR, "$DATABASE_DIR",
-		   [Directory for storing database])
+		   [Directory for storing database (in $XDG_CONFIG_HOME)])
 
 APPLICATION_FILES_DIR="accounts/applications"
 AC_SUBST(APPLICATION_FILES_DIR)
