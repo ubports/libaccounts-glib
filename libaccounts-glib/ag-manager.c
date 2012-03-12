@@ -1356,6 +1356,24 @@ ag_manager_constructor (GType type, guint n_params,
 }
 
 static void
+ag_manager_get_property (GObject *object, guint property_id,
+                         GValue *value, GParamSpec *pspec)
+{
+    AgManager *manager = AG_MANAGER (object);
+    AgManagerPrivate *priv = manager->priv;
+
+    switch (property_id)
+    {
+    case PROP_SERVICE_TYPE:
+        g_value_set_string (value, priv->service_type);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+        break;
+    }
+}
+
+static void
 ag_manager_set_property (GObject *object, guint property_id,
                          const GValue *value, GParamSpec *pspec)
 {
@@ -1469,14 +1487,22 @@ ag_manager_class_init (AgManagerClass *klass)
     klass->account_deleted = ag_manager_account_deleted;
     object_class->constructor = ag_manager_constructor;
     object_class->dispose = ag_manager_dispose;
+    object_class->get_property = ag_manager_get_property;
     object_class->set_property = ag_manager_set_property;
     object_class->finalize = ag_manager_finalize;
 
+    /**
+     * AgManager:service-type:
+     *
+     * If the service type is set, certain operations on the #AgManager, such
+     * as ag_manager_list() and ag_manager_list_services(), will be restricted
+     * to only affect accounts or services with that service type.
+     */
     g_object_class_install_property
         (object_class, PROP_SERVICE_TYPE,
          g_param_spec_string ("service-type", "service type", "Set service type",
                               NULL,
-                              G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
+                              G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
     /**
      * AgManager::account-created:
