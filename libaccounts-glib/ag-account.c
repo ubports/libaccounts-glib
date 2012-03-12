@@ -2300,8 +2300,8 @@ ag_account_store_blocking (AgAccount *account, GError **error)
  * ag_account_sign:
  * @account: the #AgAccount.
  * @key: the name of the key or prefix of the keys to be signed.
- * @token: a signing token (NULL teminated string) for creating the signature.
- * The application must possess (request) the token.
+ * @token: a signing token (%NULL-terminated string) for creating the
+ * signature. The application must possess (request) the token.
  *
  * Creates signature of the @key with given @token. The account must be
  * stored prior to calling this function.
@@ -2321,8 +2321,8 @@ ag_account_sign (AgAccount *account, const gchar *key, const gchar *token)
  * Verify if the key is signed and the signature matches the value
  * and provides the aegis token which was used for signing the @key.
  *
- * Returns: %TRUE if the key is signed and the signature matches
- * the value.
+ * Returns: %TRUE if the key is signed and the signature matches the value,
+ * %FALSE otherwise.
  */
 gboolean
 ag_account_verify (AgAccount *account, const gchar *key, const gchar **token)
@@ -2340,8 +2340,8 @@ ag_account_verify (AgAccount *account, const gchar *key, const gchar **token)
  * Verify if the @key is signed with any of the tokens from the @tokens
  * and the signature is valid.
  *
- * Returns: %TRUE if the key is signed with any of the given tokens
- * and the signature is valid.
+ * Returns: %TRUE if the key is signed with any of the given tokens and the
+ * signature is valid, %FALSE otherwise.
  */
 gboolean
 ag_account_verify_with_tokens (AgAccount *account, const gchar *key, const gchar **tokens)

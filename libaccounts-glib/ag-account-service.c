@@ -28,7 +28,7 @@
  * @include: libaccounts-glib/ag-account-service.h
  *
  * The #AgAccountService object provides access to the account settings for a
- * specific service type. It is meant to be easier to use than the AgAccount
+ * specific service type. It is meant to be easier to use than the #AgAccount
  * class because it hides the complexity of the account structure and gives
  * access to only the limited subset of account settings which are relevant to
  * a service.
@@ -104,7 +104,7 @@
  * application) should never use account services which are not enabled, and
  * should stop using an account when the account service becomes disabled. The
  * latter can be done by connecting to the #AgAccountService::changed signal
- * and checking if ag_account_service_get_enabled() still returns true.
+ * and checking if ag_account_service_get_enabled() still returns %TRUE.
  * Note that if the account gets deleted, it will always get disabled first;
  * so, there is no need to connect to the #AgAccount::deleted signal; one can
  * just monitor the #AgAccountService::changed signal.
@@ -531,7 +531,7 @@ ag_account_service_settings_iter_next (AgAccountSettingIter *iter,
  * @self: the #AgAccountService.
  *
  * This method should be called only in the context of a handler of the
- * AgAccountService::changed signal, and can be used to retrieve the set of
+ * #AgAccountService::changed signal, and can be used to retrieve the set of
  * changes.
  *
  * Returns: (transfer full): a newly allocated array of strings describing the
