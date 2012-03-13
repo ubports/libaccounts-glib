@@ -82,12 +82,38 @@ if test "x$coverage" = "xyes"; then
     CFLAGS="$CFLAGS -g -fprofile-arcs -ftest-coverage"
 fi
 
+# Python support
+
+AM_PATH_PYTHON
+
+PYGOBJECT_REQUIRED=2.90
+
+AC_ARG_ENABLE([python],
+              AS_HELP_STRING([--enable-python[=@<:@no/auto/yes@:>@]],[Build with python support]),
+              [enable_python=$enableval],
+              [enable_python="auto"])
+
+if test "x$enable_python" = "xauto"; then
+    PKG_CHECK_EXISTS([pygobject-3.0 >= $PYGOBJECT_REQUIRED],
+                    [enable_python=yes],[enable_python=no])
+fi
+
+if test "x$enable_python" = "xyes"; then
+    PKG_CHECK_MODULES(PYTHON, [pygobject-3.0 >= $PYGOBJECT_REQUIRED])
+
+    pyoverridesdir=`$PYTHON -c "import gi;print gi._overridesdir"`
+    AC_SUBST(pyoverridesdir)
+fi
+
+AM_CONDITIONAL(ENABLE_PYTHON, test x"$enable_python" = "xyes")
+
 AC_OUTPUT([
 	Makefile
 	libaccounts-glib/Makefile
 	libaccounts-glib.pc
 	docs/Makefile
 	docs/reference/Makefile
+	pygobject/Makefile
 	tests/Makefile
 	tools/Makefile
 ])
