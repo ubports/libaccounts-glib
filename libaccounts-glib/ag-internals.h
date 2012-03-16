@@ -28,6 +28,7 @@
 #define _AG_INTERNALS_H_
 
 #include "ag-account.h"
+#include "ag-auth-data.h"
 #include "ag-debug.h"
 #include "ag-manager.h"
 #include <dbus/dbus.h>
@@ -184,6 +185,10 @@ void _ag_account_settings_iter_init (AgAccount *account,
 /* Service type functions */
 G_GNUC_INTERNAL
 AgServiceType *_ag_service_type_new_from_file (const gchar *service_type_name);
+
+/* AgAuthData functions */
+G_GNUC_INTERNAL
+AgAuthData *_ag_auth_data_new (AgAccount *account, AgService *service);
 
 /* Application functions */
 G_GNUC_INTERNAL
