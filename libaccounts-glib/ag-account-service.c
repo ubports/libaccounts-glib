@@ -49,7 +49,8 @@
  * itself: these operations should ideally not be performed by consumer
  * applications, but by the account editing UI only.
  *
- * <informalexample>
+ * <example>
+ * <title>Querying available e-mail services</title>
  *   <programlisting>
  * AgManager *manager;
  * GList *services, *list;
@@ -95,7 +96,7 @@
  *     g_value_unset (&v_server);
  * }
  *   </programlisting>
- * </informalexample>
+ * </example>
  *
  * <note>
  *   <para>
