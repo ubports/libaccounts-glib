@@ -30,6 +30,73 @@
  * An #AgAccount is an object which represents an account. It provides a
  * method for enabling/disabling the account and methods for editing the
  * account settings.
+ *
+ * Accounts are created by #AgManager with ag_manager_create_account(), and
+ * deleted by #AgAccount with ag_account_delete(). These operations, and any
+ * other operations which modify the account settings, must be followed by
+ * ag_account_store() before the changes are committed to the database.
+ * <example id="example-create-new-AgAccount">
+ * <title>Creating a new <structname>AgAccount</structname></title>
+ * <programlisting>
+ * GMainLoop *main_loop = NULL;
+ *
+ * gboolean account_cleanup_idle (gpointer user_data)
+ * {
+ *     AgManager *manager;
+ *     AgAccount *account = AG_ACCOUNT (user_data);
+ *     manager = ag_account_get_manager (account);
+ *
+ *     g_object_unref (account);
+ *     g_object_unref (manager);
+ *
+ *     g_main_loop_quit (main_loop);
+ *
+ *     return FALSE;
+ * }
+ *
+ * void account_stored_cb (AgAccount *account,
+ *                         const GError *error,
+ *                         gpointer user_data)
+ * {
+ *     AgManager *manager = AG_MANAGER (user_data);
+ *
+ *     if (error != NULL)
+ *     {
+ *         g_warning ("Account with ID '%u' failed to store, with error: %s",
+ *                    account->id,
+ *                    error->message);
+ *     }
+ *     else
+ *     {
+ *         g_print ("Account stored with ID: %u", account->id);
+ *     }
+ *
+ *     /&ast; Clean up in an idle callback. &ast;/
+ *     g_idle_add (account_cleanup_idle, account);
+ *     g_main_loop_run (main_loop);
+ * }
+ *
+ * void store_account (void)
+ * {
+ *     AgManager *manager;
+ *     GList *providers;
+ *     const gchar *provider_name;
+ *     AgAccount *account;
+ *
+ *     main_loop = g_main_loop_new 9NULL, FALSE);
+ *     manager = ag_manager_new ();
+ *     providers = ag_manager_list_providers (manager);
+ *     g_assert (providers != NULL);
+ *     provider_name = ag_provider_get_name ((AgProvider *) providers->data);
+ *     account = ag_manager_create_account (manager, provider_name);
+ *
+ *     ag_provider_list_free (providers);
+ *
+ *     /&ast; The account is not valid until it has been stored. &ast;/
+ *     ag_account_store (account, account_stored_cb, (gpointer) manager);
+ * }
+ * </programlisting>
+ * </example>
  */
 
 #include "ag-manager.h"
