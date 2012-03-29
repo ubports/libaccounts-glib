@@ -355,6 +355,9 @@ START_TEST(test_account_service)
     ag_account_set_value (account, "description", &value);
     g_value_unset (&value);
 
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    fail_unless (data_stored, "Callback not invoked immediately");
+
     service = ag_manager_get_service (manager, "MyService");
     fail_unless (service != NULL);
 
@@ -380,6 +383,20 @@ START_TEST(test_account_service)
     fail_unless (ag_account_service_get_account (account_service) == account);
 
     g_object_unref (account_service);
+
+    /* Test account service for global settings */
+    account_service = ag_account_service_new (account, NULL);
+    fail_unless (AG_IS_ACCOUNT_SERVICE (account_service),
+                 "Failed to create AccountService for global settings");
+
+    g_value_init (&value, G_TYPE_STRING);
+    source = ag_account_service_get_value (account_service, "description", &value);
+    fail_unless (source == AG_SETTING_SOURCE_ACCOUNT);
+    fail_unless (g_strcmp0 (g_value_get_string (&value), description) == 0);
+    g_value_unset (&value);
+
+    g_object_unref (account_service);
+
     end_test ();
 }
 END_TEST
