@@ -188,6 +188,8 @@ START_TEST(test_provider)
     domains = ag_provider_get_domains_regex (provider);
     fail_unless (g_strcmp0 (domains, ".*provider\\.com") == 0);
 
+    fail_unless (ag_provider_match_domain (provider, "www.provider.com"));
+
     ag_provider_list_free (providers);
 
     end_test ();
