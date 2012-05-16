@@ -283,6 +283,30 @@ ag_provider_get_domains_regex (AgProvider *provider)
 }
 
 /**
+ * ag_provider_match_domain:
+ * @provider: the #AgProvider.
+ * @domain: a domain name.
+ *
+ * Check whether @domain is supported by this provider, by matching it with the
+ * regex returned by ag_provider_get_domains_regex().
+ * If the provider does not define a regular expression to match the supported
+ * domains, this function will return %FALSE.
+ *
+ * Returns: %TRUE if the given domain is supported, %FALSE otherwise.
+ */
+gboolean
+ag_provider_match_domain (AgProvider *provider, const gchar *domain)
+{
+    g_return_val_if_fail (provider != NULL, FALSE);
+    g_return_val_if_fail (domain != NULL, FALSE);
+
+    if (provider->domains == NULL)
+        return FALSE;
+
+    return g_regex_match_simple (provider->domains, domain, 0, 0);
+}
+
+/**
  * ag_provider_get_file_contents:
  * @provider: the #AgProvider.
  * @contents: location to receive the pointer to the file contents.
