@@ -41,6 +41,7 @@ GType ag_provider_get_type (void) G_GNUC_CONST;
 
 const gchar *ag_provider_get_name (AgProvider *provider);
 const gchar *ag_provider_get_display_name (AgProvider *provider);
+const gchar *ag_provider_get_description (AgProvider *provider);
 const gchar *ag_provider_get_i18n_domain (AgProvider *provider);
 const gchar *ag_provider_get_icon_name (AgProvider *provider);
 const gchar *ag_provider_get_domains_regex (AgProvider *provider);
