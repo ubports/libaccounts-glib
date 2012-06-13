@@ -199,6 +199,7 @@ ag_service_get_type
 <TITLE>AgServiceType</TITLE>
 AgServiceType
 ag_service_type_get_display_name
+ag_service_type_get_description
 ag_service_type_get_file_contents
 ag_service_type_get_i18n_domain
 ag_service_type_get_icon_name
