@@ -159,6 +159,7 @@ ag_manager_get_type
 <TITLE>AgProvider</TITLE>
 AgProvider
 ag_provider_get_display_name
+ag_provider_get_description
 ag_provider_get_file_contents
 ag_provider_get_i18n_domain
 ag_provider_get_icon_name

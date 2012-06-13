@@ -87,6 +87,11 @@ parse_provider (xmlTextReaderPtr reader, AgProvider *provider)
                 /* that's the only thing we are interested of: we can stop the
                  * parsing now. */
             }
+            else if (strcmp (name, "description") == 0)
+            {
+                ok = _ag_xml_dup_element_data (reader,
+                                               &provider->description);
+            }
             else if (strcmp (name, "translations") == 0)
             {
                 ok = _ag_xml_dup_element_data (reader,
@@ -267,6 +272,21 @@ ag_provider_get_display_name (AgProvider *provider)
 }
 
 /**
+ * ag_provider_get_description:
+ * @provider: the #AgProvider.
+ *
+ * Get the description of the #AgProvider.
+ *
+ * Returns: the description of @provider, or %NULL upon failure.
+ */
+const gchar *
+ag_provider_get_description (AgProvider *provider)
+{
+    g_return_val_if_fail (provider != NULL, NULL);
+    return provider->description;
+}
+
+/**
  * ag_provider_get_domains_regex:
  * @provider: the #AgProvider.
  *
@@ -376,6 +396,7 @@ ag_provider_unref (AgProvider *provider)
         g_free (provider->name);
         g_free (provider->i18n_domain);
         g_free (provider->icon_name);
+        g_free (provider->description);
         g_free (provider->display_name);
         g_free (provider->domains);
         g_free (provider->file_data);
