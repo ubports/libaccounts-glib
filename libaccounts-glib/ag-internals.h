@@ -119,6 +119,7 @@ struct _AgService {
     gint ref_count;
     gchar *name;
     gchar *display_name;
+    gchar *description;
     gchar *type;
     gchar *provider;
     gchar *icon_name;

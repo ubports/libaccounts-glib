@@ -178,6 +178,7 @@ ag_provider_get_type
 <TITLE>AgService</TITLE>
 AgService
 ag_service_get_display_name
+ag_service_get_description
 ag_service_get_file_contents
 ag_service_get_i18n_domain
 ag_service_get_icon_name
