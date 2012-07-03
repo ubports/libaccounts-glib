@@ -1110,7 +1110,8 @@ START_TEST(test_service)
                  "Wrong service display name: %s", service_name);
 
     service_description = ag_service_get_description (service);
-    fail_unless (g_strcmp0 (service_name, "My Service Description") == 0,
+    fail_unless (g_strcmp0 (service_description,
+			    "My Service Description") == 0,
                  "Wrong service description: %s", service_description);
 
     icon_name = ag_service_get_icon_name (service);
