@@ -29,6 +29,12 @@ G_BEGIN_DECLS
 
 typedef struct _AgAccount AgAccount;
 typedef struct _AgManager AgManager;
+typedef struct _AgService AgService;
+typedef struct _AgAccountService AgAccountService;
+typedef struct _AgProvider AgProvider;
+typedef struct _AgAuthData AgAuthData;
+typedef struct _AgServiceType AgServiceType;
+typedef struct _AgApplication AgApplication;
 
 /**
  * AgAccountId:
