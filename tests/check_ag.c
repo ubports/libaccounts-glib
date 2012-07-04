@@ -34,6 +34,11 @@
 #include "libaccounts-glib/ag-errors.h"
 #include "libaccounts-glib/ag-internals.h"
 #include "libaccounts-glib/ag-account-service.h"
+#include "libaccounts-glib/ag-provider.h"
+#include "libaccounts-glib/ag-service.h"
+#include "libaccounts-glib/ag-auth-data.h"
+#include "libaccounts-glib/ag-application.h"
+#include "libaccounts-glib/ag-service-type.h"
 
 #include <glib.h>
 #include <glib/gstdio.h>

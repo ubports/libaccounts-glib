@@ -28,10 +28,6 @@
 #define _AG_MANAGER_H_
 
 #include <glib-object.h>
-#include <libaccounts-glib/ag-application.h>
-#include <libaccounts-glib/ag-provider.h>
-#include <libaccounts-glib/ag-service.h>
-#include <libaccounts-glib/ag-service-type.h>
 #include <libaccounts-glib/ag-types.h>
 
 G_BEGIN_DECLS
