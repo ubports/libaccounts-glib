@@ -26,7 +26,6 @@
 #define _AG_ACCOUNT_H_
 
 #include <glib-object.h>
-#include <libaccounts-glib/ag-service.h>
 #include <libaccounts-glib/ag-types.h>
 
 G_BEGIN_DECLS
