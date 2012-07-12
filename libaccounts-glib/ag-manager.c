@@ -521,6 +521,11 @@ message_is_from_interesting_object (DBusMessage *msg, GPtrArray *object_paths)
     const gchar *msg_object_path;
     gint i;
 
+    /* If the object_paths array is empty, it means that we are
+     * interested in all service types. */
+    if (object_paths->len == 0)
+        return TRUE;
+
     msg_object_path = dbus_message_get_path (msg);
     if (G_UNLIKELY (msg_object_path == NULL))
         return FALSE;
@@ -718,7 +723,6 @@ signal_account_changes (AgManager *manager, AgAccount *account,
 {
     AgManagerPrivate *priv = manager->priv;
     DBusMessage *msg;
-    gboolean ret;
     EmittedSignalData eds;
 
     clock_gettime(CLOCK_MONOTONIC, &eds.ts);
@@ -728,13 +732,6 @@ signal_account_changes (AgManager *manager, AgAccount *account,
     {
         g_warning ("Creation of D-Bus signal failed");
         return;
-    }
-
-    ret = dbus_connection_send (priv->dbus_conn, msg, NULL);
-    if (G_UNLIKELY (!ret))
-    {
-        g_warning ("Emission of DBus signal failed");
-        goto finish;
     }
 
     /* emit the signal on all service-types */
@@ -748,7 +745,6 @@ signal_account_changes (AgManager *manager, AgAccount *account,
         g_list_prepend (priv->emitted_signals,
                         g_slice_dup (EmittedSignalData, &eds));
 
-finish:
     dbus_message_unref (msg);
 }
 
@@ -1262,6 +1258,24 @@ add_matches (AgManagerPrivate *priv)
     return TRUE;
 }
 
+static inline gboolean
+add_typeless_match (AgManagerPrivate *priv)
+{
+    DBusError error;
+
+    dbus_error_init (&error);
+    dbus_bus_add_match (priv->dbus_conn,
+                        "type='signal',interface='" AG_DBUS_IFACE "'",
+                        &error);
+    if (G_UNLIKELY (dbus_error_is_set (&error)))
+    {
+        g_warning ("Failed to add dbus filter (%s)", error.message);
+        dbus_error_free (&error);
+        return FALSE;
+    }
+    return TRUE;
+}
+
 static gboolean
 setup_dbus (AgManager *manager)
 {
@@ -1290,7 +1304,8 @@ setup_dbus (AgManager *manager)
     if (priv->service_type == NULL)
     {
         /* listen to all changes */
-        g_ptr_array_add (priv->object_paths, g_strdup (AG_DBUS_PATH));
+        ret = add_typeless_match (priv);
+        if (G_UNLIKELY (!ret)) return FALSE;
     }
     else
     {
@@ -1305,10 +1320,10 @@ setup_dbus (AgManager *manager)
         /* add also the global service type */
         g_ptr_array_add (priv->object_paths,
                          g_strdup (AG_DBUS_PATH_SERVICE_GLOBAL));
-    }
 
-    ret = add_matches(priv);
-    if (G_UNLIKELY (!ret)) return FALSE;
+        ret = add_matches (priv);
+        if (G_UNLIKELY (!ret)) return FALSE;
+    }
 
     dbus_connection_setup_with_g_main (priv->dbus_conn, NULL);
     return TRUE;

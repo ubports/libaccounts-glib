@@ -37,7 +37,6 @@
 
 G_BEGIN_DECLS
 
-#define AG_DBUS_PATH "/com/nokia/AccountsLib"
 #define AG_DBUS_PATH_SERVICE "/com/nokia/AccountsLib/ServiceType"
 #define AG_DBUS_IFACE "com.nokia.AccountsLib"
 #define AG_DBUS_SIG_CHANGED "AccountChanged"

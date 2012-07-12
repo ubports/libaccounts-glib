@@ -226,7 +226,9 @@ _ag_account_build_signal (AgAccount *account, AgAccountChanges *changes,
     gboolean ret;
     const gchar *provider_name;
 
-    msg = dbus_message_new_signal (AG_DBUS_PATH, AG_DBUS_IFACE,
+    /* The object path is not important here; it will be set to a valid
+     * value by the AgManager, when sending the signal. */
+    msg = dbus_message_new_signal ("/", AG_DBUS_IFACE,
                                    AG_DBUS_SIG_CHANGED);
     g_return_val_if_fail (msg != NULL, NULL);
 
