@@ -38,8 +38,8 @@
 
 G_BEGIN_DECLS
 
-#define AG_DBUS_PATH_SERVICE "/com/nokia/AccountsLib/ServiceType"
-#define AG_DBUS_IFACE "com.nokia.AccountsLib"
+#define AG_DBUS_PATH_SERVICE "/ServiceType"
+#define AG_DBUS_IFACE "com.google.code.AccountsSSO.Accounts"
 #define AG_DBUS_SIG_CHANGED "AccountChanged"
 
 #define SERVICE_GLOBAL_TYPE "global"
