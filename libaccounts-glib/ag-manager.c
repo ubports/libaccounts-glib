@@ -392,6 +392,7 @@ parse_message_header (DBusMessageIter *iter,
     if (G_UNLIKELY (dbus_message_iter_get_arg_type (iter) != t)) return FALSE
 
     EXPECT_TYPE (DBUS_TYPE_UINT32);
+    memset (ts, 0, sizeof (struct timespec));
     dbus_message_iter_get_basic (iter, &ts->tv_sec);
     dbus_message_iter_next (iter);
 
