@@ -261,6 +261,19 @@ ag_errors_quark (void)
     return (GQuark) quark;
 }
 
+/**
+ * ag_accounts_error_quark:
+ *
+ * Return the libaccounts-glib error domain.
+ *
+ * Returns: the libaccounts-glib error domain.
+ */
+GQuark
+ag_accounts_error_quark (void)
+{
+    return ag_errors_quark ();
+}
+
 static void
 ag_value_append (DBusMessageIter *iter, const GValue *value)
 {
