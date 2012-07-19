@@ -795,7 +795,8 @@ ag_account_load (AgAccount *account)
      * NOT_FOUND error */
     if (_ag_manager_get_last_error (priv->manager) == NULL && rows != 1)
     {
-        GError *error = g_error_new (AG_ERRORS, AG_ERROR_ACCOUNT_NOT_FOUND,
+        GError *error = g_error_new (AG_ACCOUNTS_ERROR,
+                                     AG_ACCOUNTS_ERROR_ACCOUNT_NOT_FOUND,
                                      "Account %u not found in DB", account->id);
         _ag_manager_take_error (priv->manager, error);
     }
@@ -1275,7 +1276,7 @@ ag_account_get_store_sql (AgAccount *account, GError **error)
 
     if (G_UNLIKELY (priv->deleted))
     {
-        *error = g_error_new (AG_ERRORS, AG_ERROR_DELETED,
+        *error = g_error_new (AG_ACCOUNTS_ERROR, AG_ACCOUNTS_ERROR_DELETED,
                               "Account %s (id = %d) has been deleted",
                               priv->display_name, account->id);
         return NULL;
