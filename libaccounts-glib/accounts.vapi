@@ -180,8 +180,8 @@ namespace Ag {
 	[SimpleType]
 	public struct AccountId : uint {
 	}
-	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", cprefix = "AG_ERROR_")]
-	public enum Error {
+	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", cprefix = "AG_ACCOUNTS_ERROR_")]
+	public errordomain AccountsError {
 		DB,
 		DISPOSED,
 		DELETED,
