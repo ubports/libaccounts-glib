@@ -25,7 +25,7 @@ namespace Ag {
 		public void settings_iter_init (Ag.AccountSettingIter iter, string? key_prefix);
 		public void sign (string key, string token);
 		public void store (Ag.AccountStoreCb callback);
-		public bool store_blocking () throws GLib.Error;
+		public bool store_blocking () throws Ag.AccountsError;
 		public bool supports_service (string service_type);
 		public bool verify (string key, string token);
 		public bool verify_with_tokens (string key, string tokens);
@@ -119,7 +119,7 @@ namespace Ag {
 		public GLib.List<Ag.ServiceType> list_service_types ();
 		public GLib.List<Ag.Service> list_services ();
 		public GLib.List<Ag.Service> list_services_by_type (string service_type);
-		public Ag.Account load_account (Ag.AccountId account_id) throws GLib.Error;
+		public Ag.Account load_account (Ag.AccountId account_id) throws Ag.AccountsError;
 		public Ag.ServiceType load_service_type (string service_type);
 		public void set_abort_on_db_timeout (bool abort);
 		public void set_db_timeout (uint timeout_ms);
