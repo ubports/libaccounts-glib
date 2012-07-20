@@ -834,11 +834,11 @@ delete_account (gchar **argv)
     if (strcmp (argv[2], "all") == 0)
         list = ag_manager_list (manager);
     else
-        list = g_list_prepend (list, GINT_TO_POINTER (atoi (argv[2])));
+        list = g_list_prepend (list, GUINT_TO_POINTER (atoi (argv[2])));
 
     for (iter = list; iter != NULL; iter = g_list_next (iter))
     {
-        id = GPOINTER_TO_INT (iter->data);
+        id = GPOINTER_TO_UINT (iter->data);
         account = ag_manager_get_account (manager, id);
         if (account == NULL)
         {
