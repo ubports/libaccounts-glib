@@ -75,7 +75,8 @@ parse_template (xmlTextReaderPtr reader, AgService *service)
 }
 
 static gboolean
-parse_preview (xmlTextReaderPtr reader, AgService *service)
+parse_preview (G_GNUC_UNUSED xmlTextReaderPtr reader,
+               G_GNUC_UNUSED AgService *service)
 {
     /* TODO: implement */
     return TRUE;

@@ -542,7 +542,8 @@ message_is_from_interesting_object (DBusMessage *msg, GPtrArray *object_paths)
 }
 
 static DBusHandlerResult
-dbus_filter_callback (DBusConnection *dbus_conn, DBusMessage *msg,
+dbus_filter_callback (G_GNUC_UNUSED DBusConnection *dbus_conn,
+                      DBusMessage *msg,
                       void *user_data)
 {
     AgManager *manager = AG_MANAGER (user_data);
@@ -1030,7 +1031,8 @@ prepare_transaction_statements (AgManagerPrivate *priv)
 
 static void
 set_last_rowid_as_account_id (sqlite3_context *ctx,
-                              int argc, sqlite3_value **argv)
+                              G_GNUC_UNUSED int argc,
+                              G_GNUC_UNUSED sqlite3_value **argv)
 {
     AgManagerPrivate *priv;
 
@@ -1040,7 +1042,9 @@ set_last_rowid_as_account_id (sqlite3_context *ctx,
 }
 
 static void
-get_account_id (sqlite3_context *ctx, int argc, sqlite3_value **argv)
+get_account_id (sqlite3_context *ctx,
+                G_GNUC_UNUSED int argc,
+                G_GNUC_UNUSED sqlite3_value **argv)
 {
     AgManagerPrivate *priv;
 

@@ -170,7 +170,9 @@ check_enabled (AgAccountServicePrivate *priv)
 }
 
 static void
-account_watch_cb (AgAccount *account, const gchar *key, gpointer user_data)
+account_watch_cb (G_GNUC_UNUSED AgAccount *account,
+                  G_GNUC_UNUSED const gchar *key,
+                  gpointer user_data)
 {
     AgAccountService *self = (AgAccountService *)user_data;
 
@@ -178,7 +180,7 @@ account_watch_cb (AgAccount *account, const gchar *key, gpointer user_data)
 }
 
 static void
-on_account_enabled (AgAccount *account,
+on_account_enabled (G_GNUC_UNUSED AgAccount *account,
                     const gchar *service_name,
                     gboolean service_enabled,
                     AgAccountService *self)
