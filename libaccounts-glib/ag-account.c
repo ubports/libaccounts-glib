@@ -1142,7 +1142,7 @@ static void
 add_service_type (GPtrArray *types, const gchar *service_type)
 {
     gboolean found = FALSE;
-    gint i;
+    guint i;
 
     /* if the service type is not yet in the list, add it */
     for (i = 0; i < types->len; i++)
