@@ -1101,7 +1101,7 @@ _ag_account_changes_from_dbus (AgManager *manager, DBusMessageIter *iter,
         while (dbus_message_iter_get_arg_type (&i_dict) != DBUS_TYPE_INVALID)
         {
             const gchar *key;
-            GValue value = { 0 };
+            GValue value = G_VALUE_INIT;
 
             EXPECT_TYPE (&i_dict, DBUS_TYPE_DICT_ENTRY);
             if (_ag_iter_get_dict_entry (&i_dict, &key, &value))
@@ -1738,7 +1738,7 @@ ag_account_get_display_name (AgAccount *account)
 void
 ag_account_set_display_name (AgAccount *account, const gchar *display_name)
 {
-    GValue value = { 0 };
+    GValue value = G_VALUE_INIT;
 
     g_return_if_fail (AG_IS_ACCOUNT (account));
 
@@ -1857,7 +1857,7 @@ ag_account_get_enabled (AgAccount *account)
 void
 ag_account_set_enabled (AgAccount *account, gboolean enabled)
 {
-    GValue value = { 0 };
+    GValue value = G_VALUE_INIT;
 
     g_return_if_fail (AG_IS_ACCOUNT (account));
 

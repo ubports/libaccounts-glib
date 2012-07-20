@@ -49,6 +49,11 @@ G_BEGIN_DECLS
 #define MAX_SQLITE_BUSY_LOOP_TIME 5
 #define MAX_SQLITE_BUSY_LOOP_TIME_MS (MAX_SQLITE_BUSY_LOOP_TIME * 1000)
 
+#if GLIB_CHECK_VERSION (2, 30, 0)
+#else
+#define G_VALUE_INIT { 0, { { 0 } } }
+#endif
+
 typedef struct _AgAccountChanges AgAccountChanges;
 
 struct _AgAccountChanges {
