@@ -31,6 +31,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if GLIB_CHECK_VERSION (2, 30, 0)
+#else
+#define G_VALUE_INIT { 0, { { 0 } } }
+#endif
+
 static gchar *gl_app_name = NULL;
 
 enum
@@ -147,7 +152,7 @@ get_account (gchar **argv)
 {
     AgManager *manager = NULL;
     AgAccount *account = NULL;
-    GValue value = { 0 };
+    GValue value = G_VALUE_INIT;
     GType type = 0;
     gchar *str = NULL;
     gchar **param = NULL;
@@ -342,7 +347,7 @@ get_service (gchar **argv)
     AgManager *manager = NULL;
     AgService *service = NULL;
     AgAccount *account = NULL;
-    GValue value = { 0 };
+    GValue value = G_VALUE_INIT;
     GType type = 0;
     gchar *str = NULL;
     gchar **param = NULL;
