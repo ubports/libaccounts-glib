@@ -521,7 +521,7 @@ static gboolean
 message_is_from_interesting_object (DBusMessage *msg, GPtrArray *object_paths)
 {
     const gchar *msg_object_path;
-    gint i;
+    guint i;
 
     /* If the object_paths array is empty, it means that we are
      * interested in all service types. */
@@ -699,7 +699,7 @@ signal_account_changes_on_service_types (AgManager *manager,
                                          DBusMessage *global_msg)
 {
     GPtrArray *service_types;
-    gint i;
+    guint i;
 
     service_types = _ag_account_changes_get_service_types (changes);
     for (i = 0; i < service_types->len; i++)
@@ -1242,7 +1242,7 @@ add_matches (AgManagerPrivate *priv)
 {
     gchar match[DBUS_MAXIMUM_MATCH_RULE_LENGTH];
     DBusError error;
-    gint i;
+    guint i;
 
     dbus_error_init (&error);
     for (i = 0; i < priv->object_paths->len; i++)
