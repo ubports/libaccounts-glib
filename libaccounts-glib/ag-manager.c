@@ -317,7 +317,7 @@ get_account_services_from_accounts (AgManager *manager,
 
         account = ag_manager_get_account (manager,
                                           (AgAccountId)
-                                          GPOINTER_TO_INT(account_list->data));
+                                          GPOINTER_TO_UINT(account_list->data));
         if (G_UNLIKELY (account == NULL))
             continue;
 
