@@ -81,7 +81,7 @@ _ag_value_to_db (const GValue *in_value, gboolean type_annotate)
     GVariant *variant;
     const gchar *type;
     gchar *string;
-    GValue transformed_value = { 0, };
+    GValue transformed_value = G_VALUE_INIT;
     const GValue *value;
 
     g_return_val_if_fail (in_value != NULL, NULL);
@@ -449,7 +449,7 @@ _ag_xml_parse_settings (xmlTextReaderPtr reader, const gchar *group,
             DEBUG_INFO ("found name %s", name);
             if (strcmp (name, "setting") == 0)
             {
-                GValue value = { 0 }, *pval;
+                GValue value = G_VALUE_INIT, *pval;
                 xmlChar *key_name;
                 gchar *key;
 

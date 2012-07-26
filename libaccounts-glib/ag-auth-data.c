@@ -71,7 +71,7 @@ static gchar *
 get_string_with_fallback (AgAccount *account, AgService *service,
                           const gchar *key)
 {
-    GValue value = {0, };
+    GValue value = G_VALUE_INIT;
     gchar *ret;
 
     g_value_init(&value, G_TYPE_STRING);
@@ -87,7 +87,7 @@ static guint
 get_uint_with_fallback (AgAccount *account, AgService *service,
                         const gchar *key)
 {
-    GValue value = {0, };
+    GValue value = G_VALUE_INIT;
 
     g_value_init(&value, G_TYPE_UINT);
     if (!get_value_with_fallback (account, service, key, &value))
