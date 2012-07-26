@@ -1106,7 +1106,7 @@ get_db_version (sqlite3 *db)
 }
 
 static gboolean
-create_db (sqlite3 *db, guint timeout)
+create_db (sqlite3 *db)
 {
     const gchar *sql;
     gchar *error;
@@ -1225,7 +1225,7 @@ open_db (AgManager *manager)
     version = get_db_version(priv->db);
     DEBUG_INFO ("DB version: %d", version);
     if (version < 1)
-        ok = create_db(priv->db, priv->db_timeout);
+        ok = create_db(priv->db);
     /* insert here code to upgrade the DB from older versions... */
 
     if (G_UNLIKELY (!ok))
