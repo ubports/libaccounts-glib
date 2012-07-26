@@ -2312,7 +2312,9 @@ ag_account_store_blocking (AgAccount *account, GError **error)
  * stored prior to calling this function.
  */
 void
-ag_account_sign (AgAccount *account, const gchar *key, const gchar *token)
+ag_account_sign (G_GNUC_UNUSED AgAccount *account,
+                 G_GNUC_UNUSED const gchar *key,
+                 G_GNUC_UNUSED const gchar *token)
 {
     g_warning ("ag_account_sign: no encryptor supported.");
 }
@@ -2330,7 +2332,9 @@ ag_account_sign (AgAccount *account, const gchar *key, const gchar *token)
  * %FALSE otherwise.
  */
 gboolean
-ag_account_verify (AgAccount *account, const gchar *key, const gchar **token)
+ag_account_verify (G_GNUC_UNUSED AgAccount *account,
+                   G_GNUC_UNUSED const gchar *key,
+                   G_GNUC_UNUSED const gchar **token)
 {
     g_warning ("ag_account_verify: no encryptor supported.");
     return FALSE;
