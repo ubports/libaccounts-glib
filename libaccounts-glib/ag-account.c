@@ -500,8 +500,7 @@ _ag_account_changes_free (AgAccountChanges *changes)
 }
 
 static GList *
-match_watch_with_key (AgAccount *account, GHashTable *watches,
-                      const gchar *key, GList *watch_list)
+match_watch_with_key (GHashTable *watches, const gchar *key, GList *watch_list)
 {
     GHashTableIter iter;
     AgAccountWatch watch;
@@ -607,8 +606,7 @@ update_settings (AgAccount *account, GHashTable *services)
 
             /* check for installed watches to be invoked */
             if (watches)
-                watch_list = match_watch_with_key (account, watches, key,
-                                                   watch_list);
+                watch_list = match_watch_with_key (watches, key, watch_list);
 
             if (strcmp (key, "enabled") == 0)
             {
