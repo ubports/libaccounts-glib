@@ -960,14 +960,11 @@ START_TEST(test_auth_data_insert_parameters)
 
     g_type_init ();
 
-    manager = ag_manager_new ();
-
-    my_service = ag_manager_get_service (manager, "MyService");
-    fail_unless (my_service != NULL);
+    manager = ag_manager_new_for_service_type ("e-mail");
 
     /* reload the account and get the AccountService */
     account_services = ag_manager_get_account_services (manager);
-    fail_unless (account_services != NULL);
+    fail_unless (g_list_length(account_services) == 1);
     account_service = AG_ACCOUNT_SERVICE (account_services->data);
     fail_unless (AG_IS_ACCOUNT_SERVICE (account_service));
 
@@ -1000,7 +997,6 @@ START_TEST(test_auth_data_insert_parameters)
 
     ag_auth_data_unref (data);
     g_object_unref (account_service);
-    ag_service_unref (my_service);
 
     end_test ();
 }
