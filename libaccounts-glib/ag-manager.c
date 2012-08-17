@@ -484,9 +484,6 @@ check_signal_processed (AgManagerPrivate *priv, struct timespec *ts)
         {
             DEBUG_INFO ("Signal already processed: %lu-%lu",
                         ts->tv_sec, ts->tv_nsec);
-            g_slice_free (ProcessedSignalData, psd);
-            priv->processed_signals =
-                g_list_delete_link (priv->processed_signals, list);
             return TRUE;
         }
     }
