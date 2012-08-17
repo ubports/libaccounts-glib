@@ -76,6 +76,14 @@ typedef struct {
 } EnabledCbData;
 
 static gboolean
+quit_loop_on_timeout(gpointer user_data)
+{
+    GMainLoop *loop = user_data;
+    g_main_loop_quit (loop);
+    return FALSE;
+}
+
+static gboolean
 test_strv_equal (const gchar **s1, const gchar **s2)
 {
     gint i;
@@ -2659,6 +2667,57 @@ START_TEST(test_delete_regression)
 }
 END_TEST
 
+static void
+on_account_created_count (AgManager *manager, AgAccountId account_id,
+                          gint *counter)
+{
+    g_debug ("%s called (%u), counter %d", G_STRFUNC, account_id, *counter);
+
+    (*counter)++;
+}
+
+START_TEST(test_duplicate_create_regression)
+{
+    gint create_signal_counter;
+
+    g_type_init ();
+
+    manager = ag_manager_new ();
+
+    g_signal_connect (manager, "account-created",
+                      G_CALLBACK (on_account_created_count),
+                      &create_signal_counter);
+
+    /* create an account */
+    account = ag_manager_create_account (manager, PROVIDER);
+    ag_account_set_enabled (account, TRUE);
+
+    service = ag_manager_get_service (manager, "MyService");
+    fail_unless (service != NULL);
+    ag_account_select_service (account, service);
+    ag_account_set_enabled (account, TRUE);
+    ag_service_unref(service);
+
+    service = ag_manager_get_service (manager, "MyService2");
+    fail_unless (service != NULL);
+    ag_account_select_service (account, service);
+    ag_account_set_enabled (account, TRUE);
+
+    create_signal_counter = 0;
+    ag_account_store_blocking (account, NULL);
+
+    main_loop = g_main_loop_new (NULL, FALSE);
+    source_id = g_timeout_add_seconds (2, quit_loop_on_timeout, main_loop);
+    g_debug ("Running loop");
+    g_main_loop_run (main_loop);
+
+    fail_unless(create_signal_counter == 1,
+                "account-created emitted %d times!", create_signal_counter);
+
+    end_test ();
+}
+END_TEST
+
 START_TEST(test_manager_new_for_service_type)
 {
     AgAccount *account1, *account2;
@@ -3220,6 +3279,7 @@ ag_suite(const char *test_case)
     tcase_add_test (tc, test_serviceid_regression);
     tcase_add_test (tc, test_enabled_regression);
     tcase_add_test (tc, test_delete_regression);
+    tcase_add_test (tc, test_duplicate_create_regression);
     IF_TEST_CASE_ENABLED("Regression")
         suite_add_tcase (s, tc);
 
