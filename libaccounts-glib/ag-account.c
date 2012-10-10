@@ -218,38 +218,27 @@ G_DEFINE_TYPE (AgAccount, ag_account, G_TYPE_OBJECT);
 
 #define AG_ACCOUNT_PRIV(obj) (AG_ACCOUNT(obj)->priv)
 
-DBusMessage *
+GVariant *
 _ag_account_build_signal (AgAccount *account, AgAccountChanges *changes,
                           const struct timespec *ts)
 {
-    DBusMessage *msg;
-    DBusMessageIter iter, i_serv, dict, i_struct, i_list;
-    gboolean ret;
+    GVariantBuilder builder;
     const gchar *provider_name;
 
-    /* The object path is not important here; it will be set to a valid
-     * value by the AgManager, when sending the signal. */
-    msg = dbus_message_new_signal ("/", AG_DBUS_IFACE,
-                                   AG_DBUS_SIG_CHANGED);
-    g_return_val_if_fail (msg != NULL, NULL);
+    g_variant_builder_init (&builder, G_VARIANT_TYPE_TUPLE);
 
     provider_name = account->priv->provider_name;
     if (!provider_name) provider_name = "";
 
-    ret = dbus_message_append_args (msg,
-                                    DBUS_TYPE_UINT32, &ts->tv_sec,
-                                    DBUS_TYPE_UINT32, &ts->tv_nsec,
-                                    DBUS_TYPE_UINT32, &account->id,
-                                    DBUS_TYPE_BOOLEAN, &changes->created,
-                                    DBUS_TYPE_BOOLEAN, &changes->deleted,
-                                    DBUS_TYPE_STRING, &provider_name,
-                                    DBUS_TYPE_INVALID);
-    if (G_UNLIKELY (!ret)) goto error;
+    g_variant_builder_add (&builder, "u", ts->tv_sec);
+    g_variant_builder_add (&builder, "u", ts->tv_nsec);
+    g_variant_builder_add (&builder, "u", account->id);
+    g_variant_builder_add (&builder, "b", changes->created);
+    g_variant_builder_add (&builder, "b", changes->deleted);
+    g_variant_builder_add (&builder, "s", provider_name);
 
     /* Append the settings */
-    dbus_message_iter_init_append (msg, &iter);
-    dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
-                                      "(ssua{sv}as)", &i_serv);
+    g_variant_builder_open (&builder, G_VARIANT_TYPE ("a(ssua{sv}as)"));
     if (changes->services)
     {
         GHashTableIter iter;
@@ -266,55 +255,49 @@ _ag_account_build_signal (AgAccount *account, AgAccountChanges *changes,
             GValue *value;
             guint service_id;
 
-            dbus_message_iter_open_container (&i_serv, DBUS_TYPE_STRUCT,
-                                              NULL, &i_struct);
+            g_variant_builder_open (&builder,
+                                    G_VARIANT_TYPE ("(ssua{sv}as)"));
+
             /* Append the service name */
-            dbus_message_iter_append_basic (&i_struct, DBUS_TYPE_STRING,
-                                            &service_name);
+            g_variant_builder_add (&builder, "s", service_name);
             /* Append the service type */
-            dbus_message_iter_append_basic (&i_struct, DBUS_TYPE_STRING,
-                                            &sc->service_type);
+            g_variant_builder_add (&builder, "s", sc->service_type);
             /* Append the service id */
             if (sc->service == NULL)
                 service_id = 0;
             else
                 service_id = sc->service->id;
 
-            dbus_message_iter_append_basic (&i_struct, DBUS_TYPE_UINT32, &service_id);
+            g_variant_builder_add (&builder, "u", service_id);
             /* Append the dictionary of service settings */
-            dbus_message_iter_open_container (&i_struct, DBUS_TYPE_ARRAY,
-                                              "{sv}", &dict);
+            g_variant_builder_open (&builder, G_VARIANT_TYPE_VARDICT);
 
             g_hash_table_iter_init (&si, sc->settings);
             while (g_hash_table_iter_next (&si,
                                            (gpointer)&key, (gpointer)&value))
             {
                 if (value)
-                    _ag_iter_append_dict_entry (&dict, key, value);
+                    _ag_builder_append_dict_entry (&builder, key, value);
                 else
                     removed_keys = g_slist_prepend (removed_keys, key);
             }
-            dbus_message_iter_close_container (&i_struct, &dict);
+            g_variant_builder_close (&builder);
 
             /* append the list of removed keys */
-            dbus_message_iter_open_container (&i_struct, DBUS_TYPE_ARRAY,
-                                              "s", &i_list);
+            g_variant_builder_open (&builder, G_VARIANT_TYPE_STRING_ARRAY);
             while (removed_keys)
             {
-                dbus_message_iter_append_basic (&i_list, DBUS_TYPE_STRING,
-                                                &removed_keys->data);
+                g_variant_builder_add (&builder, "s", removed_keys->data);
                 removed_keys = g_slist_delete_link (removed_keys, removed_keys);
             }
-            dbus_message_iter_close_container (&i_struct, &i_list);
-            dbus_message_iter_close_container (&i_serv, &i_struct);
+            g_variant_builder_close (&builder);
+
+            /* Close the service entry builder */
+            g_variant_builder_close (&builder);
         }
     }
-    dbus_message_iter_close_container (&iter, &i_serv);
-    return msg;
-
-error:
-    dbus_message_unref (msg);
-    return NULL;
+    g_variant_builder_close (&builder);
+    return g_variant_builder_end (&builder);
 }
 
 static void
@@ -1031,12 +1014,13 @@ ag_account_class_init (AgAccountClass *klass)
 }
 
 AgAccountChanges *
-_ag_account_changes_from_dbus (AgManager *manager, DBusMessageIter *iter,
+_ag_account_changes_from_dbus (AgManager *manager, GVariant *v_services,
                                gboolean created, gboolean deleted)
 {
     AgAccountChanges *changes;
     AgServiceChanges *sc;
-    DBusMessageIter i_serv, i_struct, i_dict, i_list;
+    GVariantIter i_serv, i_dict, i_list;
+    GVariant *changed_keys, *removed_keys;
     gchar *service_name;
     gchar *service_type;
     gint service_id;
@@ -1048,35 +1032,19 @@ _ag_account_changes_from_dbus (AgManager *manager, DBusMessageIter *iter,
         g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
                                (GDestroyNotify)ag_service_changes_free);
 
-    /* TODO: parse the settings */
-#define EXPECT_TYPE(i, t) \
-    if (G_UNLIKELY (dbus_message_iter_get_arg_type (i) != t)) \
-    { \
-        DEBUG_INFO ("%s expected (%c), got (%c)", G_STRLOC, \
-                    t, dbus_message_iter_get_arg_type (i)); \
-        goto error; \
-    }
+    /* parse the settings */
+    g_variant_iter_init (&i_serv, v_services);
 
-    EXPECT_TYPE (iter, DBUS_TYPE_ARRAY);
-    dbus_message_iter_recurse (iter, &i_serv);
-
-    /* iterate the array of "ssa{sv}as", each one holds one service */
-    while (dbus_message_iter_get_arg_type (&i_serv) != DBUS_TYPE_INVALID)
+    /* iterate the array, each element holds one service */
+    while (g_variant_iter_next (&i_serv, "(ssu@a{sv}@as)",
+                                &service_name,
+                                &service_type,
+                                &service_id,
+                                &changed_keys,
+                                &removed_keys))
     {
-        EXPECT_TYPE (&i_serv, DBUS_TYPE_STRUCT);
-        dbus_message_iter_recurse (&i_serv, &i_struct);
-
-        EXPECT_TYPE (&i_struct, DBUS_TYPE_STRING);
-        dbus_message_iter_get_basic (&i_struct, &service_name);
-        dbus_message_iter_next (&i_struct);
-
-        EXPECT_TYPE (&i_struct, DBUS_TYPE_STRING);
-        dbus_message_iter_get_basic (&i_struct, &service_type);
-        dbus_message_iter_next (&i_struct);
-
-        EXPECT_TYPE (&i_struct, DBUS_TYPE_UINT32);
-        dbus_message_iter_get_basic (&i_struct, &service_id);
-        dbus_message_iter_next (&i_struct);
+        GVariant *variant;
+        gchar *key;
 
         sc = g_slice_new0 (AgServiceChanges);
         if (service_name != NULL && strcmp (service_name, SERVICE_GLOBAL) == 0)
@@ -1085,55 +1053,37 @@ _ag_account_changes_from_dbus (AgManager *manager, DBusMessageIter *iter,
             sc->service = _ag_manager_get_service_lazy (manager, service_name,
                                                         service_type,
                                                         service_id);
-        sc->service_type = g_strdup (service_type);
+        sc->service_type = service_type;
 
         sc->settings = g_hash_table_new_full
             (g_str_hash, g_str_equal,
              g_free, (GDestroyNotify)_ag_value_slice_free);
         g_hash_table_insert (changes->services, service_name, sc);
 
-        EXPECT_TYPE (&i_struct, DBUS_TYPE_ARRAY);
-        dbus_message_iter_recurse (&i_struct, &i_dict);
-
         /* iterate the "a{sv}" of settings */
-        while (dbus_message_iter_get_arg_type (&i_dict) != DBUS_TYPE_INVALID)
+        g_variant_iter_init (&i_dict, changed_keys);
+        while (g_variant_iter_next (&i_dict, "{sv}", &key, &variant))
         {
-            const gchar *key;
             GValue value = G_VALUE_INIT;
+            _ag_value_from_variant (&value, variant);
 
-            EXPECT_TYPE (&i_dict, DBUS_TYPE_DICT_ENTRY);
-            if (_ag_iter_get_dict_entry (&i_dict, &key, &value))
-            {
-                g_hash_table_insert (sc->settings, g_strdup (key),
-                                     g_slice_dup (GValue, &value));
-            }
-            dbus_message_iter_next (&i_dict);
+            g_hash_table_insert (sc->settings, key,
+                                 g_slice_dup (GValue, &value));
+            g_variant_unref (variant);
         }
-        dbus_message_iter_next (&i_struct);
-
-        EXPECT_TYPE (&i_struct, DBUS_TYPE_ARRAY);
-        dbus_message_iter_recurse (&i_struct, &i_list);
+        g_variant_unref (changed_keys);
 
         /* iterate the "as" of removed settings */
-        while (dbus_message_iter_get_arg_type (&i_list) != DBUS_TYPE_INVALID)
+        g_variant_iter_init (&i_list, removed_keys);
+        while (g_variant_iter_next (&i_list, "s", &key))
         {
-            const gchar *key;
-            EXPECT_TYPE (&i_list, DBUS_TYPE_STRING);
-            dbus_message_iter_get_basic (&i_list, &key);
-            g_hash_table_insert (sc->settings, g_strdup (key), NULL);
-            dbus_message_iter_next (&i_list);
+            g_hash_table_insert (sc->settings, key, NULL);
         }
 
-        dbus_message_iter_next (&i_serv);
+        g_variant_unref (removed_keys);
     }
 
-#undef EXPECT_TYPE
     return changes;
-
-error:
-    g_warning ("Wrong format of D-Bus message");
-    g_slice_free(AgAccountChanges, changes);
-    return NULL;
 }
 
 static void
@@ -1386,7 +1336,7 @@ ag_account_get_store_sql (AgAccount *account, GError **error)
 
                 if (value)
                 {
-                    const gchar *type_str;
+                    const GVariantType *type_str;
                     gchar *value_str;
 
                     value_str = _ag_value_to_db (value, FALSE);
@@ -1397,7 +1347,7 @@ ag_account_get_store_sql (AgAccount *account, GError **error)
                                                           "key, type, value) "
                          "VALUES (%s, %s, %Q, %Q, %Q);",
                          account_id_str, service_id_str, key,
-                         type_str, value_str);
+                         (const gchar *)type_str, value_str);
                     g_free (value_str);
                 }
                 else if (account->id != 0)
