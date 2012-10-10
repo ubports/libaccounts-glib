@@ -4,7 +4,15 @@ INCLUDES=-I$(top_srcdir) $(LIBACCOUNTS_CFLAGS)
 
 check_PROGRAMS = accounts-glib-testsuite test-process 
 
-check_SCRIPTS = accounts-glib-test.sh
+if HAVE_XMLLINT
+xml_test = xml-dtd-validate.sh
+else
+xml_test =
+endif
+
+check_SCRIPTS = \
+	accounts-glib-test.sh \
+	$(xml_test)
 
 accounts_glib_testsuite_SOURCES = check_ag.c
 accounts_glib_testsuite_CFLAGS = $(CHECK_FLAGS) -I$(top_srcdir)
@@ -20,12 +28,13 @@ test_process_LDADD = \
 	$(top_builddir)/libaccounts-glib/libaccounts-glib.la
 
 TESTS_ENVIRONMENT = \
-	TESTDATADIR=$(top_srcdir)/tests/
+	DTDDIR=$(top_srcdir)/libaccounts-glib/ \
+	TESTDATADIR=$(top_srcdir)/tests/ \
+	XMLLINT=$(XMLLINT)
 
-TESTS = accounts-glib-test.sh
+TESTS = $(check_SCRIPTS)
 
 EXTRA_DIST = \
-	accounts-glib-test.sh \
 	tests.xml \
 	e-mail.service-type \
 	Gallery.application \

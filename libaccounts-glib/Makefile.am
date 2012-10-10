@@ -117,6 +117,12 @@ typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 CLEANFILES += $(gir_DATA) $(typelib_DATA)
 endif
 
+# XML DTDs
+dist_noinst_DATA = \
+	accounts-application.dtd \
+	accounts-provider.dtd \
+	accounts-service.dtd \
+	accounts-service-type.dtd
 
 # Vala bindings
 vapidir = $(datadir)/vala/vapi
