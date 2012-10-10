@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- DTD for libaccounts provider files. -->
+
+<!-- Root element for provider files. -->
+<!ELEMENT provider (name?, description?, translations?, icon?, domains?)>
+
+<!-- The ID is optional, and only used if it differs from the basename of
+     the service file. -->
+<!ATTLIST provider
+  id ID #IMPLIED>
+
+<!-- Human-readable name of the provider, for display to the user. -->
+<!ELEMENT name (#PCDATA)>
+
+<!-- Description of the provider, for display to the user. -->
+<!ELEMENT description (#PCDATA)>
+
+<!-- The gettext translation domain used for internationalization support in
+     applications. -->
+<!ELEMENT translations (#PCDATA)>
+
+<!-- Name of a themed icon representing the provider. -->
+<!ELEMENT icon (#PCDATA)>
+
+<!-- A regular expression which should match all the domains where the provider
+     may be used on the web. This can be used in combination with an Ubuntu
+     Webapp to automatically create an account when the user logs in to an
+     accepted domain. -->
+<!ELEMENT domains (#PCDATA)>
