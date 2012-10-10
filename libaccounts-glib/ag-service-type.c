@@ -310,6 +310,7 @@ gboolean ag_service_type_has_tag (AgServiceType *service_type,
                                   const gchar *tag)
 {
     g_return_val_if_fail (service_type != NULL, FALSE);
+    if (service_type->tags == NULL) return FALSE;
     return g_hash_table_lookup_extended (service_type->tags, tag, NULL, NULL);
 }
 
@@ -327,6 +328,7 @@ gboolean ag_service_type_has_tag (AgServiceType *service_type,
 GList *ag_service_type_get_tags (AgServiceType *service_type)
 {
     g_return_val_if_fail (service_type != NULL, NULL);
+    if (service_type->tags == NULL) return NULL;
     return g_hash_table_get_keys (service_type->tags);
 }
 
