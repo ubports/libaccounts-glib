@@ -47,6 +47,11 @@ G_GNUC_INTERNAL
 void _ag_value_slice_free (GValue *value);
 
 G_GNUC_INTERNAL
+GVariant *_ag_value_to_variant (const GValue *value);
+G_GNUC_INTERNAL
+void _ag_value_from_variant (GValue *value, GVariant *variant);
+
+G_GNUC_INTERNAL
 gchar *_ag_value_to_db (const GValue *value, gboolean type_annotate);
 
 G_GNUC_INTERNAL

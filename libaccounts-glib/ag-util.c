@@ -75,12 +75,10 @@ _ag_value_slice_free (GValue *value)
     g_slice_free (GValue, value);
 }
 
-gchar *
-_ag_value_to_db (const GValue *in_value, gboolean type_annotate)
+GVariant *
+_ag_value_to_variant (const GValue *in_value)
 {
-    GVariant *variant;
     const gchar *type;
-    gchar *string;
     GValue transformed_value = G_VALUE_INIT;
     const GValue *value;
 
@@ -106,10 +104,20 @@ _ag_value_to_db (const GValue *in_value, gboolean type_annotate)
     }
 
     type = _ag_type_from_g_type (G_VALUE_TYPE (value));
-    variant = g_dbus_gvalue_to_gvariant (value, (GVariantType *)type);
+    return g_dbus_gvalue_to_gvariant (value, (GVariantType *)type);
+}
+
+gchar *
+_ag_value_to_db (const GValue *value, gboolean type_annotate)
+{
+    GVariant *variant;
+    gchar *string;
+
+    variant = _ag_value_to_variant (value);
     if (G_UNLIKELY (variant == NULL))
     {
-        g_warning ("%s: unsupported type ``%s''", G_STRFUNC, type);
+        g_warning ("%s: unsupported type ``%s''", G_STRFUNC,
+                   G_VALUE_TYPE_NAME (value));
         return NULL;
     }
 
@@ -180,6 +188,12 @@ _ag_type_to_g_type (const gchar *type_str)
     }
 }
 
+void
+_ag_value_from_variant (GValue *value, GVariant *variant)
+{
+    g_dbus_gvariant_to_gvalue (variant, value);
+}
+
 static gboolean
 _ag_value_set_from_string (GValue *value, const gchar *type,
                            const gchar *string)
@@ -210,7 +224,7 @@ _ag_value_set_from_string (GValue *value, const gchar *type,
         return FALSE;
     }
 
-    g_dbus_gvariant_to_gvalue (variant, value);
+    _ag_value_from_variant (value, variant);
     g_variant_unref (variant);
 
     return TRUE;
