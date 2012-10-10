@@ -3,6 +3,7 @@
   <type>sharing</type>
   <name>Other Service</name>
   <icon>general_otherservice</icon>
+  <provider>other_provider</provider>
   <tags>
       <tag>video</tag>
       <tag>sharing</tag>
