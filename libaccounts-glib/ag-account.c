@@ -1029,7 +1029,7 @@ _ag_account_changes_from_dbus (AgManager *manager, GVariant *v_services,
     changes->created = created;
     changes->deleted = deleted;
     changes->services =
-        g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+        g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
                                (GDestroyNotify)ag_service_changes_free);
 
     /* parse the settings */
