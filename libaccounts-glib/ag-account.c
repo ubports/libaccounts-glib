@@ -84,7 +84,7 @@
  *     const gchar *provider_name;
  *     AgAccount *account;
  *
- *     main_loop = g_main_loop_new 9NULL, FALSE);
+ *     main_loop = g_main_loop_new (NULL, FALSE);
  *     manager = ag_manager_new ();
  *     providers = ag_manager_list_providers (manager);
  *     g_assert (providers != NULL);
