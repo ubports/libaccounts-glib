@@ -112,10 +112,20 @@ typedef enum {
     AG_SETTING_SOURCE_PROFILE,
 } AgSettingSource;
 
+#ifndef AG_DISABLE_DEPRECATED
+AG_DEPRECATED_FOR(ag_account_get_variant)
 AgSettingSource ag_account_get_value (AgAccount *account, const gchar *key,
                                       GValue *value);
+AG_DEPRECATED_FOR(ag_account_set_variant)
 void ag_account_set_value (AgAccount *account, const gchar *key,
                            const GValue *value);
+#endif
+
+GVariant *ag_account_get_variant (AgAccount *account, const gchar *key,
+                                  AgSettingSource *source);
+void ag_account_set_variant (AgAccount *account, const gchar *key,
+                             GVariant *value);
+
 
 typedef struct _AgAccountSettingIter AgAccountSettingIter;
 
@@ -142,9 +152,15 @@ void ag_account_settings_iter_free (AgAccountSettingIter *iter);
 void ag_account_settings_iter_init (AgAccount *account,
                                     AgAccountSettingIter *iter,
                                     const gchar *key_prefix);
+#ifndef AG_DISABLE_DEPRECATED
+AG_DEPRECATED_FOR(ag_account_settings_iter_get_next)
 gboolean ag_account_settings_iter_next (AgAccountSettingIter *iter,
                                         const gchar **key,
                                         const GValue **value);
+#endif
+gboolean ag_account_settings_iter_get_next (AgAccountSettingIter *iter,
+                                            const gchar **key,
+                                            GVariant **value);
 
 AgAccountSettingIter *ag_account_get_settings_iter (AgAccount *account,
                                                     const gchar *key_prefix);

@@ -30,6 +30,8 @@
  * Shows how to initialize the framework.
  */
 
+#define AG_DISABLE_DEPRECATION_WARNINGS
+
 #include "libaccounts-glib/ag-manager.h"
 #include "libaccounts-glib/ag-account.h"
 #include "libaccounts-glib/ag-errors.h"
@@ -959,6 +961,92 @@ START_TEST(test_auth_data)
 }
 END_TEST
 
+static void
+check_variant_in_dict (GVariant *dict, const gchar *key,
+                       GVariant *expected)
+{
+    GVariant *actual;
+    gboolean equal;
+
+    actual = g_variant_lookup_value (dict, key, NULL);
+    if (actual == NULL)
+    {
+        if (expected == NULL) return;
+        fail ("Key %s is missing", key);
+    }
+
+    if (!g_variant_equal(actual, expected))
+    {
+        fail ("Values differ for key %s! Expected %s, actual %s", key,
+              g_variant_print (expected, TRUE),
+              g_variant_print (actual, TRUE));
+    }
+
+    g_variant_ref_sink (expected);
+    g_variant_unref (expected);
+    g_variant_unref (actual);
+}
+
+START_TEST(test_auth_data_get_login_parameters)
+{
+    GList *account_services;
+    AgAccountService *account_service;
+    AgService *my_service;
+    AgAuthData *data;
+    GVariant *params, *variant;
+    GVariantBuilder builder;
+    const gchar *display = "desktop";
+    const gchar *animal = "cat";
+
+    g_type_init ();
+
+    manager = ag_manager_new_for_service_type ("e-mail");
+
+    /* reload the account and get the AccountService */
+    account_services = ag_manager_get_account_services (manager);
+    fail_unless (g_list_length(account_services) == 1);
+    account_service = AG_ACCOUNT_SERVICE (account_services->data);
+    fail_unless (AG_IS_ACCOUNT_SERVICE (account_service));
+
+    /* get the auth data */
+    data = ag_account_service_get_auth_data (account_service);
+    fail_unless (data != NULL);
+
+    /* add an application setting */
+    params = ag_auth_data_get_login_parameters (data, NULL);
+    fail_unless (params != NULL);
+
+    check_variant_in_dict (params, "id", g_variant_new_string ("123"));
+    check_variant_in_dict (params, "display",
+                           g_variant_new_string ("mobile"));
+    check_variant_in_dict (params, "service",
+                           g_variant_new_string (TEST_SERVICE_VALUE));
+    g_variant_unref (params);
+
+    /* Try adding some client parameters */
+    g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
+    g_variant_builder_add (&builder, "{sv}",
+                           "display", g_variant_new_string (display));
+    g_variant_builder_add (&builder, "{sv}",
+                           "animal", g_variant_new_string (animal));
+
+    variant = g_variant_builder_end (&builder);
+    params = ag_auth_data_get_login_parameters (data, variant);
+    check_variant_in_dict (params, "id", g_variant_new_string ("123"));
+    check_variant_in_dict (params, "display",
+                           g_variant_new_string (display));
+    check_variant_in_dict (params, "service",
+                           g_variant_new_string (TEST_SERVICE_VALUE));
+    check_variant_in_dict (params, "animal",
+                           g_variant_new_string (animal));
+    g_variant_unref (params);
+
+    ag_auth_data_unref (data);
+    g_object_unref (account_service);
+
+    end_test ();
+}
+END_TEST
 START_TEST(test_auth_data_insert_parameters)
 {
     GList *account_services;
@@ -3242,6 +3330,7 @@ ag_suite(const char *test_case)
 
     tc = tcase_create("AuthData");
     tcase_add_test (tc, test_auth_data);
+    tcase_add_test (tc, test_auth_data_get_login_parameters);
     tcase_add_test (tc, test_auth_data_insert_parameters);
     IF_TEST_CASE_ENABLED("AuthData")
         suite_add_tcase (s, tc);
