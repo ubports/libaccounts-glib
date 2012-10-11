@@ -35,6 +35,7 @@ stamp-h1
 /docs/reference/libaccounts-glib.*
 !/docs/reference/libaccounts-glib-sections.txt
 /docs/reference/tmpl/
+/docs/reference/version.xml
 /docs/reference/xml/
 /libaccounts-glib/ag-marshal.c
 /libaccounts-glib/ag-marshal.h

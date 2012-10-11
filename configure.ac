@@ -125,6 +125,7 @@ AC_OUTPUT([
 	libaccounts-glib.pc
 	docs/Makefile
 	docs/reference/Makefile
+	docs/reference/version.xml
 	pygobject/Makefile
 	tests/Makefile
 	tools/Makefile
