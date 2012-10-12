@@ -56,7 +56,8 @@ content_files= \
 	libaccounts-overview.xml \
 	provider-file-format.xml \
 	service-file-format.xml \
-	service-type-file-format.xml
+	service-type-file-format.xml \
+	validating-xml-files.xml
 
 # CFLAGS and LDFLAGS for compiling gtkdoc-scangobj with your library.
 # Only needed if you are using gtkdoc-scangobj to dynamically query widget

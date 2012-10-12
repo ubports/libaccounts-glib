@@ -65,6 +65,7 @@
       <xi:include href="provider-file-format.xml"/>
       <xi:include href="service-file-format.xml"/>
       <xi:include href="service-type-file-format.xml"/>
+      <xi:include href="validating-xml-files.xml"/>
     </chapter>
   </part>
 
