@@ -10,26 +10,53 @@
     </releaseinfo>
   </bookinfo>
 
-  <chapter id="libaccounts-glib">
-    <title>libaccounts-glib</title>
-    <para>
-    libaccounts-glib provides account management functionality for GLib
-    applications.
-    </para>
-    <xi:include href="xml/ag-manager.xml"/>
-    <xi:include href="xml/ag-account.xml"/>
-    <xi:include href="xml/ag-account-service.xml"/>
-    <xi:include href="xml/ag-auth-data.xml"/>
-    <xi:include href="xml/ag-application.xml"/>
-    <xi:include href="xml/ag-provider.xml"/>
-    <xi:include href="xml/ag-service.xml"/>
-    <xi:include href="xml/ag-service-type.xml"/>
-  </chapter>
+  <part id="libaccounts-glib-objects">
+    <title>libaccounts-glib Objects</title>
 
-  <chapter id="object-tree">
-    <title>Object Hierarchy</title>
-    <xi:include href="xml/tree_index.sgml"/>
-  </chapter>
+    <partintro>
+      <para>
+      libaccounts-glib provides account management functionality for GLib
+      applications.
+      </para>
+    </partintro>
+
+    <chapter id="object-tree">
+      <title>Object Hierarchy</title>
+      <xi:include href="xml/tree_index.sgml"/>
+    </chapter>
+    <chapter id="account-management">
+      <title>Account management</title>
+      <xi:include href="xml/ag-manager.xml"/>
+      <xi:include href="xml/ag-account.xml"/>
+      <xi:include href="xml/ag-account-service.xml"/>
+      <xi:include href="xml/ag-auth-data.xml"/>
+      <xi:include href="xml/ag-application.xml"/>
+      <xi:include href="xml/ag-provider.xml"/>
+      <xi:include href="xml/ag-service.xml"/>
+      <xi:include href="xml/ag-service-type.xml"/>
+    </chapter>
+  </part>
+
+  <part id="xml-files">
+    <title>libaccounts-glib data files</title>
+
+    <partintro>
+      <para>
+      libaccounts-glib uses a number of different data files to enumerate
+      information on applications, providers, services and service types. These
+      files are all in an XML format, with DTDs available which describe the
+      formats.
+      </para>
+    </partintro>
+
+    <chapter id="xml-file-formats">
+      <title>XML files</title>
+      <xi:include href="application-file-format.xml"/>
+      <xi:include href="provider-file-format.xml"/>
+      <xi:include href="service-file-format.xml"/>
+      <xi:include href="service-type-file-format.xml"/>
+    </chapter>
+  </part>
 
   <index id="api-index-full">
     <title>API Index</title>
