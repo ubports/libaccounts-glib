@@ -118,7 +118,8 @@ CLEANFILES += $(gir_DATA) $(typelib_DATA)
 endif
 
 # XML DTDs
-dist_noinst_DATA = \
+dtddir = $(datadir)/xml/accounts/schema/dtd
+dist_dtd_DATA = \
 	accounts-application.dtd \
 	accounts-provider.dtd \
 	accounts-service.dtd \
