@@ -1,11 +1,15 @@
 <?xml version="1.0"?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
-               "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+               "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd" [
+<!ENTITY version SYSTEM "version.xml">
+]>
+
 <book id="index" xmlns:xi="http://www.w3.org/2003/XInclude">
   <bookinfo>
     <title>libaccounts-glib Reference Manual</title>
     <releaseinfo>
-      The latest version of this documentation can be built from the source code at
+      This document is for libaccounts-glib, version &version;. The latest
+      version of this documentation can be built from the source code at
       <ulink role="online-location" url="https://code.google.com/p/accounts-sso/source/checkout?repo=libaccounts-glib">https://code.google.com/p/accounts-sso/source/checkout?repo=libaccounts-glib</ulink>.
     </releaseinfo>
   </bookinfo>
