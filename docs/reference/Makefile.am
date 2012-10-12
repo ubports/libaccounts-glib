@@ -53,6 +53,7 @@ HTML_IMAGES=
 # e.g. content_files=running.sgml building.sgml changes-2.0.sgml
 content_files= \
 	application-file-format.xml \
+	libaccounts-overview.xml \
 	provider-file-format.xml \
 	service-file-format.xml \
 	service-type-file-format.xml

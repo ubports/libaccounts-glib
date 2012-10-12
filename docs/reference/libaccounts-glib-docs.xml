@@ -14,8 +14,8 @@
     </releaseinfo>
   </bookinfo>
 
-  <part id="libaccounts-glib-objects">
-    <title>libaccounts-glib Objects</title>
+  <part id="libaccounts-glib-overview">
+    <title>libaccounts-glib Overview</title>
 
     <partintro>
       <para>
@@ -23,6 +23,12 @@
       applications.
       </para>
     </partintro>
+
+    <xi:include href="libaccounts-overview.xml"/>
+  </part>
+
+  <part id="libaccounts-glib-objects">
+    <title>libaccounts-glib Objects</title>
 
     <chapter id="object-tree">
       <title>Object Hierarchy</title>
