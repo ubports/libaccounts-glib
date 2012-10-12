@@ -25,6 +25,7 @@
     </partintro>
 
     <xi:include href="libaccounts-overview.xml"/>
+    <xi:include href="libaccounts-running.xml"/>
   </part>
 
   <part id="libaccounts-glib-objects">
