@@ -2,7 +2,7 @@
 <!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
     "http://www.oasis-open.org/doxbook/xml/4.3/docbookx.dtd">
 
-<section id="provider-file-format">
+<section id="provider-file-format" xreflabel="provider description files">
 
 <title>Provider description file format</title>
 

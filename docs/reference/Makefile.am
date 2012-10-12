@@ -54,6 +54,7 @@ HTML_IMAGES=
 content_files= \
 	application-file-format.xml \
 	libaccounts-overview.xml \
+	libaccounts-running.xml \
 	provider-file-format.xml \
 	service-file-format.xml \
 	service-type-file-format.xml \

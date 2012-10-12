@@ -2,7 +2,7 @@
 <!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
     "http://www.oasis-open.org/doxbook/xml/4.3/docbookx.dtd">
 
-<section id="service-file-format">
+<section id="service-file-format" xreflabel="service descriptions files">
 
 <title>Service description file format</title>
 
