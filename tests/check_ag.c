@@ -1585,7 +1585,7 @@ START_TEST(test_list)
 }
 END_TEST
 
-START_TEST(test_settings_iter)
+START_TEST(test_settings_iter_gvalue)
 {
     const gchar *keys[] = {
         "param/address",
@@ -1738,6 +1738,169 @@ START_TEST(test_settings_iter)
             gint port;
 
             port = g_value_get_int (val);
+            fail_unless (port == new_port_value,
+                         "Got value %d for key %s, expecting %d",
+                         port, key, new_port_value);
+        }
+
+        n_read++;
+    }
+
+    fail_unless (n_read == 5, "Not all settings were retrieved");
+
+
+    end_test ();
+}
+END_TEST
+
+START_TEST(test_settings_iter)
+{
+    const gchar *keys[] = {
+        "param/address",
+        "weight",
+        "param/city",
+        "age",
+        "param/country",
+        NULL,
+    };
+    const gchar *values[] = {
+        "Helsinginkatu",
+        "110",
+        "Helsinki",
+        "90",
+        "Suomi",
+        NULL,
+    };
+    const gchar *service_name = "OtherService";
+    AgAccountSettingIter iter;
+    const gchar *key;
+    GVariant *val;
+    gint i, n_values, n_read;
+    const gint new_port_value = 32412;
+
+    g_type_init ();
+
+    manager = ag_manager_new ();
+    account = ag_manager_create_account (manager, PROVIDER);
+
+    ag_account_set_enabled (account, TRUE);
+
+    for (i = 0; keys[i] != NULL; i++)
+    {
+        ag_account_set_variant (account, keys[i],
+                                g_variant_new_string (values[i]));
+    }
+    n_values = i;
+
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    fail_unless (data_stored, "Callback not invoked immediately");
+
+    fail_unless (account->id != 0, "Account ID is still 0!");
+
+    /* iterate the settings */
+    n_read = 0;
+    ag_account_settings_iter_init (account, &iter, NULL);
+    while (ag_account_settings_iter_get_next (&iter, &key, &val))
+    {
+        gboolean found = FALSE;
+        for (i = 0; keys[i] != NULL; i++)
+        {
+            if (g_strcmp0 (key, keys[i]) == 0)
+            {
+                const gchar *text;
+                found = TRUE;
+                text = g_variant_get_string (val, NULL);
+                fail_unless (g_strcmp0 (values[i], text) == 0,
+                             "Got value %s for key %s, expecting %s",
+                             text, key, values[i]);
+                break;
+            }
+        }
+
+        fail_unless (found, "Unknown setting %s", key);
+
+        n_read++;
+    }
+
+    fail_unless (n_read == n_values,
+                 "Not all settings were retrieved (%d out of %d)",
+                 n_read, n_values);
+
+    /* iterate settings with prefix */
+    n_read = 0;
+    ag_account_settings_iter_init (account, &iter, "param/");
+    while (ag_account_settings_iter_get_next (&iter, &key, &val))
+    {
+        gboolean found = FALSE;
+        gchar *full_key;
+        fail_unless (strncmp (key, "param/", 6) != 0,
+                     "Got key with unstripped prefix (%s)", key);
+
+        full_key = g_strconcat ("param/", key, NULL);
+        for (i = 0; keys[i] != NULL; i++)
+        {
+            if (g_strcmp0 (full_key, keys[i]) == 0)
+            {
+                const gchar *text;
+                found = TRUE;
+                text = g_variant_get_string (val, NULL);
+                fail_unless (g_strcmp0 (values[i], text) == 0,
+                             "Got value %s for key %s, expecting %s",
+                             text, key, values[i]);
+                break;
+            }
+        }
+        g_free (full_key);
+
+        fail_unless (found, "Unknown setting %s", key);
+
+        n_read++;
+    }
+
+    fail_unless (n_read == 3, "Not all settings were retrieved");
+
+    /* iterate template default settings */
+    service = ag_manager_get_service (manager, service_name);
+    ag_account_select_service (account, service);
+    n_read = 0;
+    ag_account_settings_iter_init (account, &iter, NULL);
+    while (ag_account_settings_iter_get_next (&iter, &key, &val))
+    {
+        g_debug ("Got key %s of type %s",
+                 key, g_variant_get_type_string (val));
+
+        n_read++;
+    }
+    fail_unless (n_read == 4, "Not all settings were retrieved");
+
+    /* Add a setting that is also on the template, to check if it will
+     * override the one on the template */
+    ag_account_set_variant (account, "parameters/port",
+                            g_variant_new_int16 (new_port_value));
+
+    /* Add a setting */
+    ag_account_set_variant (account, "parameters/message",
+                            g_variant_new_string ("How's life?"));
+
+    /* save */
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    fail_unless (data_stored, "Callback not invoked immediately");
+
+    /* enumerate the parameters */
+    n_read = 0;
+    ag_account_settings_iter_init (account, &iter, "parameters/");
+    while (ag_account_settings_iter_get_next (&iter, &key, &val))
+    {
+        fail_unless (strncmp (key, "parameters/", 6) != 0,
+                     "Got key with unstripped prefix (%s)", key);
+
+        g_debug ("Got key %s of type %s",
+                 key, g_variant_get_type_string (val));
+        if (g_strcmp0 (key, "port") == 0)
+        {
+            gint port;
+
+            port = g_variant_get_int16 (val);
             fail_unless (port == new_port_value,
                          "Got value %d for key %s, expecting %d",
                          port, key, new_port_value);
@@ -3315,6 +3478,7 @@ ag_suite(const char *test_case)
     tc = tcase_create("Service");
     tcase_add_test (tc, test_service);
     tcase_add_test (tc, test_account_services);
+    tcase_add_test (tc, test_settings_iter_gvalue);
     tcase_add_test (tc, test_settings_iter);
     tcase_add_test (tc, test_service_type);
     IF_TEST_CASE_ENABLED("Service")
