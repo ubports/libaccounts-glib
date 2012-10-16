@@ -11,8 +11,6 @@ GOBJECT_INTROSPECTION_CHECK([1.30.0])
 
 PKG_CHECK_MODULES(
 	LIBACCOUNTS,
-	dbus-1
-	dbus-glib-1
 	glib-2.0 >= 2.26
 	gio-2.0 >= 2.30
 	gio-unix-2.0

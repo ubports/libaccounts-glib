@@ -29,7 +29,6 @@
 #include "ag-debug.h"
 #include "ag-errors.h"
 
-#include <dbus/dbus.h>
 #include <gio/gio.h>
 #include <sched.h>
 #include <stdio.h>
@@ -75,12 +74,10 @@ _ag_value_slice_free (GValue *value)
     g_slice_free (GValue, value);
 }
 
-gchar *
-_ag_value_to_db (const GValue *in_value, gboolean type_annotate)
+GVariant *
+_ag_value_to_variant (const GValue *in_value)
 {
-    GVariant *variant;
-    const gchar *type;
-    gchar *string;
+    const GVariantType *type;
     GValue transformed_value = G_VALUE_INIT;
     const GValue *value;
 
@@ -106,10 +103,20 @@ _ag_value_to_db (const GValue *in_value, gboolean type_annotate)
     }
 
     type = _ag_type_from_g_type (G_VALUE_TYPE (value));
-    variant = g_dbus_gvalue_to_gvariant (value, (GVariantType *)type);
+    return g_dbus_gvalue_to_gvariant (value, type);
+}
+
+gchar *
+_ag_value_to_db (const GValue *value, gboolean type_annotate)
+{
+    GVariant *variant;
+    gchar *string;
+
+    variant = _ag_value_to_variant (value);
     if (G_UNLIKELY (variant == NULL))
     {
-        g_warning ("%s: unsupported type ``%s''", G_STRFUNC, type);
+        g_warning ("%s: unsupported type ``%s''", G_STRFUNC,
+                   G_VALUE_TYPE_NAME (value));
         return NULL;
     }
 
@@ -118,30 +125,30 @@ _ag_value_to_db (const GValue *in_value, gboolean type_annotate)
     return string;
 }
 
-const gchar *
+const GVariantType *
 _ag_type_from_g_type (GType type)
 {
     switch (type)
     {
     case G_TYPE_STRING:
-        return DBUS_TYPE_STRING_AS_STRING;
+        return G_VARIANT_TYPE_STRING;
     case G_TYPE_INT:
     case G_TYPE_CHAR:
-        return DBUS_TYPE_INT32_AS_STRING;
+        return G_VARIANT_TYPE_INT32;
     case G_TYPE_UINT:
-        return DBUS_TYPE_UINT32_AS_STRING;
+        return G_VARIANT_TYPE_UINT32;
     case G_TYPE_BOOLEAN:
-        return DBUS_TYPE_BOOLEAN_AS_STRING;
+        return G_VARIANT_TYPE_BOOLEAN;
     case G_TYPE_UCHAR:
-        return DBUS_TYPE_BYTE_AS_STRING;
+        return G_VARIANT_TYPE_BYTE;
     case G_TYPE_INT64:
-        return DBUS_TYPE_INT64_AS_STRING;
+        return G_VARIANT_TYPE_INT64;
     case G_TYPE_UINT64:
-        return DBUS_TYPE_UINT64_AS_STRING;
+        return G_VARIANT_TYPE_UINT64;
     default:
         /* handle dynamic types here */
         if (type == G_TYPE_STRV)
-            return DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_STRING_AS_STRING;
+            return G_VARIANT_TYPE_STRING_ARRAY;
 
         g_warning ("%s: unsupported type ``%s''", G_STRFUNC,
                    g_type_name (type));
@@ -149,35 +156,10 @@ _ag_type_from_g_type (GType type)
     }
 }
 
-GType
-_ag_type_to_g_type (const gchar *type_str)
+void
+_ag_value_from_variant (GValue *value, GVariant *variant)
 {
-    g_return_val_if_fail (type_str != NULL, G_TYPE_INVALID);
-
-    switch (type_str[0])
-    {
-    case DBUS_TYPE_STRING:
-        return G_TYPE_STRING;
-    case DBUS_TYPE_INT32:
-        return G_TYPE_INT;
-    case DBUS_TYPE_UINT32:
-        return G_TYPE_UINT;
-    case DBUS_TYPE_INT64:
-        return G_TYPE_INT64;
-    case DBUS_TYPE_UINT64:
-        return G_TYPE_UINT64;
-    case DBUS_TYPE_BOOLEAN:
-        return G_TYPE_BOOLEAN;
-    case DBUS_TYPE_BYTE:
-        return G_TYPE_UCHAR;
-    case DBUS_TYPE_ARRAY:
-        if (type_str[1] == DBUS_TYPE_STRING)
-            return G_TYPE_STRV;
-        // fall through
-    default:
-        g_warning ("%s: unsupported type ``%s''", G_STRFUNC, type_str);
-        return G_TYPE_INVALID;
-    }
+    g_dbus_gvariant_to_gvalue (variant, value);
 }
 
 static gboolean
@@ -210,7 +192,7 @@ _ag_value_set_from_string (GValue *value, const gchar *type,
         return FALSE;
     }
 
-    g_dbus_gvariant_to_gvalue (variant, value);
+    _ag_value_from_variant (value, variant);
     g_variant_unref (variant);
 
     return TRUE;
@@ -275,70 +257,14 @@ ag_accounts_error_quark (void)
     return ag_errors_quark ();
 }
 
-static void
-ag_value_append (DBusMessageIter *iter, const GValue *value)
-{
-    DBusMessageIter var;
-    gchar *val_str;
-
-    val_str = _ag_value_to_db (value, TRUE);
-
-    dbus_message_iter_open_container (iter, DBUS_TYPE_VARIANT,
-                                      DBUS_TYPE_STRING_AS_STRING, &var);
-    dbus_message_iter_append_basic (&var, DBUS_TYPE_STRING, &val_str);
-    dbus_message_iter_close_container (iter, &var);
-
-    g_free (val_str);
-}
-
 void
-_ag_iter_append_dict_entry (DBusMessageIter *iter, const gchar *key,
-                            const GValue *value)
+_ag_builder_append_dict_entry (GVariantBuilder *builder,
+                               const gchar *key,
+                               const GValue *value)
 {
-    DBusMessageIter args;
+    GVariant *variant = _ag_value_to_variant (value);
 
-    dbus_message_iter_open_container (iter, DBUS_TYPE_DICT_ENTRY, NULL, &args);
-    dbus_message_iter_append_basic (&args, DBUS_TYPE_STRING, &key);
-
-    ag_value_append (&args, value);
-    dbus_message_iter_close_container (iter, &args);
-}
-
-static gboolean
-_ag_iter_get_value (DBusMessageIter *iter, GValue *value)
-{
-    DBusMessageIter var;
-    const gchar *val_str;
-
-    dbus_message_iter_recurse (iter, &var);
-
-    /* the values are always passed as strings, in the GVariant text format. */
-    if (dbus_message_iter_get_arg_type (&var) != DBUS_TYPE_STRING)
-        return FALSE;
-
-    dbus_message_iter_get_basic (&var, &val_str);
-    return _ag_value_set_from_string (value, NULL, val_str);
-}
-
-gboolean
-_ag_iter_get_dict_entry (DBusMessageIter *iter, const gchar **key,
-                         GValue *value)
-{
-    DBusMessageIter args;
-
-    dbus_message_iter_recurse (iter, &args);
-    if (G_UNLIKELY (dbus_message_iter_get_arg_type (&args) !=
-                    DBUS_TYPE_STRING))
-        return FALSE;
-
-    dbus_message_iter_get_basic (&args, key);
-    dbus_message_iter_next (&args);
-
-    if (G_UNLIKELY (dbus_message_iter_get_arg_type (&args) !=
-                    DBUS_TYPE_VARIANT))
-        return FALSE;
-
-    return _ag_iter_get_value (&args, value);
+    g_variant_builder_add (builder, "{sv}", key, variant);
 }
 
 gboolean
