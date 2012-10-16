@@ -200,7 +200,8 @@ typedef struct {
     AgAccount *account;
     GHashTableIter iter;
     gchar *key_prefix;
-    gpointer ptr2;
+    /* The next field is used by ag_account_settings_iter_next() only */
+    GValue *last_gvalue;
     gint stage;
     gint must_free_prefix;
 } RealIter;
@@ -217,6 +218,13 @@ typedef struct _AgSignature {
 G_DEFINE_TYPE (AgAccount, ag_account, G_TYPE_OBJECT);
 
 #define AG_ACCOUNT_PRIV(obj) (AG_ACCOUNT(obj)->priv)
+
+static void
+ag_variant_safe_unref (gpointer variant)
+{
+    if (variant != NULL)
+        g_variant_unref ((GVariant *)variant);
+}
 
 GVariant *
 _ag_account_build_signal (AgAccount *account, AgAccountChanges *changes,
@@ -252,7 +260,7 @@ _ag_account_build_signal (AgAccount *account, AgAccountChanges *changes,
             GSList *removed_keys = NULL;
             GHashTableIter si;
             gchar *key;
-            GValue *value;
+            GVariant *value;
             guint service_id;
 
             g_variant_builder_open (&builder,
@@ -277,7 +285,7 @@ _ag_account_build_signal (AgAccount *account, AgAccountChanges *changes,
                                            (gpointer)&key, (gpointer)&value))
             {
                 if (value)
-                    _ag_builder_append_dict_entry (&builder, key, value);
+                    g_variant_builder_add (&builder, "{sv}", key, value);
                 else
                     removed_keys = g_slist_prepend (removed_keys, key);
             }
@@ -368,7 +376,7 @@ static gboolean
 got_account_setting (sqlite3_stmt *stmt, GHashTable *settings)
 {
     gchar *key;
-    GValue *value;
+    GVariant *value;
 
     key = g_strdup ((gchar *)sqlite3_column_text (stmt, 0));
     g_return_val_if_fail (key != NULL, FALSE);
@@ -410,7 +418,7 @@ get_service_settings (AgAccountPrivate *priv, AgService *service,
         ss->service = service ? ag_service_ref (service) : NULL;
         ss->settings = g_hash_table_new_full
             (g_str_hash, g_str_equal,
-             g_free, (GDestroyNotify)_ag_value_slice_free);
+             g_free, ag_variant_safe_unref);
         g_hash_table_insert (priv->services, (gchar *)service_name, ss);
     }
 
@@ -421,7 +429,7 @@ static gboolean
 ag_account_changes_get_enabled (AgAccountChanges *changes, gboolean *enabled)
 {
     AgServiceChanges *sc;
-    const GValue *value;
+    GVariant *value;
 
     sc = g_hash_table_lookup (changes->services, SERVICE_GLOBAL);
     if (sc)
@@ -429,7 +437,7 @@ ag_account_changes_get_enabled (AgAccountChanges *changes, gboolean *enabled)
         value = g_hash_table_lookup (sc->settings, "enabled");
         if (value)
         {
-            *enabled = g_value_get_boolean (value);
+            *enabled = g_variant_get_boolean (value);
             return TRUE;
         }
     }
@@ -442,7 +450,7 @@ ag_account_changes_get_display_name (AgAccountChanges *changes,
                                      const gchar **display_name)
 {
     AgServiceChanges *sc;
-    const GValue *value;
+    GVariant *value;
 
     sc = g_hash_table_lookup (changes->services, SERVICE_GLOBAL);
     if (sc)
@@ -450,7 +458,7 @@ ag_account_changes_get_display_name (AgAccountChanges *changes,
         value = g_hash_table_lookup (sc->settings, "name");
         if (value)
         {
-            *display_name = g_value_get_string (value);
+            *display_name = g_variant_get_string (value, NULL);
             return TRUE;
         }
     }
@@ -528,7 +536,7 @@ update_settings (AgAccount *account, GHashTable *services)
         AgServiceSettings *ss;
         GHashTableIter si;
         gchar *key;
-        GValue *value;
+        GVariant *value;
         GHashTable *watches = NULL;
 
         if (priv->foreign)
@@ -566,14 +574,14 @@ update_settings (AgAccount *account, GHashTable *services)
                 {
                     g_free (priv->display_name);
                     priv->display_name =
-                        value ? g_value_dup_string (value) : NULL;
+                        value ? g_variant_dup_string (value, NULL) : NULL;
                     g_signal_emit (account, signals[DISPLAY_NAME_CHANGED], 0);
                     continue;
                 }
                 else if (strcmp (key, "enabled") == 0)
                 {
                     priv->enabled =
-                        value ? g_value_get_boolean (value) : FALSE;
+                        value ? g_variant_get_boolean (value) : FALSE;
                     g_signal_emit (account, signals[ENABLED], 0,
                                    service_name, priv->enabled);
                     continue;
@@ -583,7 +591,7 @@ update_settings (AgAccount *account, GHashTable *services)
             if (value)
                 g_hash_table_replace (ss->settings,
                                       g_strdup (key),
-                                      _ag_value_slice_dup (value));
+                                      g_variant_ref (value));
             else
                 g_hash_table_remove (ss->settings, key);
 
@@ -594,7 +602,7 @@ update_settings (AgAccount *account, GHashTable *services)
             if (strcmp (key, "enabled") == 0)
             {
                 gboolean enabled =
-                    value ? g_value_get_boolean (value) : FALSE;
+                    value ? g_variant_get_boolean (value) : FALSE;
                 g_signal_emit (account, signals[ENABLED], 0,
                                service_name, enabled);
             }
@@ -701,7 +709,7 @@ account_service_changes_get (AgAccountPrivate *priv, AgService *service,
 
         sc->settings = g_hash_table_new_full
             (g_str_hash, g_str_equal,
-            g_free, (GDestroyNotify)_ag_value_slice_free);
+            g_free, ag_variant_safe_unref);
         g_hash_table_insert (changes->services, service_name, sc);
     }
 
@@ -730,17 +738,18 @@ _ag_account_get_service_changes (AgAccount *account, AgService *service)
 
 static void
 change_service_value (AgAccountPrivate *priv, AgService *service,
-                      const gchar *key, const GValue *value)
+                      const gchar *key, GVariant *value)
 {
     AgServiceChanges *sc;
     sc = account_service_changes_get (priv, service, FALSE);
     g_hash_table_insert (sc->settings,
-                         g_strdup (key), _ag_value_slice_dup (value));
+                         g_strdup (key),
+                         value ? g_variant_ref_sink (value) : NULL);
 }
 
 static inline void
 change_selected_service_value (AgAccountPrivate *priv,
-                               const gchar *key, const GValue *value)
+                               const gchar *key, GVariant *value)
 {
     change_service_value(priv, priv->service, key, value);
 }
@@ -1057,19 +1066,14 @@ _ag_account_changes_from_dbus (AgManager *manager, GVariant *v_services,
 
         sc->settings = g_hash_table_new_full
             (g_str_hash, g_str_equal,
-             g_free, (GDestroyNotify)_ag_value_slice_free);
+             g_free, ag_variant_safe_unref);
         g_hash_table_insert (changes->services, service_name, sc);
 
         /* iterate the "a{sv}" of settings */
         g_variant_iter_init (&i_dict, changed_keys);
         while (g_variant_iter_next (&i_dict, "{sv}", &key, &variant))
         {
-            GValue value = G_VALUE_INIT;
-            _ag_value_from_variant (&value, variant);
-
-            g_hash_table_insert (sc->settings, key,
-                                 g_slice_dup (GValue, &value));
-            g_variant_unref (variant);
+            g_hash_table_insert (sc->settings, key, variant);
         }
         g_variant_unref (changed_keys);
 
@@ -1332,7 +1336,7 @@ ag_account_get_store_sql (AgAccount *account, GError **error)
             while (g_hash_table_iter_next (&i_settings, &ht_key, &ht_value))
             {
                 const gchar *key = ht_key;
-                const GValue *value = ht_value;
+                GVariant *value = ht_value;
 
                 if (value)
                 {
@@ -1340,7 +1344,7 @@ ag_account_get_store_sql (AgAccount *account, GError **error)
                     gchar *value_str;
 
                     value_str = _ag_value_to_db (value, FALSE);
-                    type_str = _ag_type_from_g_type (G_VALUE_TYPE (value));
+                    type_str = g_variant_get_type (value);
                     _ag_string_append_printf
                         (sql,
                          "INSERT OR REPLACE INTO Settings (account, service,"
@@ -1503,7 +1507,7 @@ list_enabled_services_from_memory (AgAccountPrivate *priv,
     g_hash_table_iter_init (&iter, priv->services);
     while (g_hash_table_iter_next (&iter, NULL, (gpointer)&ss))
     {
-        GValue *value;
+        GVariant *value;
 
         if (ss->service == NULL) continue;
 
@@ -1512,7 +1516,7 @@ list_enabled_services_from_memory (AgAccountPrivate *priv,
                 continue;
 
         value = g_hash_table_lookup (ss->settings, "enabled");
-        if (value != NULL && g_value_get_boolean (value))
+        if (value != NULL && g_variant_get_boolean (value))
             list = g_list_prepend (list, ag_service_ref(ss->service));
     }
     return list;
@@ -1521,7 +1525,11 @@ list_enabled_services_from_memory (AgAccountPrivate *priv,
 static AgAccountSettingIter *
 ag_account_settings_iter_copy(const AgAccountSettingIter *orig)
 {
-    return g_slice_dup (AgAccountSettingIter, orig);
+    RealIter *copy;
+
+    copy = (RealIter *)g_slice_dup (AgAccountSettingIter, orig);
+    copy->last_gvalue = NULL;
+    return (AgAccountSettingIter *)copy;
 }
 
 G_DEFINE_BOXED_TYPE (AgAccountSettingIter, ag_account_settings_iter,
@@ -1561,6 +1569,8 @@ _ag_account_settings_iter_init (AgAccount *account,
         g_hash_table_iter_init (&ri->iter, ss->settings);
         ri->stage = AG_ITER_STAGE_ACCOUNT;
     }
+
+    ri->last_gvalue = NULL;
 }
 
 /**
@@ -1686,13 +1696,10 @@ ag_account_get_display_name (AgAccount *account)
 void
 ag_account_set_display_name (AgAccount *account, const gchar *display_name)
 {
-    GValue value = G_VALUE_INIT;
-
     g_return_if_fail (AG_IS_ACCOUNT (account));
 
-    g_value_init (&value, G_TYPE_STRING);
-    g_value_set_static_string (&value, display_name);
-    change_service_value (account->priv, NULL, "name", &value);
+    change_service_value (account->priv, NULL, "name",
+                          g_variant_new_string (display_name));
 }
 
 /**
@@ -1774,7 +1781,7 @@ ag_account_get_enabled (AgAccount *account)
     AgAccountPrivate *priv;
     gboolean ret = FALSE;
     AgServiceSettings *ss;
-    GValue *val;
+    GVariant *val;
 
     g_return_val_if_fail (AG_IS_ACCOUNT (account), FALSE);
     priv = account->priv;
@@ -1789,7 +1796,7 @@ ag_account_get_enabled (AgAccount *account)
         if (ss)
         {
             val = g_hash_table_lookup (ss->settings, "enabled");
-            ret = val ? g_value_get_boolean (val) : FALSE;
+            ret = val ? g_variant_get_boolean (val) : FALSE;
         }
     }
     return ret;
@@ -1805,13 +1812,10 @@ ag_account_get_enabled (AgAccount *account)
 void
 ag_account_set_enabled (AgAccount *account, gboolean enabled)
 {
-    GValue value = G_VALUE_INIT;
-
     g_return_if_fail (AG_IS_ACCOUNT (account));
 
-    g_value_init (&value, G_TYPE_BOOLEAN);
-    g_value_set_boolean (&value, enabled);
-    change_selected_service_value (account->priv, "enabled", &value);
+    change_selected_service_value (account->priv, "enabled",
+                                   g_variant_new_boolean (enabled));
 }
 
 /**
@@ -1845,38 +1849,29 @@ ag_account_delete (AgAccount *account)
  * not present, %AG_SETTING_SOURCE_ACCOUNT if the setting comes from the
  * account configuration, or %AG_SETTING_SOURCE_PROFILE if the value comes as
  * predefined in the profile.
+ *
+ * Deprecated: 1.4: Use ag_account_get_variant() instead.
  */
 AgSettingSource
 ag_account_get_value (AgAccount *account, const gchar *key,
                       GValue *value)
 {
-    AgAccountPrivate *priv;
-    AgServiceSettings *ss;
     AgSettingSource source;
-    const GValue *val = NULL;
+    GValue val = G_VALUE_INIT;
+    GVariant *variant;
 
     g_return_val_if_fail (AG_IS_ACCOUNT (account), AG_SETTING_SOURCE_NONE);
-    priv = account->priv;
 
-    ss = get_service_settings (priv, priv->service, FALSE);
-    if (ss)
-    {
-        val = g_hash_table_lookup (ss->settings, key);
-        source = AG_SETTING_SOURCE_ACCOUNT;
-    }
+    variant = ag_account_get_variant (account, key, &source);
 
-    if (!val && priv->service)
+    if (variant != NULL)
     {
-        val = _ag_service_get_default_setting (priv->service, key);
-        source = AG_SETTING_SOURCE_PROFILE;
-    }
-
-    if (val)
-    {
-        if (G_VALUE_TYPE (val) == G_VALUE_TYPE (value))
-            g_value_copy (val, value);
+        _ag_value_from_variant (&val, variant);
+        if (G_VALUE_TYPE (&val) == G_VALUE_TYPE (value))
+            g_value_copy (&val, value);
         else
-            g_value_transform (val, value);
+            g_value_transform (&val, value);
+        g_value_unset (&val);
         return source;
     }
 
@@ -1891,10 +1886,101 @@ ag_account_get_value (AgAccount *account, const gchar *key,
  *
  * Sets the value of the configuration setting @key to the value @value.
  * If @value is %NULL, then the setting is unset.
+ *
+ * Deprecated: 1.4: Use ag_account_set_variant() instead.
  */
 void
 ag_account_set_value (AgAccount *account, const gchar *key,
                       const GValue *value)
+{
+    AgAccountPrivate *priv;
+    GVariant *variant;
+
+    g_return_if_fail (AG_IS_ACCOUNT (account));
+    priv = account->priv;
+
+    if (value != NULL)
+    {
+        variant = _ag_value_to_variant (value);
+        g_return_if_fail (variant != NULL);
+    }
+    else
+    {
+        variant = NULL;
+    }
+
+    change_selected_service_value (priv, key, variant);
+}
+
+/**
+ * ag_account_get_variant:
+ * @account: the #AgAccount.
+ * @key: the name of the setting to retrieve.
+ * @source: (allow-none) (out): a pointer to an
+ * #AgSettingSource variable which will tell whether the setting was
+ * retrieved from the accounts DB or from a service template.
+ *
+ * Gets the value of the configuration setting @key.
+ *
+ * Returns: (transfer none): a #GVariant holding the setting value, or
+ * %NULL. The returned #GVariant is owned by the account, and no guarantees
+ * are made about its lifetime. If the client wishes to keep it, it should
+ * call g_variant_ref() on it.
+ *
+ * Since: 1.4
+ */
+GVariant *
+ag_account_get_variant (AgAccount *account, const gchar *key,
+                        AgSettingSource *source)
+{
+    AgAccountPrivate *priv;
+    AgServiceSettings *ss;
+    GVariant *value;
+
+    g_return_val_if_fail (AG_IS_ACCOUNT (account), NULL);
+    priv = account->priv;
+
+    ss = get_service_settings (priv, priv->service, FALSE);
+    if (ss)
+    {
+        value = g_hash_table_lookup (ss->settings, key);
+        if (value != NULL)
+        {
+            if (source) *source = AG_SETTING_SOURCE_ACCOUNT;
+            return value;
+        }
+    }
+
+    if (priv->service)
+    {
+        value = _ag_service_get_default_setting (priv->service, key);
+        if (value != NULL)
+        {
+            if (source) *source = AG_SETTING_SOURCE_PROFILE;
+            return value;
+        }
+    }
+
+    if (source) *source = AG_SETTING_SOURCE_NONE;
+    return NULL;
+}
+
+/**
+ * ag_account_set_variant:
+ * @account: the #AgAccount.
+ * @key: the name of the setting to change.
+ * @value: (allow-none): a #GVariant holding the new setting's value.
+ *
+ * Sets the value of the configuration setting @key to the value @value.
+ * If @value has a floating reference, the @account will take ownership
+ * of it.
+ * If @value is %NULL, then the setting is unset.
+ *
+ * Since: 1.4
+ */
+void
+ag_account_set_variant (AgAccount *account, const gchar *key,
+                        GVariant *value)
 {
     AgAccountPrivate *priv;
 
@@ -1937,6 +2023,8 @@ ag_account_settings_iter_free (AgAccountSettingIter *iter)
     RealIter *ri = (RealIter *)iter;
     if (ri->must_free_prefix)
         g_free (ri->key_prefix);
+    if (ri->last_gvalue != NULL)
+        _ag_value_slice_free (ri->last_gvalue);
     g_slice_free (AgAccountSettingIter, iter);
 }
 
@@ -1972,10 +2060,66 @@ ag_account_settings_iter_init (AgAccount *account,
  *
  * Returns: %TRUE if @key and @value have been set, %FALSE if we there are no
  * more account settings to iterate over.
+ *
+ * Deprecated: 1.4: Use ag_account_settings_iter_get_next() instead.
  */
 gboolean
 ag_account_settings_iter_next (AgAccountSettingIter *iter,
                                const gchar **key, const GValue **value)
+{
+    RealIter *ri = (RealIter *)iter;
+    GVariant *variant;
+    GValue *val;
+    gboolean ok;
+
+    /* Since AgAccount internally operates with GVariants, we need to
+     * allocate a new GValue. The client, however, won't free it, so we
+     * free it ourselves the next time that this function is called, or
+     * when the iterator is freed.
+     * NOTE: It's still possible that the GValue is leaked if the
+     * AgAccountSettingIter was allocated on the stack and the loop was
+     * interrupted before ag_account_settings_iter_next() returned
+     * FALSE; however, this is not common (and we hope that clients
+     * will soon migrate to the new GVariant API. */
+    if (ri->last_gvalue != NULL)
+    {
+        _ag_value_slice_free (ri->last_gvalue);
+        ri->last_gvalue = NULL;
+    }
+
+    ok = ag_account_settings_iter_get_next (iter, key, &variant);
+    if (!ok)
+    {
+        *value = NULL;
+        return FALSE;
+    }
+
+    val = g_slice_new0 (GValue);
+    _ag_value_from_variant (val, variant);
+    ri->last_gvalue = val;
+    *value = val;
+    return TRUE;
+}
+
+/**
+ * ag_account_settings_iter_get_next:
+ * @iter: an initialized #AgAccountSettingIter structure.
+ * @key: (out callee-allocates) (transfer none): a pointer to a string
+ * receiving the key name.
+ * @value: (out callee-allocates) (transfer none): a pointer to a pointer to a
+ * #GVariant, to receive the key value.
+ *
+ * Iterates over the account keys. @iter must be an iterator previously
+ * initialized with ag_account_settings_iter_init().
+ *
+ * Returns: %TRUE if @key and @value have been set, %FALSE if we there are no
+ * more account settings to iterate over.
+ *
+ * Since: 1.4
+ */
+gboolean
+ag_account_settings_iter_get_next (AgAccountSettingIter *iter,
+                                   const gchar **key, GVariant **value)
 {
     RealIter *ri = (RealIter *)iter;
     AgServiceSettings *ss;

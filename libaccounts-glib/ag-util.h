@@ -51,18 +51,13 @@ G_GNUC_INTERNAL
 void _ag_value_from_variant (GValue *value, GVariant *variant);
 
 G_GNUC_INTERNAL
-gchar *_ag_value_to_db (const GValue *value, gboolean type_annotate);
+gchar *_ag_value_to_db (GVariant *value, gboolean type_annotate);
 
 G_GNUC_INTERNAL
-GValue *_ag_value_from_db (sqlite3_stmt *stmt, gint col_type, gint col_value);
+GVariant *_ag_value_from_db (sqlite3_stmt *stmt, gint col_type, gint col_value);
 
 G_GNUC_INTERNAL
 const GVariantType *_ag_type_from_g_type (GType type);
-
-G_GNUC_INTERNAL
-void _ag_builder_append_dict_entry (GVariantBuilder *builder,
-                                    const gchar *key,
-                                    const GValue *value);
 
 G_GNUC_INTERNAL
 gboolean _ag_xml_get_element_data (xmlTextReaderPtr reader,

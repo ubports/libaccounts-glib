@@ -23,6 +23,8 @@
  * 02110-1301 USA
  */
 
+#define AG_DISABLE_DEPRECATION_WARNINGS
+
 #include "libaccounts-glib/ag-account.h"
 #include "libaccounts-glib/ag-manager.h"
 #include "libaccounts-glib/ag-provider.h"

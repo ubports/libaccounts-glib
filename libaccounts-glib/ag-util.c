@@ -107,22 +107,9 @@ _ag_value_to_variant (const GValue *in_value)
 }
 
 gchar *
-_ag_value_to_db (const GValue *value, gboolean type_annotate)
+_ag_value_to_db (GVariant *value, gboolean type_annotate)
 {
-    GVariant *variant;
-    gchar *string;
-
-    variant = _ag_value_to_variant (value);
-    if (G_UNLIKELY (variant == NULL))
-    {
-        g_warning ("%s: unsupported type ``%s''", G_STRFUNC,
-                   G_VALUE_TYPE_NAME (value));
-        return NULL;
-    }
-
-    string = g_variant_print (variant, type_annotate);
-    g_variant_unref (variant);
-    return string;
+    return g_variant_print (value, type_annotate);
 }
 
 const GVariantType *
@@ -162,14 +149,13 @@ _ag_value_from_variant (GValue *value, GVariant *variant)
     g_dbus_gvariant_to_gvalue (variant, value);
 }
 
-static gboolean
-_ag_value_set_from_string (GValue *value, const gchar *type,
-                           const gchar *string)
+static GVariant *
+_ag_value_from_string (const gchar *type, const gchar *string)
 {
     GVariant *variant;
     GError *error = NULL;
 
-    if (G_UNLIKELY (!string)) return FALSE;
+    if (G_UNLIKELY (!string)) return NULL;
 
     /* g_variant_parse() expects all strings to be enclosed in quotes, which we
      * wouldn't like to enforce in the XML files. So, if we know that we are
@@ -177,9 +163,7 @@ _ag_value_set_from_string (GValue *value, const gchar *type,
     if (type != NULL && type[0] == 's' && type[1] == '\0' &&
         string[0] != '"' && string[0] != '\'')
     {
-        g_value_init (value, G_TYPE_STRING);
-        g_value_set_string (value, string);
-        return TRUE;
+        return g_variant_new_string (string);
     }
 
     variant = g_variant_parse ((GVariantType *)type, string,
@@ -189,35 +173,22 @@ _ag_value_set_from_string (GValue *value, const gchar *type,
         g_warning ("%s: error parsing type \"%s\" ``%s'': %s",
                    G_STRFUNC, type, string, error->message);
         g_error_free (error);
-        return FALSE;
+        return NULL;
     }
 
-    _ag_value_from_variant (value, variant);
-    g_variant_unref (variant);
-
-    return TRUE;
+    return variant;
 }
 
-GValue *
+GVariant *
 _ag_value_from_db (sqlite3_stmt *stmt, gint col_type, gint col_value)
 {
-    GValue *value;
     gchar *string_value;
     gchar *type;
-    gboolean ok;
 
     type = (gchar *)sqlite3_column_text (stmt, col_type);
     string_value = (gchar *)sqlite3_column_text (stmt, col_value);
 
-    value = g_slice_new0 (GValue);
-    ok = _ag_value_set_from_string (value, type, string_value);
-    if (G_UNLIKELY (!ok))
-    {
-        g_slice_free (GValue, value);
-        return NULL;
-    }
-
-    return value;
+    return _ag_value_from_string (type, string_value);
 }
 
 /**
@@ -255,16 +226,6 @@ GQuark
 ag_accounts_error_quark (void)
 {
     return ag_errors_quark ();
-}
-
-void
-_ag_builder_append_dict_entry (GVariantBuilder *builder,
-                               const gchar *key,
-                               const GValue *value)
-{
-    GVariant *variant = _ag_value_to_variant (value);
-
-    g_variant_builder_add (builder, "{sv}", key, variant);
 }
 
 gboolean
@@ -315,7 +276,7 @@ _ag_xml_dup_element_data (xmlTextReaderPtr reader, gchar **dest_ptr)
 }
 
 static gboolean
-parse_param (xmlTextReaderPtr reader, GValue *value)
+parse_param (xmlTextReaderPtr reader, GVariant **value)
 {
     const gchar *str_value;
     xmlChar *str_type = NULL;
@@ -337,8 +298,7 @@ parse_param (xmlTextReaderPtr reader, GValue *value)
     /* Empty value is not an error, but simply ignored */
     if (G_UNLIKELY (!str_value)) goto finish;
 
-    ok = _ag_value_set_from_string (value, type, str_value);
-    if (G_UNLIKELY (!ok)) goto error;
+    *value = _ag_value_from_string (type, str_value);
 
     ok = close_element (reader);
     if (G_UNLIKELY (!ok)) goto error;
@@ -375,7 +335,7 @@ _ag_xml_parse_settings (xmlTextReaderPtr reader, const gchar *group,
             DEBUG_INFO ("found name %s", name);
             if (strcmp (name, "setting") == 0)
             {
-                GValue value = G_VALUE_INIT, *pval;
+                GVariant *value = NULL;
                 xmlChar *key_name;
                 gchar *key;
 
@@ -385,19 +345,13 @@ _ag_xml_parse_settings (xmlTextReaderPtr reader, const gchar *group,
                 if (key_name) xmlFree (key_name);
 
                 ok = parse_param (reader, &value);
-                if (ok && G_VALUE_TYPE (&value) != G_TYPE_INVALID)
+                if (ok && value != NULL)
                 {
-                    pval = g_slice_new0 (GValue);
-                    g_value_init (pval, G_VALUE_TYPE (&value));
-                    g_value_copy (&value, pval);
-
-                    g_hash_table_insert (settings, key, pval);
+                    g_variant_ref_sink (value);
+                    g_hash_table_insert (settings, key, value);
                 }
                 else
                     g_free (key);
-
-                if (G_IS_VALUE(&value))
-                    g_value_unset (&value);
             }
             else if (strcmp (name, "group") == 0 &&
                      xmlTextReaderHasAttributes (reader))

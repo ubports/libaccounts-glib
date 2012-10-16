@@ -61,7 +61,7 @@ parse_template (xmlTextReaderPtr reader, AgService *service)
 
     settings =
         g_hash_table_new_full (g_str_hash, g_str_equal,
-                               g_free, (GDestroyNotify)_ag_value_slice_free);
+                               g_free, (GDestroyNotify)g_variant_unref);
 
     ok = _ag_xml_parse_settings (reader, "", settings);
     if (G_UNLIKELY (!ok))
@@ -325,7 +325,7 @@ _ag_service_load_default_settings (AgService *service)
     return service->default_settings;
 }
 
-const GValue *
+GVariant *
 _ag_service_get_default_setting (AgService *service, const gchar *key)
 {
     GHashTable *settings;
