@@ -378,6 +378,8 @@ ag_service_get_display_name (AgService *service)
  * Gets the description of the #AgService.
  *
  * Returns: the description of @service, or %NULL upon failure.
+ *
+ * Since: 1.2
  */
 const gchar *
 ag_service_get_description (AgService *service)
