@@ -10,7 +10,7 @@ else
 xml_test =
 endif
 
-check_SCRIPTS = \
+dist_check_SCRIPTS = \
 	accounts-glib-test.sh \
 	$(xml_test)
 
@@ -32,7 +32,7 @@ TESTS_ENVIRONMENT = \
 	TESTDATADIR=$(top_srcdir)/tests/ \
 	XMLLINT=$(XMLLINT)
 
-TESTS = $(check_SCRIPTS)
+TESTS = $(dist_check_SCRIPTS)
 
 EXTRA_DIST = \
 	tests.xml \
@@ -43,4 +43,3 @@ EXTRA_DIST = \
 	MyService.service \
 	MyService2.service \
 	OtherService.service
-
