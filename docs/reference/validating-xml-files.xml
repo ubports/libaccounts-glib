@@ -16,7 +16,7 @@ data files can be caught early.
 
   <section id="validating-with-xmllint">
 
-  <title>Using <command>xmllint</command></title>
+  <title>Using <application>xmllint</application></title>
 
   <para>
   <command>xmllint</command> is part of <application>libxml2</application> and
