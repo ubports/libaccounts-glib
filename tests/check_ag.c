@@ -83,6 +83,15 @@ quit_loop_on_timeout(gpointer user_data)
     return FALSE;
 }
 
+static void
+run_main_loop_for_a_while()
+{
+    GMainLoop *loop = g_main_loop_new (NULL, FALSE);
+    g_timeout_add_seconds (2, quit_loop_on_timeout, loop);
+    g_main_loop_run (loop);
+    g_main_loop_unref (loop);
+}
+
 static gboolean
 test_strv_equal (const gchar **s1, const gchar **s2)
 {
@@ -290,6 +299,7 @@ START_TEST(test_store_locked)
     fail_unless (main_loop != NULL, "Callback invoked too early");
     g_debug ("Running loop");
     g_main_loop_run (main_loop);
+    sqlite3_close (db);
 }
 END_TEST
 
@@ -306,13 +316,14 @@ account_store_locked_unref_cb (AgAccount *account, const GError *error,
     fail_unless (g_strcmp0 (string, TEST_STRING) == 0, "Got wrong string");
 }
 
-static void
+static gboolean
 release_lock_unref (sqlite3 *db)
 {
     g_debug ("releasing lock");
     sqlite3_exec (db, "COMMIT;", NULL, NULL, NULL);
 
     end_test ();
+    return FALSE;
 }
 
 static gboolean
@@ -345,6 +356,7 @@ START_TEST(test_store_locked_unref)
     fail_unless (main_loop != NULL, "Callback invoked too early");
     g_debug ("Running loop");
     g_main_loop_run (main_loop);
+    sqlite3_close (db);
 }
 END_TEST
 
@@ -897,6 +909,7 @@ START_TEST(test_auth_data)
     ag_account_select_service (account, my_service);
     ag_account_set_enabled (account, TRUE);
     write_strings_to_account (account, key_prefix, service_params);
+    g_free (key_prefix);
 
     g_value_init (&value, G_TYPE_UINT);
     g_value_set_uint (&value, credentials_id);
@@ -2152,6 +2165,7 @@ START_TEST(test_concurrency)
     fail_unless (ecd.called == TRUE);
     fail_unless (ecd.enabled == TRUE);
     fail_unless (g_strcmp0 (ecd.service, "MyService") == 0);
+    g_free (ecd.service);
 
     end_test ();
 }
@@ -2807,6 +2821,9 @@ START_TEST(test_manager_enabled_event)
     gint ret;
 
     g_type_init();
+
+    /* consume any still unprocessed D-Bus signals */
+    run_main_loop_for_a_while ();
 
     /* delete the database */
     g_unlink (db_filename);

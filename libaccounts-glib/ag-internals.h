@@ -32,7 +32,6 @@
 #include "ag-auth-data.h"
 #include "ag-debug.h"
 #include "ag-manager.h"
-#include <dbus/dbus.h>
 #include <sqlite3.h>
 #include <time.h>
 
@@ -75,12 +74,12 @@ G_GNUC_INTERNAL
 void _ag_account_done_changes (AgAccount *account, AgAccountChanges *changes);
 
 G_GNUC_INTERNAL
-DBusMessage *_ag_account_build_signal (AgAccount *account,
-                                       AgAccountChanges *changes,
-                                       const struct timespec *ts);
+GVariant *_ag_account_build_signal (AgAccount *account,
+                                    AgAccountChanges *changes,
+                                    const struct timespec *ts);
 G_GNUC_INTERNAL
 AgAccountChanges *_ag_account_changes_from_dbus (AgManager *manager,
-                                                 DBusMessageIter *iter,
+                                                 GVariant *v_services,
                                                  gboolean created,
                                                  gboolean deleted);
 
