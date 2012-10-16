@@ -30,6 +30,8 @@ stamp-h1
 *.stamp
 *.typelib
 *.tar.*
+/docs/reference/ag-backup.1
+/docs/reference/ag-tool.1
 /docs/reference/html/
 /docs/reference/libaccounts-glib*txt
 /docs/reference/libaccounts-glib.*

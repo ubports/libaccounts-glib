@@ -7,7 +7,8 @@ ACLOCAL_AMFLAGS = -I m4
 
 DISTCHECK_CONFIGURE_FLAGS = \
 	--enable-gtk-doc \
-	--enable-introspection=yes
+	--enable-introspection=yes \
+	--enable-man
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libaccounts-glib.pc
