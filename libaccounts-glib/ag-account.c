@@ -123,7 +123,12 @@ enum
     PROP_MANAGER,
     PROP_PROVIDER,
     PROP_FOREIGN,
+    PROP_ENABLED,
+    PROP_DISPLAY_NAME,
+    N_PROPERTIES
 };
+
+static GParamSpec *properties[N_PROPERTIES];
 
 enum
 {
@@ -576,6 +581,8 @@ update_settings (AgAccount *account, GHashTable *services)
                     priv->display_name =
                         value ? g_variant_dup_string (value, NULL) : NULL;
                     g_signal_emit (account, signals[DISPLAY_NAME_CHANGED], 0);
+                    g_object_notify_by_pspec ((GObject *)account,
+                                              properties[PROP_DISPLAY_NAME]);
                     continue;
                 }
                 else if (strcmp (key, "enabled") == 0)
@@ -584,6 +591,8 @@ update_settings (AgAccount *account, GHashTable *services)
                         value ? g_variant_get_boolean (value) : FALSE;
                     g_signal_emit (account, signals[ENABLED], 0,
                                    service_name, priv->enabled);
+                    g_object_notify_by_pspec ((GObject *)account,
+                                              properties[PROP_ENABLED]);
                     continue;
                 }
             }
@@ -660,6 +669,8 @@ _ag_account_done_changes (AgAccount *account, AgAccountChanges *changes)
         priv->deleted = TRUE;
         priv->enabled = FALSE;
         g_signal_emit (account, signals[ENABLED], 0, NULL, FALSE);
+        g_object_notify_by_pspec ((GObject *)account,
+                                  properties[PROP_ENABLED]);
         g_signal_emit (account, signals[DELETED], 0);
     }
 }
@@ -842,6 +853,12 @@ ag_account_get_property (GObject *object, guint property_id,
     case PROP_ID:
         g_value_set_uint (value, account->id);
         break;
+    case PROP_ENABLED:
+        g_value_set_boolean (value, account->priv->enabled);
+        break;
+    case PROP_DISPLAY_NAME:
+        g_value_set_string (value, account->priv->display_name);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
@@ -945,33 +962,59 @@ ag_account_class_init (AgAccountClass *klass)
      *
      * The AgAccountId for the account.
      */
-    g_object_class_install_property
-        (object_class, PROP_ID,
-         g_param_spec_uint ("id", "Account ID",
-                            "The AgAccountId of the account",
-                            0, G_MAXUINT, 0,
-                            G_PARAM_STATIC_STRINGS |
-                            G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+    properties[PROP_ID] =
+        g_param_spec_uint ("id", "Account ID",
+                           "The AgAccountId of the account",
+                           0, G_MAXUINT, 0,
+                           G_PARAM_STATIC_STRINGS |
+                           G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
 
-    g_object_class_install_property
-        (object_class, PROP_MANAGER,
-         g_param_spec_object ("manager", "manager", "manager",
-                              AG_TYPE_MANAGER,
-                              G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
+    properties[PROP_MANAGER] =
+        g_param_spec_object ("manager", "manager", "manager",
+                             AG_TYPE_MANAGER,
+                             G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
 
-    g_object_class_install_property
-        (object_class, PROP_PROVIDER,
-         g_param_spec_string ("provider", "provider", "provider",
-                              NULL,
+    properties[PROP_PROVIDER] =
+        g_param_spec_string ("provider", "provider", "provider",
+                             NULL,
+                             G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+                             G_PARAM_STATIC_STRINGS);
+
+    properties[PROP_FOREIGN] =
+        g_param_spec_boolean ("foreign", "foreign", "foreign",
+                              FALSE,
                               G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
-                              G_PARAM_STATIC_STRINGS));
+                              G_PARAM_STATIC_STRINGS);
 
-    g_object_class_install_property
-        (object_class, PROP_FOREIGN,
-         g_param_spec_boolean ("foreign", "foreign", "foreign",
-                               FALSE,
-                               G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
-                               G_PARAM_STATIC_STRINGS));
+    /**
+     * AgAccount:enabled:
+     *
+     * Whether the account is currently enabled.
+     *
+     * Since: 1.4
+     */
+    properties[PROP_ENABLED] =
+        g_param_spec_boolean ("enabled", "Enabled",
+                              "Whether the account is enabled",
+                              FALSE,
+                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    /**
+     * AgAccount:display-name:
+     *
+     * The display name of the account.
+     *
+     * Since: 1.4
+     */
+    properties[PROP_DISPLAY_NAME] =
+        g_param_spec_string ("display-name", "Display name",
+                             "The display name of the account",
+                             NULL,
+                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    g_object_class_install_properties (object_class,
+                                       N_PROPERTIES,
+                                       properties);
 
     /**
      * AgAccount::enabled:

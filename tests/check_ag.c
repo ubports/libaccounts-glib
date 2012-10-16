@@ -486,6 +486,9 @@ START_TEST(test_account_service_enabledness)
 
     /* Still disabled, because the account is disabled */
     fail_unless (service_enabled == FALSE);
+    service_enabled = TRUE;
+    g_object_get (account_service, "enabled", &service_enabled, NULL);
+    fail_unless (service_enabled == FALSE);
 
     /* enable the account */
     ag_account_select_service (account, NULL);
@@ -494,6 +497,9 @@ START_TEST(test_account_service_enabledness)
     ag_account_store (account, account_store_now_cb, TEST_STRING);
     fail_unless (data_stored, "Callback not invoked immediately");
 
+    fail_unless (service_enabled == TRUE);
+    service_enabled = FALSE;
+    g_object_get (account_service, "enabled", &service_enabled, NULL);
     fail_unless (service_enabled == TRUE);
 
     g_object_unref (account_service);
@@ -1490,6 +1496,9 @@ START_TEST(test_signals)
     const gchar *display_name = "My lovely account";
     gboolean enabled_called = FALSE;
     gboolean display_name_called = FALSE;
+    gboolean notify_enabled_called = FALSE;
+    gboolean notify_display_name_called = FALSE;
+    gboolean enabled = FALSE;
 
     g_type_init ();
 
@@ -1502,6 +1511,12 @@ START_TEST(test_signals)
     g_signal_connect_swapped (account, "display-name-changed",
                               G_CALLBACK (set_boolean_variable),
                               &display_name_called);
+    g_signal_connect_swapped (account, "notify::enabled",
+                              G_CALLBACK (set_boolean_variable),
+                              &notify_enabled_called);
+    g_signal_connect_swapped (account, "notify::display-name",
+                              G_CALLBACK (set_boolean_variable),
+                              &notify_display_name_called);
 
     ag_account_set_enabled (account, TRUE);
     ag_account_set_display_name (account, display_name);
@@ -1512,6 +1527,11 @@ START_TEST(test_signals)
 
     fail_unless (enabled_called, "Enabled signal not emitted!");
     fail_unless (display_name_called, "DisplayName signal not emitted!");
+    fail_unless (notify_enabled_called, "Enabled property not notified!");
+    g_object_get (account, "enabled", &enabled, NULL);
+    fail_unless (enabled == TRUE, "Account not enabled!");
+    fail_unless (notify_display_name_called,
+                 "DisplayName property not notified!");
 
     end_test ();
 }
@@ -2275,6 +2295,16 @@ START_TEST(test_concurrency)
     display_name = ag_account_get_display_name (account);
     fail_unless (g_strcmp0 (display_name, "MyAccountName") == 0,
                  "Wrong display name '%s'", display_name);
+
+    {
+        gchar *allocated_display_name = NULL;
+        g_object_get (account,
+                      "display-name", &allocated_display_name,
+                      NULL);
+        fail_unless (g_strcmp0 (allocated_display_name, "MyAccountName") == 0,
+                     "Wrong display name '%s'", allocated_display_name);
+        g_free (allocated_display_name);
+    }
 
     /* check deletion */
     g_signal_connect (manager, "account-deleted",
