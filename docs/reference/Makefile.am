@@ -53,6 +53,7 @@ HTML_IMAGES=
 # e.g. content_files=running.sgml building.sgml changes-2.0.sgml
 content_files= \
 	ag-backup.xml \
+	ag-tool.xml \
 	application-file-format.xml \
 	gettext-xml-files.xml \
 	libaccounts-compiling.xml \
