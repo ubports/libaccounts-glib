@@ -206,6 +206,8 @@ ag_auth_data_unref (AgAuthData *self)
  * Gets the ID of the credentials associated with this account.
  *
  * Returns: the credentials ID.
+ *
+ * Since: 1.1
  */
 guint
 ag_auth_data_get_credentials_id (AgAuthData *self)

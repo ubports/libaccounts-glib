@@ -279,6 +279,8 @@ ag_provider_get_display_name (AgProvider *provider)
  * Get the description of the #AgProvider.
  *
  * Returns: the description of @provider, or %NULL upon failure.
+ *
+ * Since: 1.2
  */
 const gchar *
 ag_provider_get_description (AgProvider *provider)
@@ -295,6 +297,8 @@ ag_provider_get_description (AgProvider *provider)
  * can be used.
  *
  * Returns: a regular expression matching the domain names.
+ *
+ * Since: 1.1
  */
 const gchar *
 ag_provider_get_domains_regex (AgProvider *provider)
@@ -314,6 +318,8 @@ ag_provider_get_domains_regex (AgProvider *provider)
  * domains, this function will return %FALSE.
  *
  * Returns: %TRUE if the given domain is supported, %FALSE otherwise.
+ *
+ * Since: 1.2
  */
 gboolean
 ag_provider_match_domain (AgProvider *provider, const gchar *domain)
