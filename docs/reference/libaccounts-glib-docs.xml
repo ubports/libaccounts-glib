@@ -75,6 +75,7 @@
   <part id="libaccounts-glib-tools">
     <title>libaccounts-glib tools</title>
     <xi:include href="ag-backup.xml"/>
+    <xi:include href="ag-tool.xml"/>
   </part>
 
   <part id="appendices">
