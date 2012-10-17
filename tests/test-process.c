@@ -27,6 +27,7 @@
 
 #include "libaccounts-glib/ag-manager.h"
 #include "libaccounts-glib/ag-account.h"
+#include "libaccounts-glib/ag-service.h"
 #include "libaccounts-glib/ag-errors.h"
 
 #include <glib.h>
