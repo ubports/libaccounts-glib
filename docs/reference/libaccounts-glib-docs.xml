@@ -72,20 +72,33 @@
     </chapter>
   </part>
 
-  <index id="api-index-full">
-    <title>API Index</title>
-    <xi:include href="xml/api-index-full.xml"><xi:fallback /></xi:include>
-  </index>
+  <part id="appendices">
+    <title>Appendices</title>
+    <index id="api-index-full">
+      <title>API Index</title>
+      <xi:include href="xml/api-index-full.xml"><xi:fallback /></xi:include>
+    </index>
 
-  <index id="api-index-deprecated" role="deprecated">
-    <title>Index of deprecated symbols</title>
-    <xi:include href="xml/api-index-deprecated.xml"><xi:fallback /></xi:include>
-  </index>
+    <index id="api-index-deprecated" role="deprecated">
+      <title>Index of deprecated symbols</title>
+      <xi:include href="xml/api-index-deprecated.xml"><xi:fallback /></xi:include>
+    </index>
 
-  <index id="api-index-1-4" role="1.4">
-    <title>Index of new symbols in 1.4</title>
-    <xi:include href="xml/api-index-1.4.xml"><xi:fallback /></xi:include>
-  </index>
+    <index id="api-index-1-1" role="1.1">
+      <title>Index of new symbols in 1.1</title>
+      <xi:include href="xml/api-index-1.1.xml"><xi:fallback /></xi:include>
+    </index>
 
-  <xi:include href="xml/annotation-glossary.xml"><xi:fallback /></xi:include>
+    <index id="api-index-1-2" role="1.2">
+      <title>Index of new symbols in 1.2</title>
+      <xi:include href="xml/api-index-1.2.xml"><xi:fallback /></xi:include>
+    </index>
+
+    <index id="api-index-1-4" role="1.4">
+      <title>Index of new symbols in 1.4</title>
+      <xi:include href="xml/api-index-1.4.xml"><xi:fallback /></xi:include>
+    </index>
+
+    <xi:include href="xml/annotation-glossary.xml"><xi:fallback /></xi:include>
+  </part>
 </book>
