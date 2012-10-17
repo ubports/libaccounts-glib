@@ -57,11 +57,6 @@ struct _AgAccountClass
     void (*_ag_reserved7) (void);
 };
 
-/**
- * AgAccount:
- *
- * Use the accessor functions below.
- */
 struct _AgAccount
 {
     GObject parent_instance;
