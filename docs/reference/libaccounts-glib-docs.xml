@@ -72,6 +72,11 @@
     </chapter>
   </part>
 
+  <part id="libaccounts-glib-tools">
+    <title>libaccounts-glib tools</title>
+    <xi:include href="ag-backup.xml"/>
+  </part>
+
   <part id="appendices">
     <title>Appendices</title>
     <index id="api-index-full">
