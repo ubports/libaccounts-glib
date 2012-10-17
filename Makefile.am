@@ -11,22 +11,22 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	--enable-man
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libaccounts-glib.pc
-
-libaccountsdocdir = ${prefix}/doc/reference
-libaccountsdoc_DATA= README COPYING AUTHORS ChangeLog INSTALL NEWS
+pkgconfig_in_files = libaccounts-glib.pc.in
+pkgconfig_DATA = $(pkgconfig_in_files:.pc.in=.pc)
 
 backupconfdir = ${prefix}/share/backup-framework/applications
 backupconf_in_files = accounts.conf.in 
-backupconf_DATA= accounts.conf
+backupconf_DATA = $(backupconf_in_files:.conf.in=.conf)
 
 CLEANFILES = \
 	$(backupconf_DATA)
 
-EXTRA_DIST = \
+DISTCLEANFILES = \
+	$(pkgconfig_DATA)
+
+dist_noinst_DATA = \
 	$(backupconf_in_files) \
-	$(libaccountsdoc_DATA) \
 	m4/introspection.m4
 
 $(backupconf_DATA): $(backupconf_in_files) 
-	@sed -e "s|\@DATABASE_DIR\@|$(DATABASE_DIR)|" $< > $@ 
+	$(AM_V_GEN)$(SED) -e "s|\@DATABASE_DIR\@|$(DATABASE_DIR)|" $< > $@
