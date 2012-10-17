@@ -9,6 +9,7 @@ autom4te.cache
 /config.*
 debian/
 gtk-doc.make
+/INSTALL
 libtool
 m4/gtk-doc.m4
 m4/libtool.m4
