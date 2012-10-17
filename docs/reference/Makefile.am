@@ -69,7 +69,7 @@ content_files= \
 # signals and properties.
 # e.g. INCLUDES=-I$(top_srcdir) -I$(top_builddir) $(GTK_DEBUG_FLAGS)
 # e.g. GTKDOC_LIBS=$(top_builddir)/gtk/$(gtktargetlib)
-INCLUDES=-I$(top_srcdir) $(LIBACCOUNTS_CFLAGS)
+AM_CPPFLAGS=-I$(top_srcdir) $(LIBACCOUNTS_CFLAGS)
 GTKDOC_LIBS=$(top_builddir)/libaccounts-glib/libaccounts-glib.la $(LIBACCOUNTS_LIBS)
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
@@ -78,6 +78,21 @@ include $(top_srcdir)/gtk-doc.make
 # Other files to distribute
 # e.g. EXTRA_DIST += version.xml.in
 EXTRA_DIST += 
+
+if ENABLE_MAN
+ag-backup.1: ag-backup.xml
+	$(AM_V_GEN)xsltproc -nonet --path $(builddir) http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $<
+
+ag-tool.1: ag-tool.xml
+	$(AM_V_GEN)xsltproc -nonet --path $(builddir) http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $<
+
+nodist_man_MANS = \
+	ag-backup.1 \
+	ag-tool.1
+
+# Already defined in gtk-doc.make.
+CLEANFILES += $(nodist_man_MANS)
+endif
 
 if ENABLE_GTK_DOC
 TESTS = $(GTKDOC_CHECK)
