@@ -123,8 +123,12 @@ enum {
     PROP_0,
 
     PROP_ACCOUNT,
-    PROP_SERVICE
+    PROP_SERVICE,
+    PROP_ENABLED,
+    N_PROPERTIES
 };
+
+static GParamSpec *properties[N_PROPERTIES];
 
 struct _AgAccountServicePrivate {
     AgAccount *account;
@@ -193,6 +197,24 @@ on_account_enabled (G_GNUC_UNUSED AgAccount *account,
     {
         priv->enabled = enabled;
         g_signal_emit (self, signals[ENABLED], 0, enabled);
+        g_object_notify_by_pspec ((GObject *)self, properties[PROP_ENABLED]);
+    }
+}
+
+static void
+ag_account_service_get_property (GObject *object, guint property_id,
+                                 GValue *value, GParamSpec *pspec)
+{
+    AgAccountService *self = AG_ACCOUNT_SERVICE (object);
+
+    switch (property_id)
+    {
+    case PROP_ENABLED:
+        g_value_set_boolean (value, self->priv->enabled);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+        break;
     }
 }
 
@@ -274,20 +296,39 @@ ag_account_service_class_init(AgAccountServiceClass *klass)
 
     object_class->constructed = ag_account_service_constructed;
     object_class->dispose = ag_account_service_dispose;
+    object_class->get_property = ag_account_service_get_property;
     object_class->set_property = ag_account_service_set_property;
 
-    g_object_class_install_property
-        (object_class, PROP_ACCOUNT,
-         g_param_spec_object ("account", "account", "account",
-                              AG_TYPE_ACCOUNT,
-                              G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
+    properties[PROP_ACCOUNT] =
+        g_param_spec_object ("account", "account", "account",
+                             AG_TYPE_ACCOUNT,
+                             G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
 
-    g_object_class_install_property
-        (object_class, PROP_SERVICE,
-         g_param_spec_boxed ("service", "service", "service",
-                             ag_service_get_type(),
-                             G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
+    properties[PROP_SERVICE] =
+        g_param_spec_boxed ("service", "service", "service",
+                            ag_service_get_type(),
+                            G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
 
+    /**
+     * AgAccountService:enabled:
+     *
+     * Whether the account service is currently enabled. The value of
+     * this property is %TRUE if and only if the underlying #AgAccount
+     * is enabled and the selected #AgService is enabled on it. If this
+     * property is %FALSE, applications should not try to use this
+     * object.
+     *
+     * Since: 1.4
+     */
+    properties[PROP_ENABLED] =
+        g_param_spec_boolean ("enabled", "Enabled",
+                              "Whether the account service is enabled",
+                              FALSE,
+                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    g_object_class_install_properties (object_class,
+                                       N_PROPERTIES,
+                                       properties);
 
     /**
      * AgAccountService::changed:
