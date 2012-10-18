@@ -57,6 +57,7 @@ content_files= \
 	application-file-format.xml \
 	gettext-xml-files.xml \
 	libaccounts-compiling.xml \
+	libaccounts-glossary.xml \
 	libaccounts-overview.xml \
 	libaccounts-running.xml \
 	provider-file-format.xml \
