@@ -25,6 +25,7 @@
 #ifndef _AG_ACCOUNT_H_
 #define _AG_ACCOUNT_H_
 
+#include <gio/gio.h>
 #include <glib-object.h>
 #include <libaccounts-glib/ag-types.h>
 
@@ -180,10 +181,20 @@ AgAccountWatch ag_account_watch_dir (AgAccount *account,
                                      gpointer user_data);
 void ag_account_remove_watch (AgAccount *account, AgAccountWatch watch);
 
+#ifndef AG_DISABLE_DEPRECATED
 typedef void (*AgAccountStoreCb) (AgAccount *account, const GError *error,
                                   gpointer user_data);
+AG_DEPRECATED_FOR(ag_account_store_async)
 void ag_account_store (AgAccount *account, AgAccountStoreCb callback,
                        gpointer user_data);
+#endif
+void ag_account_store_async (AgAccount *account,
+                             GCancellable *cancellable,
+                             GAsyncReadyCallback callback,
+                             gpointer user_data);
+gboolean ag_account_store_finish (AgAccount *account,
+                                  GAsyncResult *res,
+                                  GError **error);
 
 gboolean ag_account_store_blocking (AgAccount *account, GError **error);
 

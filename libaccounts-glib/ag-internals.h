@@ -66,9 +66,7 @@ struct _AgAccountChanges {
 
 G_GNUC_INTERNAL
 void _ag_account_store_completed (AgAccount *account,
-                                  AgAccountChanges *changes,
-                                  AgAccountStoreCb callback,
-                                  const GError *error, gpointer user_data);
+                                  AgAccountChanges *changes);
 
 G_GNUC_INTERNAL
 void _ag_account_done_changes (AgAccount *account, AgAccountChanges *changes);
@@ -87,11 +85,12 @@ G_GNUC_INTERNAL
 GHashTable *_ag_account_get_service_changes (AgAccount *account,
                                              AgService *service);
 
+G_GNUC_INTERNAL
 void _ag_manager_exec_transaction (AgManager *manager, const gchar *sql,
                                    AgAccountChanges *changes,
                                    AgAccount *account,
-                                   AgAccountStoreCb callback,
-                                   gpointer user_data) G_GNUC_INTERNAL;
+                                   GSimpleAsyncResult *async_result,
+                                   GCancellable *cancellable);
 
 typedef gboolean (*AgQueryCallback) (sqlite3_stmt *stmt, gpointer user_data);
 
