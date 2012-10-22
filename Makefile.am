@@ -1,6 +1,9 @@
-SUBDIRS = libaccounts-glib docs tests tools
+SUBDIRS = libaccounts-glib docs tools
 if ENABLE_PYTHON
 SUBDIRS += pygobject
+endif
+if ENABLE_TESTS
+SUBDIRS += tests
 endif
 
 ACLOCAL_AMFLAGS = -I m4

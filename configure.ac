@@ -34,7 +34,25 @@ PKG_CHECK_MODULES(
 AC_SUBST(LIBACCOUNTS_CFLAGS)
 AC_SUBST(LIBACCOUNTS_LIBS)
 
-PKG_CHECK_MODULES([CHECK], [check >= 0.9.4])
+# Build tests.
+
+CHECK_REQUIRED="check >= 0.9.4"
+
+AC_ARG_ENABLE([tests],
+  [AS_HELP_STRING([--disable-tests], [build with testing support disabled])])
+
+AS_IF([test "x$enable_tests" != "xno"],
+  [PKG_CHECK_EXISTS([$CHECK_REQUIRED], [have_check=yes], [have_check=no])],
+  [have_check=no])
+
+AS_IF([test "x$have_check" = "xyes"],
+  [PKG_CHECK_MODULES([CHECK], [$CHECK_REQUIRED])
+   AC_SUBST([CHECK_CFLAGS])
+   AC_SUBST([CHECK_LIBS])],
+  [AS_IF([test "x$enable_tests" = "xyes"],
+      [AC_MSG_ERROR([tests enabled but required dependencies were not found])])])
+
+AM_CONDITIONAL([ENABLE_TESTS], [test "x$have_check" = "xyes"])
 
 GTK_DOC_CHECK([1.14], [--flavour no-tmpl])
 

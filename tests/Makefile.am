@@ -18,7 +18,7 @@ dist_check_SCRIPTS = \
 
 accounts_glib_testsuite_SOURCES = check_ag.c
 accounts_glib_testsuite_CPPFLAGS = \
-	$(CHECK_FLAGS) \
+	$(CHECK_CFLAGS) \
 	-I$(top_builddir) \
 	$(AM_CPPFLAGS)
 accounts_glib_testsuite_LDADD = \
