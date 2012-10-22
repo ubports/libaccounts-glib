@@ -183,6 +183,9 @@ struct _AgAccountPrivate {
      */
     GHashTable *changes_for_watches;
 
+    /* GSimpleAsyncResult for the ag_account_store_async operation. */
+    GSimpleAsyncResult *store_async_result;
+
     /* The "foreign" flag means that the account has been created by another
      * instance and we got informed about it from D-Bus. In this case, all the
      * informations that we get via D-Bus will be cached in the
@@ -216,6 +219,11 @@ typedef struct _AgSignature {
     gchar *token;
 } AgSignature;
 
+typedef struct {
+    AgAccountStoreCb callback;
+    gpointer user_data;
+} AsyncReadyCbWrapperData;
+
 #define AG_ITER_STAGE_UNSET     0
 #define AG_ITER_STAGE_ACCOUNT   1
 #define AG_ITER_STAGE_SERVICE   2
@@ -223,6 +231,24 @@ typedef struct _AgSignature {
 G_DEFINE_TYPE (AgAccount, ag_account, G_TYPE_OBJECT);
 
 #define AG_ACCOUNT_PRIV(obj) (AG_ACCOUNT(obj)->priv)
+
+static void
+async_ready_cb_wrapper (GObject *object, GAsyncResult *res,
+                        gpointer user_data)
+{
+    AsyncReadyCbWrapperData *cb_data = user_data;
+    AgAccount *account = AG_ACCOUNT (object);
+    GError *error = NULL;
+
+    ag_account_store_finish (account, res, &error);
+    if (cb_data->callback != NULL)
+    {
+        cb_data->callback (account, error, cb_data->user_data);
+    }
+
+    g_clear_error (&error);
+    g_slice_free (AsyncReadyCbWrapperData, cb_data);
+}
 
 static void
 ag_variant_safe_unref (gpointer variant)
@@ -637,12 +663,12 @@ update_settings (AgAccount *account, GHashTable *services)
 }
 
 void
-_ag_account_store_completed (AgAccount *account, AgAccountChanges *changes,
-                             AgAccountStoreCb callback, const GError *error,
-                             gpointer user_data)
+_ag_account_store_completed (AgAccount *account, AgAccountChanges *changes)
 {
-    if (callback)
-        callback (account, error, user_data);
+    AgAccountPrivate *priv = account->priv;
+
+    g_simple_async_result_complete (priv->store_async_result);
+    g_clear_object (&priv->store_async_result);
 
     _ag_account_changes_free (changes);
 }
@@ -2341,10 +2367,39 @@ ag_account_remove_watch (AgAccount *account, AgAccountWatch watch)
  *
  * Store the account settings which have been changed into the account
  * database, and invoke @callback when the operation has been completed.
+ *
+ * Deprecated: 1.4: Use ag_account_store_async() instead.
  */
 void
 ag_account_store (AgAccount *account, AgAccountStoreCb callback,
                   gpointer user_data)
+{
+    AsyncReadyCbWrapperData *cb_data;
+
+    g_return_if_fail (AG_IS_ACCOUNT (account));
+
+    cb_data = g_slice_new (AsyncReadyCbWrapperData);
+    cb_data->callback = callback;
+    cb_data->user_data = user_data;
+    ag_account_store_async (account, NULL, async_ready_cb_wrapper, cb_data);
+}
+
+/**
+ * ag_account_store_async:
+ * @account: the #AgAccount.
+ * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
+ * @callback: (scope async): function to be called when the settings have been
+ * written.
+ * @user_data: pointer to user data, to be passed to @callback.
+ *
+ * Store the account settings which have been changed into the account
+ * database, and invoke @callback when the operation has been completed.
+ *
+ * Since: 1.4
+ */
+void
+ag_account_store_async (AgAccount *account, GCancellable *cancellable,
+                        GAsyncReadyCallback callback, gpointer user_data)
 {
     AgAccountPrivate *priv;
     AgAccountChanges *changes;
@@ -2354,15 +2409,26 @@ ag_account_store (AgAccount *account, AgAccountStoreCb callback,
     g_return_if_fail (AG_IS_ACCOUNT (account));
     priv = account->priv;
 
+    if (G_UNLIKELY (priv->store_async_result != NULL))
+    {
+        g_critical ("ag_account_store_async called again before completion");
+        return;
+    }
+
+    priv->store_async_result =
+        g_simple_async_result_new ((GObject *)account,
+                                   callback, user_data,
+                                   ag_account_store_async);
+    g_simple_async_result_set_check_cancellable (priv->store_async_result,
+                                                 cancellable);
+
     sql = ag_account_get_store_sql (account, &error);
     if (G_UNLIKELY (error))
     {
-        if (callback)
-            callback (account, error, user_data);
-        else
-            g_warning ("%s: %s", G_STRFUNC, error->message);
-
-        g_error_free (error);
+        g_simple_async_result_take_error (priv->store_async_result,
+                                          error);
+        g_simple_async_result_complete (priv->store_async_result);
+        g_clear_object (&priv->store_async_result);
         return;
     }
 
@@ -2372,14 +2438,39 @@ ag_account_store (AgAccount *account, AgAccountStoreCb callback,
     if (G_UNLIKELY (!sql))
     {
         /* Nothing to do: invoke the callback immediately */
-        if (callback)
-            callback (account, NULL, user_data);
+        g_simple_async_result_complete (priv->store_async_result);
+        g_clear_object (&priv->store_async_result);
         return;
     }
 
     _ag_manager_exec_transaction (priv->manager, sql, changes, account,
-                                  callback, user_data);
+                                  priv->store_async_result, cancellable);
     g_free (sql);
+}
+
+/**
+ * ag_account_store_finish:
+ * @account: the #AgAccount.
+ * @res: A #GAsyncResult obtained from the #GAsyncReadyCallback passed to
+ * ag_account_store_async().
+ * @error: return location for error, or %NULL.
+ *
+ * Finishes the store operation started by ag_account_store_async().
+ *
+ * Returns: %TRUE on success, %FALSE otherwise.
+ *
+ * Since: 1.4
+ */
+gboolean
+ag_account_store_finish (AgAccount *account, GAsyncResult *res,
+                         GError **error)
+{
+    GSimpleAsyncResult *async_result;
+
+    g_return_val_if_fail (AG_IS_ACCOUNT (account), FALSE);
+
+    async_result = (GSimpleAsyncResult *)res;
+    return !g_simple_async_result_propagate_error (async_result, error);
 }
 
 /**

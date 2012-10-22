@@ -32,6 +32,8 @@ ag_account_settings_iter_next
 ag_account_settings_iter_free
 ag_account_sign
 ag_account_store
+ag_account_store_async
+ag_account_store_finish
 ag_account_store_blocking
 ag_account_supports_service
 ag_account_verify

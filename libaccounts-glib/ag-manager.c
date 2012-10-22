@@ -130,8 +130,8 @@ typedef struct {
     gchar *sql;
     AgAccountChanges *changes;
     guint id;
-    AgAccountStoreCb callback;
-    gpointer user_data;
+    GSimpleAsyncResult *async_result;
+    GCancellable *cancellable;
 } StoreCbData;
 
 typedef struct {
@@ -880,29 +880,8 @@ exec_transaction (AgManager *manager, AgAccount *account,
 }
 
 static void
-lost_weak_ref (gpointer data, GObject *dead)
-{
-    StoreCbData *sd = data;
-    AgManagerPrivate *priv;
-
-    GError error = { AG_ACCOUNTS_ERROR, AG_ACCOUNTS_ERROR_DISPOSED,
-                     "Account disposed" };
-
-    g_assert ((GObject *)sd->account == dead);
-    _ag_account_store_completed (sd->account, sd->changes,
-                                 sd->callback, &error, sd->user_data);
-
-    priv = AG_MANAGER_PRIV (sd->manager);
-    priv->locks = g_list_remove (priv->locks, sd);
-    sd->account = NULL; /* so that the weak reference is not removed */
-    store_cb_data_free (sd);
-}
-
-static void
 store_cb_data_free (StoreCbData *sd)
 {
-    if (sd->account)
-        g_object_weak_unref (G_OBJECT (sd->account), lost_weak_ref, sd);
     if (sd->id)
         g_source_remove (sd->id);
     g_free (sd->sql);
@@ -921,16 +900,27 @@ exec_transaction_idle (StoreCbData *sd)
     g_return_val_if_fail (AG_IS_MANAGER (manager), FALSE);
     priv = manager->priv;
 
+    g_object_ref (manager);
+    g_object_ref (account);
+
+    /* If the operation was cancelled, abort it. */
+    if (sd->cancellable != NULL)
+    {
+        g_cancellable_set_error_if_cancelled (sd->cancellable, &error);
+        if (error != NULL)
+            goto finish;
+    }
+
     g_return_val_if_fail (priv->begin_stmt != NULL, FALSE);
     ret = sqlite3_step (priv->begin_stmt);
     if (ret == SQLITE_BUSY)
     {
         sched_yield ();
+        g_object_unref (account);
+        g_object_unref (manager);
         return TRUE; /* call this callback again */
     }
 
-    g_object_ref (manager);
-    g_object_ref (account);
     if (ret == SQLITE_DONE)
     {
         exec_transaction (manager, account, sd->sql, sd->changes, &error);
@@ -940,10 +930,14 @@ exec_transaction_idle (StoreCbData *sd)
         error = g_error_new_literal (AG_ACCOUNTS_ERROR, AG_ACCOUNTS_ERROR_DB,
                                      "Generic error");
     }
-    _ag_account_store_completed (account, sd->changes,
-                                 sd->callback, error, sd->user_data);
-    if (error)
-        g_error_free (error);
+
+finish:
+    if (error != NULL)
+    {
+        g_simple_async_result_take_error (sd->async_result, error);
+    }
+
+    _ag_account_store_completed (account, sd->changes);
 
     priv->locks = g_list_remove (priv->locks, sd);
     sd->id = 0;
@@ -2093,7 +2087,8 @@ ag_manager_list_services_by_type (AgManager *manager, const gchar *service_type)
 void
 _ag_manager_exec_transaction (AgManager *manager, const gchar *sql,
                               AgAccountChanges *changes, AgAccount *account,
-                              AgAccountStoreCb callback, gpointer user_data)
+                              GSimpleAsyncResult *async_result,
+                              GCancellable *cancellable)
 {
     AgManagerPrivate *priv = manager->priv;
     GError *error = NULL;
@@ -2111,21 +2106,17 @@ _ag_manager_exec_transaction (AgManager *manager, const gchar *sql,
     ret = sqlite3_step (priv->begin_stmt);
     if (ret == SQLITE_BUSY)
     {
-        if (callback)
-        {
-            StoreCbData *sd;
+        StoreCbData *sd;
 
-            sd = g_slice_new (StoreCbData);
-            sd->manager = manager;
-            sd->account = account;
-            sd->changes = changes;
-            sd->callback = callback;
-            sd->user_data = user_data;
-            sd->sql = g_strdup (sql);
-            sd->id = g_idle_add ((GSourceFunc)exec_transaction_idle, sd);
-            priv->locks = g_list_prepend (priv->locks, sd);
-            g_object_weak_ref (G_OBJECT (account), lost_weak_ref, sd);
-        }
+        sd = g_slice_new (StoreCbData);
+        sd->manager = manager;
+        sd->account = account;
+        sd->changes = changes;
+        sd->async_result = async_result;
+        sd->cancellable = cancellable;
+        sd->sql = g_strdup (sql);
+        sd->id = g_idle_add ((GSourceFunc)exec_transaction_idle, sd);
+        priv->locks = g_list_prepend (priv->locks, sd);
         return;
     }
 
@@ -2140,10 +2131,12 @@ _ag_manager_exec_transaction (AgManager *manager, const gchar *sql,
     exec_transaction (manager, account, sql, changes, &error);
 
 finish:
-    _ag_account_store_completed (account, changes,
-                                 callback, error, user_data);
-    if (error)
-        g_error_free (error);
+    if (error != NULL)
+    {
+        g_simple_async_result_take_error (async_result, error);
+    }
+
+    _ag_account_store_completed (account, changes);
 }
 
 void

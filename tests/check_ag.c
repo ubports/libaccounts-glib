@@ -306,20 +306,25 @@ START_TEST(test_store_locked)
 END_TEST
 
 static void
-account_store_locked_unref_cb (AgAccount *account, const GError *error,
+account_store_locked_cancel_cb (GObject *object, GAsyncResult *res,
                                gpointer user_data)
 {
-    const gchar *string = user_data;
+    gboolean *called = user_data;
+    GError *error = NULL;
 
     g_debug ("%s called", G_STRFUNC);
+
+    ag_account_store_finish (AG_ACCOUNT (object), res, &error);
     fail_unless (error != NULL, "Account disposed but no error set!");
-    fail_unless (error->code == AG_ERROR_DISPOSED,
+    fail_unless (error->domain == G_IO_ERROR, "Wrong error domain");
+    fail_unless (error->code == G_IO_ERROR_CANCELLED,
                  "Got a different error code");
-    fail_unless (g_strcmp0 (string, TEST_STRING) == 0, "Got wrong string");
+    g_error_free (error);
+    *called = TRUE;
 }
 
 static gboolean
-release_lock_unref (sqlite3 *db)
+release_lock_cancel (sqlite3 *db)
 {
     g_debug ("releasing lock");
     sqlite3_exec (db, "COMMIT;", NULL, NULL, NULL);
@@ -329,18 +334,20 @@ release_lock_unref (sqlite3 *db)
 }
 
 static gboolean
-unref_account (gpointer user_data)
+cancel_store (gpointer user_data)
 {
-    g_debug ("Unreferencing account %p", account);
-    fail_unless (AG_IS_ACCOUNT (account), "Account disposed?");
-    g_object_unref (account);
-    account = NULL;
+    GCancellable *cancellable = user_data;
+
+    g_debug ("Cancelling %p", cancellable);
+    g_cancellable_cancel (cancellable);
     return FALSE;
 }
 
-START_TEST(test_store_locked_unref)
+START_TEST(test_store_locked_cancel)
 {
     sqlite3 *db;
+    GCancellable *cancellable;
+    gboolean cb_called = FALSE;
 
     g_type_init ();
     manager = ag_manager_new ();
@@ -352,13 +359,16 @@ START_TEST(test_store_locked_unref)
     sqlite3_exec (db, "BEGIN EXCLUSIVE", NULL, NULL, NULL);
 
     main_loop = g_main_loop_new (NULL, FALSE);
-    ag_account_store (account, account_store_locked_unref_cb, TEST_STRING);
-    g_timeout_add (10, (GSourceFunc)unref_account, NULL);
-    g_timeout_add (20, (GSourceFunc)release_lock_unref, db);
+    cancellable = g_cancellable_new ();
+    ag_account_store_async (account, cancellable, account_store_locked_cancel_cb, &cb_called);
+    g_timeout_add (10, (GSourceFunc)cancel_store, cancellable);
+    g_timeout_add (20, (GSourceFunc)release_lock_cancel, db);
     fail_unless (main_loop != NULL, "Callback invoked too early");
     g_debug ("Running loop");
     g_main_loop_run (main_loop);
+    fail_unless (cb_called, "Callback not invoked");
     sqlite3_close (db);
+    g_object_unref (cancellable);
 }
 END_TEST
 
@@ -3501,7 +3511,7 @@ ag_suite(const char *test_case)
     tc = tcase_create("Store");
     tcase_add_test (tc, test_store);
     tcase_add_test (tc, test_store_locked);
-    tcase_add_test (tc, test_store_locked_unref);
+    tcase_add_test (tc, test_store_locked_cancel);
     IF_TEST_CASE_ENABLED("Store")
         suite_add_tcase (s, tc);
 
