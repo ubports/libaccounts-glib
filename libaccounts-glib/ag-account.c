@@ -2365,8 +2365,8 @@ ag_account_remove_watch (AgAccount *account, AgAccountWatch watch)
  * written.
  * @user_data: pointer to user data, to be passed to @callback.
  *
- * Store the account settings which have been changed into the account
- * database, and invoke @callback when the operation has been completed.
+ * Commit the changed account settings to the account database, and invoke
+ * @callback when the operation has been completed.
  *
  * Deprecated: 1.4: Use ag_account_store_async() instead.
  */
@@ -2392,8 +2392,8 @@ ag_account_store (AgAccount *account, AgAccountStoreCb callback,
  * written.
  * @user_data: pointer to user data, to be passed to @callback.
  *
- * Store the account settings which have been changed into the account
- * database, and invoke @callback when the operation has been completed.
+ * Commit the changed account settings to the account database, and invoke
+ * @callback when the operation has been completed.
  *
  * Since: 1.4
  */
@@ -2484,8 +2484,8 @@ ag_account_store_finish (AgAccount *account, GAsyncResult *res,
  * @account: the #AgAccount.
  * @error: pointer to receive the #GError, or %NULL.
  *
- * Store the account settings which have been changed into the account
- * database. This function does not return until the operation has completed.
+ * Commit the changed account settings to the account database, and invoke
+ * @callback when the operation has been completed.
  *
  * Returns: %TRUE on success, %FALSE on failure.
  */
