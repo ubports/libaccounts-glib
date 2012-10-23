@@ -2412,6 +2412,12 @@ ag_account_store_async (AgAccount *account, GCancellable *cancellable,
     if (G_UNLIKELY (priv->store_async_result != NULL))
     {
         g_critical ("ag_account_store_async called again before completion");
+        g_simple_async_report_error_in_idle ((GObject *)account,
+                                             callback, user_data,
+                                             AG_ACCOUNTS_ERROR,
+                                             AG_ACCOUNTS_ERROR_STORE_IN_PROGRESS,
+                                             "Store operation already "
+                                             "in progress");
         return;
     }
 
