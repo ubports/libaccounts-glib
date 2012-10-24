@@ -404,6 +404,7 @@ START_TEST(test_account_service)
     g_value_unset (&value);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     service = ag_manager_get_service (manager, "MyService");
@@ -480,6 +481,7 @@ START_TEST(test_account_service_enabledness)
                  "Failed to create AccountService");
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
     account_id = account->id;
 
@@ -492,6 +494,7 @@ START_TEST(test_account_service_enabledness)
     ag_account_set_enabled (account, TRUE);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     /* Still disabled, because the account is disabled */
@@ -505,6 +508,7 @@ START_TEST(test_account_service_enabledness)
     ag_account_set_enabled (account, TRUE);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     fail_unless (service_enabled == TRUE);
@@ -552,6 +556,7 @@ START_TEST(test_account_service_enabledness)
     ag_account_set_enabled (account, FALSE);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     fail_unless (service_enabled == FALSE);
@@ -627,6 +632,7 @@ START_TEST(test_account_service_settings)
     g_value_unset (&value);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     /* The callback for the "changed" signal should have been emitted.
@@ -661,6 +667,7 @@ START_TEST(test_account_service_settings)
     g_value_unset (&value);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     /* The callback for the "changed" signal should have been emitted.
@@ -726,6 +733,7 @@ START_TEST(test_account_service_list)
         ag_account_set_enabled (account, TRUE);
         ag_account_set_display_name (account, display_name);
         ag_account_store (account, account_store_now_cb, TEST_STRING);
+        run_main_loop_for_n_seconds(0);
         fail_unless (data_stored, "Callback not invoked immediately");
         account_id[i] = account->id;
         g_object_unref (account);
@@ -762,6 +770,7 @@ START_TEST(test_account_service_list)
     ag_account_select_service (account, my_service2);
     ag_account_set_enabled (account, FALSE);
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     account = ag_manager_get_account (manager, account_id[1]);
@@ -772,6 +781,7 @@ START_TEST(test_account_service_list)
     ag_account_select_service (account, my_service2);
     ag_account_set_enabled (account, FALSE);
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     account = ag_manager_get_account (manager, account_id[2]);
@@ -781,6 +791,7 @@ START_TEST(test_account_service_list)
     ag_account_select_service (account, my_service2);
     ag_account_set_enabled (account, TRUE);
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     g_object_unref (manager);
@@ -945,6 +956,7 @@ START_TEST(test_auth_data)
     g_value_unset (&value);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
     account_id = account->id;
     g_object_unref (account);
@@ -1335,6 +1347,7 @@ START_TEST(test_service)
     g_value_unset (&value);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     g_debug ("Service id: %d", service->id);
@@ -1433,6 +1446,7 @@ START_TEST(test_service)
     ag_account_set_enabled (account, TRUE);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     fail_unless (ag_account_get_enabled (account) == TRUE,
@@ -1533,6 +1547,7 @@ START_TEST(test_signals)
 
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     fail_unless (enabled_called, "Enabled signal not emitted!");
@@ -1565,6 +1580,7 @@ START_TEST(test_list)
     ag_account_set_display_name (account, display_name);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     fail_unless (account->id != 0, "Account ID is still 0!");
@@ -1602,6 +1618,7 @@ START_TEST(test_list)
     g_value_unset (&value);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     /* check that the service is now there */
@@ -1658,6 +1675,7 @@ START_TEST(test_settings_iter_gvalue)
     n_values = i;
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     fail_unless (account->id != 0, "Account ID is still 0!");
@@ -1752,6 +1770,7 @@ START_TEST(test_settings_iter_gvalue)
 
     /* save */
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     /* enumerate the parameters */
@@ -1823,6 +1842,7 @@ START_TEST(test_settings_iter)
     n_values = i;
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     fail_unless (account->id != 0, "Account ID is still 0!");
@@ -1914,6 +1934,7 @@ START_TEST(test_settings_iter)
 
     /* save */
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     /* enumerate the parameters */
@@ -2052,6 +2073,7 @@ START_TEST(test_delete)
     account = ag_manager_create_account (manager, PROVIDER);
     ag_account_set_enabled (account, TRUE);
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     fail_unless (account->id != 0, "Account ID is still 0!");
@@ -2076,6 +2098,7 @@ START_TEST(test_delete)
 
     /* really delete the account */
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     /* check that the signals are emitted */
@@ -2158,6 +2181,7 @@ START_TEST(test_watches)
     g_value_unset (&value);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     /* if we didn't change the server, make sure the callback is not
@@ -2189,6 +2213,7 @@ START_TEST(test_watches)
     port_changed = FALSE;
     dir_changed = FALSE;
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     /* make sure the callback for the server is invoked */
@@ -2517,6 +2542,7 @@ START_TEST(test_service_regression)
     g_value_unset (&value);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     g_debug ("Service id: %d", service->id);
@@ -2702,6 +2728,7 @@ START_TEST(test_sign_verify_key)
     ag_account_sign (account, key2, token);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     fail_unless (account->id != 0, "Account ID is still 0!");
@@ -2739,6 +2766,7 @@ START_TEST(test_sign_verify_key)
     ag_account_sign (account, key2, token);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     fail_unless (account->id != 0, "Account ID is still 0!");
@@ -2780,6 +2808,7 @@ START_TEST(test_cache_regression)
     ag_account_set_display_name (account, display_name1);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     account_id1 = account->id;
@@ -2788,6 +2817,7 @@ START_TEST(test_cache_regression)
     ag_account_delete (account);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     /* after deleting the account, we shouldn't get it anymore, even if we
@@ -2802,6 +2832,7 @@ START_TEST(test_cache_regression)
     ag_account_set_display_name (account, display_name2);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     account_id2 = account->id;
@@ -2854,9 +2885,11 @@ START_TEST(test_serviceid_regression)
     ag_account_set_enabled (account2, FALSE);
 
     ag_account_store (account1, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     ag_account_store (account2, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     fail_unless (account1->id != 0);
@@ -2930,6 +2963,7 @@ START_TEST(test_delete_regression)
     ag_account_set_enabled (account, TRUE);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     fail_unless (account->id != 0, "Account ID is still 0!");
@@ -2956,6 +2990,7 @@ START_TEST(test_delete_regression)
 
     /* really delete the account */
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     /* check that the signals are emitted */
@@ -3053,8 +3088,10 @@ START_TEST(test_manager_new_for_service_type)
     ag_account_set_enabled (account2, FALSE);
 
     ag_account_store (account1, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
     ag_account_store (account2, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     fail_unless (account1->id != 0);
@@ -3130,6 +3167,7 @@ START_TEST(test_manager_enabled_event)
 
     ag_account_set_enabled (account, TRUE);
     ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
     main_loop = g_main_loop_new (NULL, FALSE);
