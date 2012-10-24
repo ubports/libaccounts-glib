@@ -667,7 +667,7 @@ _ag_account_store_completed (AgAccount *account, AgAccountChanges *changes)
 {
     AgAccountPrivate *priv = account->priv;
 
-    g_simple_async_result_complete (priv->store_async_result);
+    g_simple_async_result_complete_in_idle (priv->store_async_result);
     g_clear_object (&priv->store_async_result);
 
     _ag_account_changes_free (changes);
@@ -2433,7 +2433,7 @@ ag_account_store_async (AgAccount *account, GCancellable *cancellable,
     {
         g_simple_async_result_take_error (priv->store_async_result,
                                           error);
-        g_simple_async_result_complete (priv->store_async_result);
+        g_simple_async_result_complete_in_idle (priv->store_async_result);
         g_clear_object (&priv->store_async_result);
         return;
     }
@@ -2444,7 +2444,7 @@ ag_account_store_async (AgAccount *account, GCancellable *cancellable,
     if (G_UNLIKELY (!sql))
     {
         /* Nothing to do: invoke the callback immediately */
-        g_simple_async_result_complete (priv->store_async_result);
+        g_simple_async_result_complete_in_idle (priv->store_async_result);
         g_clear_object (&priv->store_async_result);
         return;
     }
