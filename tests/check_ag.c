@@ -86,10 +86,10 @@ quit_loop_on_timeout(gpointer user_data)
 }
 
 static void
-run_main_loop_for_a_while()
+run_main_loop_for_n_seconds(guint seconds)
 {
     GMainLoop *loop = g_main_loop_new (NULL, FALSE);
-    g_timeout_add_seconds (2, quit_loop_on_timeout, loop);
+    g_timeout_add_seconds (seconds, quit_loop_on_timeout, loop);
     g_main_loop_run (loop);
     g_main_loop_unref (loop);
 }
@@ -3114,7 +3114,7 @@ START_TEST(test_manager_enabled_event)
     g_type_init();
 
     /* consume any still unprocessed D-Bus signals */
-    run_main_loop_for_a_while ();
+    run_main_loop_for_n_seconds (2);
 
     /* delete the database */
     g_unlink (db_filename);
