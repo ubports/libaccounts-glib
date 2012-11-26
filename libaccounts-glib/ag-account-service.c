@@ -209,6 +209,12 @@ ag_account_service_get_property (GObject *object, guint property_id,
 
     switch (property_id)
     {
+    case PROP_ACCOUNT:
+        g_value_set_object (value, self->priv->account);
+        break;
+    case PROP_SERVICE:
+        g_value_set_boxed (value, self->priv->service);
+        break;
     case PROP_ENABLED:
         g_value_set_boolean (value, self->priv->enabled);
         break;
@@ -299,15 +305,29 @@ ag_account_service_class_init(AgAccountServiceClass *klass)
     object_class->get_property = ag_account_service_get_property;
     object_class->set_property = ag_account_service_set_property;
 
+    /**
+     * AgAccountService:account:
+     *
+     * The #AgAccount used by the account service.
+     *
+     * Since: 1.4
+     */
     properties[PROP_ACCOUNT] =
         g_param_spec_object ("account", "account", "account",
                              AG_TYPE_ACCOUNT,
-                             G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
+                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
 
+    /**
+     * AgAccountService:service:
+     *
+     * The #AgService used by the account service.
+     *
+     * Since: 1.4
+     */
     properties[PROP_SERVICE] =
         g_param_spec_boxed ("service", "service", "service",
                             ag_service_get_type(),
-                            G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
+                            G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
 
     /**
      * AgAccountService:enabled:
