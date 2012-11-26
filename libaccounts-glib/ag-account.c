@@ -879,6 +879,12 @@ ag_account_get_property (GObject *object, guint property_id,
     case PROP_ID:
         g_value_set_uint (value, account->id);
         break;
+    case PROP_MANAGER:
+        g_value_set_object (value, account->priv->manager);
+        break;
+    case PROP_PROVIDER:
+        g_value_set_string (value, account->priv->provider_name);
+        break;
     case PROP_ENABLED:
         g_value_set_boolean (value, account->priv->enabled);
         break;
@@ -995,15 +1001,29 @@ ag_account_class_init (AgAccountClass *klass)
                            G_PARAM_STATIC_STRINGS |
                            G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
 
+    /**
+     * AgAccount:manager:
+     *
+     * The #AgManager from which the account was instantiated.
+     *
+     * Since: 1.4
+     */
     properties[PROP_MANAGER] =
         g_param_spec_object ("manager", "manager", "manager",
                              AG_TYPE_MANAGER,
-                             G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY);
+                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
 
+    /**
+     * AgAccount:provider:
+     *
+     * The ID of the provider for the account.
+     *
+     * Since: 1.4
+     */
     properties[PROP_PROVIDER] =
         g_param_spec_string ("provider", "provider", "provider",
                              NULL,
-                             G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
                              G_PARAM_STATIC_STRINGS);
 
     properties[PROP_FOREIGN] =

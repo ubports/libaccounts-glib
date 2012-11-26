@@ -417,6 +417,21 @@ START_TEST(test_account_service)
     fail_unless (AG_IS_ACCOUNT_SERVICE (account_service),
                  "Failed to create AccountService");
 
+    /* test the readable properties */
+    {
+        AgAccount *account_prop = NULL;
+        AgService *service_prop = NULL;
+
+        g_object_get (account_service,
+                      "account", &account_prop,
+                      "service", &service_prop,
+                      NULL);
+        fail_unless (account_prop == account);
+        fail_unless (service_prop == service);
+        g_object_unref (account_prop);
+        ag_service_unref (service_prop);
+    }
+
     /* test getting default setting from template */
     g_value_init (&value, G_TYPE_INT);
     source = ag_account_service_get_value (account_service, "parameters/port", &value);
@@ -1584,6 +1599,24 @@ START_TEST(test_list)
     fail_unless (data_stored, "Callback not invoked immediately");
 
     fail_unless (account->id != 0, "Account ID is still 0!");
+
+    /* Test the account readable properties */
+    {
+        AgAccountId id_prop = 0;
+        AgManager *manager_prop = NULL;
+        gchar *provider_prop = NULL;
+
+        g_object_get (account,
+                      "id", &id_prop,
+                      "manager", &manager_prop,
+                      "provider", &provider_prop,
+                      NULL);
+        fail_unless (id_prop == account->id);
+        fail_unless (manager_prop == manager);
+        fail_unless (g_strcmp0 (provider_prop, PROVIDER) == 0);
+        g_object_unref (manager);
+        g_free (provider_prop);
+    }
 
     list = ag_manager_list (manager);
     fail_unless (list != NULL, "Empty list");
