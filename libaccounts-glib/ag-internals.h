@@ -161,10 +161,18 @@ struct _AgProvider {
     gchar *description;
     gchar *domains;
     gchar *file_data;
+    GHashTable *default_settings;
 };
 
 G_GNUC_INTERNAL
 AgProvider *_ag_provider_new_from_file (const gchar *provider_name);
+
+G_GNUC_INTERNAL
+GHashTable *_ag_provider_load_default_settings (AgProvider *provider);
+
+G_GNUC_INTERNAL
+GVariant *_ag_provider_get_default_setting (AgProvider *provider,
+                                            const gchar *key);
 
 G_GNUC_INTERNAL
 GPtrArray *_ag_account_changes_get_service_types (AgAccountChanges *changes);

@@ -54,6 +54,29 @@ G_DEFINE_BOXED_TYPE (AgProvider, ag_provider,
                      (GBoxedFreeFunc)ag_provider_unref);
 
 static gboolean
+parse_template (xmlTextReaderPtr reader, AgProvider *provider)
+{
+    GHashTable *settings;
+    gboolean ok;
+
+    g_return_val_if_fail (provider->default_settings == NULL, FALSE);
+
+    settings =
+        g_hash_table_new_full (g_str_hash, g_str_equal,
+                               g_free, (GDestroyNotify)g_variant_unref);
+
+    ok = _ag_xml_parse_settings (reader, "", settings);
+    if (G_UNLIKELY (!ok))
+    {
+        g_hash_table_destroy (settings);
+        return FALSE;
+    }
+
+    provider->default_settings = settings;
+    return TRUE;
+}
+
+static gboolean
 parse_provider (xmlTextReaderPtr reader, AgProvider *provider)
 {
     const gchar *name;
@@ -106,6 +129,10 @@ parse_provider (xmlTextReaderPtr reader, AgProvider *provider)
             else if (strcmp (name, "domains") == 0)
             {
                 ok = _ag_xml_dup_element_data (reader, &provider->domains);
+            }
+            else if (strcmp (name, "template") == 0)
+            {
+                ok = parse_template (reader, provider);
             }
             else
                 ok = TRUE;
@@ -210,6 +237,41 @@ _ag_provider_new_from_file (const gchar *provider_name)
     }
 
     return provider;
+}
+
+GHashTable *
+_ag_provider_load_default_settings (AgProvider *provider)
+{
+    g_return_val_if_fail (provider != NULL, NULL);
+
+    if (!provider->default_settings)
+    {
+        /* This can happen if the provider was created by the AccountManager by
+         * loading the record from the DB.
+         * Now we must reload the provider from its XML file.
+         */
+        if (!_ag_provider_load_from_file (provider))
+        {
+            g_warning ("Loading provider %s file failed", provider->name);
+            return NULL;
+        }
+    }
+
+    return provider->default_settings;
+}
+
+GVariant *
+_ag_provider_get_default_setting (AgProvider *provider, const gchar *key)
+{
+    GHashTable *settings;
+
+    g_return_val_if_fail (key != NULL, NULL);
+
+    settings = _ag_provider_load_default_settings (provider);
+    if (G_UNLIKELY (!settings))
+        return NULL;
+
+    return g_hash_table_lookup (settings, key);
 }
 
 /**

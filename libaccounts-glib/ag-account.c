@@ -106,6 +106,7 @@
 
 #include "ag-internals.h"
 #include "ag-marshal.h"
+#include "ag-provider.h"
 #include "ag-service.h"
 #include "ag-util.h"
 
@@ -160,6 +161,7 @@ struct _AgAccountPrivate {
     /* selected service */
     AgService *service;
 
+    AgProvider *provider;
     gchar *provider_name;
     gchar *display_name;
 
@@ -231,6 +233,19 @@ typedef struct {
 G_DEFINE_TYPE (AgAccount, ag_account, G_TYPE_OBJECT);
 
 #define AG_ACCOUNT_PRIV(obj) (AG_ACCOUNT(obj)->priv)
+
+static inline gboolean
+ensure_has_provider (AgAccountPrivate *priv)
+{
+    if (priv->provider == NULL &&
+        priv->provider_name != NULL)
+    {
+        priv->provider = ag_manager_get_provider (priv->manager,
+                                                  priv->provider_name);
+    }
+
+    return priv->provider != NULL;
+}
 
 static void
 async_ready_cb_wrapper (GObject *object, GAsyncResult *res,
@@ -945,6 +960,12 @@ ag_account_dispose (GObject *object)
     {
         g_hash_table_destroy (priv->watches);
         priv->watches = NULL;
+    }
+
+    if (priv->provider)
+    {
+        ag_provider_unref (priv->provider);
+        priv->provider = NULL;
     }
 
     if (priv->manager)
@@ -2024,7 +2045,7 @@ ag_account_get_variant (AgAccount *account, const gchar *key,
 {
     AgAccountPrivate *priv;
     AgServiceSettings *ss;
-    GVariant *value;
+    GVariant *value = NULL;
 
     g_return_val_if_fail (AG_IS_ACCOUNT (account), NULL);
     priv = account->priv;
@@ -2043,11 +2064,16 @@ ag_account_get_variant (AgAccount *account, const gchar *key,
     if (priv->service)
     {
         value = _ag_service_get_default_setting (priv->service, key);
-        if (value != NULL)
-        {
-            if (source) *source = AG_SETTING_SOURCE_PROFILE;
-            return value;
-        }
+    }
+    else if (ensure_has_provider (priv))
+    {
+        value = _ag_provider_get_default_setting (priv->provider, key);
+    }
+
+    if (value != NULL)
+    {
+        if (source) *source = AG_SETTING_SOURCE_PROFILE;
+        return value;
     }
 
     if (source) *source = AG_SETTING_SOURCE_NONE;
@@ -2236,19 +2262,20 @@ ag_account_settings_iter_get_next (AgAccountSettingIter *iter,
         ri->stage = AG_ITER_STAGE_UNSET;
     }
 
-    if (!priv->service)
-    {
-        *key = NULL;
-        *value = NULL;
-        return FALSE;
-    }
-
     if (ri->stage == AG_ITER_STAGE_UNSET)
     {
-        GHashTable *settings;
+        GHashTable *settings = NULL;
 
-        settings = _ag_service_load_default_settings (priv->service);
-        if (!settings) return FALSE;
+        if (priv->service != NULL)
+        {
+            settings = _ag_service_load_default_settings (priv->service);
+        }
+        else if (ensure_has_provider (priv))
+        {
+            settings = _ag_provider_load_default_settings (priv->provider);
+        }
+
+        if (!settings) goto finish;
 
         g_hash_table_iter_init (&ri->iter, settings);
         ri->stage = AG_ITER_STAGE_SERVICE;
@@ -2270,6 +2297,7 @@ ag_account_settings_iter_get_next (AgAccountSettingIter *iter,
         return TRUE;
     }
 
+finish:
     *key = NULL;
     *value = NULL;
     return FALSE;
