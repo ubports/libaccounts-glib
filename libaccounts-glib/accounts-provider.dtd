@@ -2,7 +2,8 @@
 <!-- DTD for libaccounts provider files. -->
 
 <!-- Root element for provider files. -->
-<!ELEMENT provider (name?, description?, translations?, icon?, domains?)>
+<!ELEMENT provider (name?, description?, translations?, icon?, domains?,
+                    template?)>
 
 <!-- The ID is optional, and only used if it differs from the basename of
      the service file. -->
@@ -27,3 +28,21 @@
      Webapp to automatically create an account when the user logs in to an
      accepted domain. -->
 <!ELEMENT domains (#PCDATA)>
+
+<!-- Optional template settings. Account settings have a higher priority
+     than settings listed in the template. -->
+<!ELEMENT template (group*, setting*)>
+
+<!-- A named settings group. This could be used to group settings for
+     an application or class of applications. -->
+<!ELEMENT group (setting*, group*)>
+<!ATTLIST group
+  name CDATA #REQUIRED>
+
+<!ELEMENT setting (#PCDATA)>
+<!-- Settings are assumed to be of string type (hence the "s" GVariant type
+     string as the default for type), but this can be overridden (for example,
+     in the case of boolean types). -->
+<!ATTLIST setting
+  name ID #REQUIRED
+  type CDATA "s">

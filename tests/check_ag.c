@@ -180,8 +180,11 @@ START_TEST(test_provider)
     const gchar *provider_name, *display_name;
     const gchar *description;
     const gchar *domains;
+    AgSettingSource source;
     AgProvider *provider;
-    GList *providers;
+    GVariant *variant;
+    GList *providers, *list;
+    gboolean found;
 
     g_type_init ();
     manager = ag_manager_new ();
@@ -208,18 +211,55 @@ START_TEST(test_provider)
     /* Test provider enumeration */
     providers = ag_manager_list_providers (manager);
     fail_unless (providers != NULL);
-    fail_unless (g_list_length (providers) == 1);
-    provider = providers->data;
+    fail_unless (g_list_length (providers) == 2);
 
-    display_name = ag_provider_get_display_name (provider);
-    fail_unless (g_strcmp0 (display_name, "My Provider") == 0);
+    found = FALSE;
+    for (list = providers; list != NULL; list = list->next)
+    {
+        display_name = ag_provider_get_display_name (provider);
+        if (g_strcmp0 (display_name, "My Provider") != 0) continue;
 
-    domains = ag_provider_get_domains_regex (provider);
-    fail_unless (g_strcmp0 (domains, ".*provider\\.com") == 0);
+        found = TRUE;
+        domains = ag_provider_get_domains_regex (provider);
+        fail_unless (g_strcmp0 (domains, ".*provider\\.com") == 0);
 
-    fail_unless (ag_provider_match_domain (provider, "www.provider.com"));
+        fail_unless (ag_provider_match_domain (provider, "www.provider.com"));
+    }
+
+    fail_unless (found);
 
     ag_provider_list_free (providers);
+
+    end_test ();
+}
+END_TEST
+
+START_TEST(test_provider_settings)
+{
+    AgSettingSource source;
+    AgProvider *provider;
+    GVariant *variant;
+
+    g_type_init ();
+    manager = ag_manager_new ();
+
+    account = ag_manager_create_account (manager, "MyProvider");
+    fail_unless (AG_IS_ACCOUNT (account),
+                 "Failed to create the AgAccount.");
+
+    /* Test provider default settings */
+    source = AG_SETTING_SOURCE_NONE;
+    variant = ag_account_get_variant (account, "login/server", &source);
+    fail_unless (source == AG_SETTING_SOURCE_PROFILE);
+    fail_unless (variant != NULL);
+    fail_unless (g_strcmp0 (g_variant_get_string (variant, NULL),
+                            "login.example.com") == 0);
+
+    source = AG_SETTING_SOURCE_NONE;
+    variant = ag_account_get_variant (account, "login/remember-me", &source);
+    fail_unless (source == AG_SETTING_SOURCE_PROFILE);
+    fail_unless (variant != NULL);
+    fail_unless (g_variant_get_boolean (variant) == TRUE);
 
     end_test ();
 }
@@ -995,6 +1035,7 @@ START_TEST(test_auth_data)
     check_string_in_params (params, "id", "123");
     check_string_in_params (params, "display", "mobile");
     check_string_in_params (params, "service", TEST_SERVICE_VALUE);
+    check_string_in_params (params, "from-provider", "yes");
 
     ag_auth_data_unref (data);
     g_object_unref (account_service);
@@ -3575,8 +3616,13 @@ ag_suite(const char *test_case)
 
     tc = tcase_create("Create");
     tcase_add_test (tc, test_object);
-    tcase_add_test (tc, test_provider);
     IF_TEST_CASE_ENABLED("Create")
+        suite_add_tcase (s, tc);
+
+    tc = tcase_create("Provider");
+    tcase_add_test (tc, test_provider);
+    tcase_add_test (tc, test_provider_settings);
+    IF_TEST_CASE_ENABLED("Provider")
         suite_add_tcase (s, tc);
 
     tc = tcase_create("Store");

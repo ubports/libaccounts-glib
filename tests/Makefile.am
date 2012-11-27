@@ -46,4 +46,5 @@ dist_noinst_DATA = \
 	MyProvider.provider \
 	MyService.service \
 	MyService2.service \
-	OtherService.service
+	OtherService.service \
+	maemo.provider
