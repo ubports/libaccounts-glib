@@ -4,6 +4,7 @@
   <description>My Provider Description</description>
   <icon>general_myprovider</icon>
   <domains>.*provider\.com</domains>
+  <plugin>oauth2</plugin>
   <!-- default settings (account settings have precedence over these) -->
   <template>
     <group name="login">

@@ -180,6 +180,7 @@ START_TEST(test_provider)
     const gchar *provider_name, *display_name;
     const gchar *description;
     const gchar *domains;
+    const gchar *plugin_name;
     AgSettingSource source;
     AgProvider *provider;
     GVariant *variant;
@@ -225,6 +226,9 @@ START_TEST(test_provider)
         fail_unless (g_strcmp0 (domains, ".*provider\\.com") == 0);
 
         fail_unless (ag_provider_match_domain (provider, "www.provider.com"));
+
+        plugin_name = ag_provider_get_plugin_name (provider);
+        fail_unless (g_strcmp0 (plugin_name, "oauth2") == 0);
     }
 
     fail_unless (found);

@@ -4,7 +4,7 @@
  * This file is part of libaccounts-glib
  *
  * Copyright (C) 2009-2010 Nokia Corporation.
- * Copyright (C) 2012 Canonical Ltd.
+ * Copyright (C) 2012-2013 Canonical Ltd.
  * Copyright (C) 2012 Intel Corporation.
  *
  * Contact: Alberto Mardegan <alberto.mardegan@canonical.com>
@@ -160,6 +160,7 @@ struct _AgProvider {
     gchar *display_name;
     gchar *description;
     gchar *domains;
+    gchar *plugin_name;
     gchar *file_data;
     GHashTable *default_settings;
 };

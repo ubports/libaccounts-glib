@@ -3,7 +3,7 @@
 
 <!-- Root element for provider files. -->
 <!ELEMENT provider (name?, description?, translations?, icon?, domains?,
-                    template?)>
+                    plugin?, template?)>
 
 <!-- The ID is optional, and only used if it differs from the basename of
      the service file. -->
@@ -28,6 +28,10 @@
      Webapp to automatically create an account when the user logs in to an
      accepted domain. -->
 <!ELEMENT domains (#PCDATA)>
+
+<!-- Name of the account plugin which manages the accounts from this
+     provider. -->
+<!ELEMENT plugin (#PCDATA)>
 
 <!-- Optional template settings. Account settings have a higher priority
      than settings listed in the template. -->
