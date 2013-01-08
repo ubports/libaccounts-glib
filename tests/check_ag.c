@@ -4,7 +4,7 @@
  * This file is part of libaccounts-glib
  *
  * Copyright (C) 2009-2010 Nokia Corporation.
- * Copyright (C) 2012 Canonical Ltd.
+ * Copyright (C) 2012-2013 Canonical Ltd.
  * Copyright (C) 2012 Intel Corporation.
  *
  * Contact: Alberto Mardegan <alberto.mardegan@canonical.com>
@@ -216,6 +216,7 @@ START_TEST(test_provider)
     found = FALSE;
     for (list = providers; list != NULL; list = list->next)
     {
+        provider = list->data;
         display_name = ag_provider_get_display_name (provider);
         if (g_strcmp0 (display_name, "My Provider") != 0) continue;
 
