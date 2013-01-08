@@ -4,7 +4,7 @@
  * This file is part of libaccounts-glib
  *
  * Copyright (C) 2009-2010 Nokia Corporation.
- * Copyright (C) 2012 Canonical Ltd.
+ * Copyright (C) 2012-2013 Canonical Ltd.
  *
  * Contact: Alberto Mardegan <alberto.mardegan@canonical.com>
  *
@@ -129,6 +129,10 @@ parse_provider (xmlTextReaderPtr reader, AgProvider *provider)
             else if (strcmp (name, "domains") == 0)
             {
                 ok = _ag_xml_dup_element_data (reader, &provider->domains);
+            }
+            else if (strcmp (name, "plugin") == 0)
+            {
+                ok = _ag_xml_dup_element_data (reader, &provider->plugin_name);
             }
             else if (strcmp (name, "template") == 0)
             {
@@ -393,6 +397,27 @@ ag_provider_match_domain (AgProvider *provider, const gchar *domain)
         return FALSE;
 
     return g_regex_match_simple (provider->domains, domain, 0, 0);
+}
+
+/**
+ * ag_provider_get_plugin_name:
+ * @provider: the #AgProvider.
+ *
+ * Get the name of the account plugin which manages all accounts created from
+ * this #AgProvider.
+ * Some platforms might find it useful to store plugin names in the provider
+ * XML files, especially when the same plugin can work for different providers.
+ *
+ * Returns: the plugin name for @provider, or %NULL if a plugin name is not
+ * defined.
+ *
+ * Since: 1.5
+ */
+const gchar *
+ag_provider_get_plugin_name (AgProvider *provider)
+{
+    g_return_val_if_fail (provider != NULL, NULL);
+    return provider->plugin_name;
 }
 
 /**
