@@ -114,7 +114,7 @@ AS_IF([test "x$enable_python" != "xno"],
 
 AS_IF([test "x$have_python" = "xyes"],
     [AM_PATH_PYTHON
-     AC_SUBST([pyoverridesdir], [`$PYTHON -c "import gi;print gi._overridesdir"`])])
+     AC_SUBST([pyoverridesdir], [`$PYTHON -c "import gi;print (gi._overridesdir)" 2>/dev/null`])])
 
 AM_CONDITIONAL([ENABLE_PYTHON], [test "x$have_python" = "xyes"])
 
