@@ -36,7 +36,7 @@ class Account(Accounts.Account):
     get_bool = _get_bool
 
     def get_settings_iter(self, prefix=''):
-        return super().get_settings_iter(prefix)
+        return super(Account, self).get_settings_iter(prefix)
 
     def get_settings(self, prefix=''):
         itr = self.get_settings_iter(prefix)
