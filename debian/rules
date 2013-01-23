@@ -18,5 +18,8 @@ override_dh_install:
 	dh_install --fail-missing
 	dh_python2 -pgir1.2-accounts-1.0
 
+override_dh_autoreconf:
+	NOCONFIGURE=1 dh_autoreconf ./autogen.sh
+
 %:
 	dh $@ --with autoreconf,python2
