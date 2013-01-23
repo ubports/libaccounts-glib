@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.64])
 AC_INIT([libaccounts-glib],
-        [1.4],
+        [1.6],
         [http://code.google.com/p/accounts-sso/issues/entry],
         [libaccounts-glib],
         [http://code.google.com/p/accounts-sso/])
@@ -114,7 +114,7 @@ AS_IF([test "x$enable_python" != "xno"],
 
 AS_IF([test "x$have_python" = "xyes"],
     [AM_PATH_PYTHON
-     AC_SUBST([pyoverridesdir], [`$PYTHON -c "import gi;print gi._overridesdir"`])])
+     AC_SUBST([pyoverridesdir], [`$PYTHON -c "import gi;print (gi._overridesdir)" 2>/dev/null`])])
 
 AM_CONDITIONAL([ENABLE_PYTHON], [test "x$have_python" = "xyes"])
 
