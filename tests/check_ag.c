@@ -1091,6 +1091,26 @@ START_TEST(test_auth_data_get_login_parameters)
 
     manager = ag_manager_new_for_service_type ("e-mail");
 
+    /* first, check the default parameters on a non-stored account */
+    account = ag_manager_create_account (manager, "maemo");
+    account_service = ag_account_service_new (account, NULL);
+    data = ag_account_service_get_auth_data (account_service);
+    fail_unless (data != NULL);
+
+    params = ag_auth_data_get_login_parameters (data, NULL);
+    fail_unless (params != NULL);
+
+    check_variant_in_dict (params, "id", g_variant_new_string ("879"));
+    check_variant_in_dict (params, "display",
+                           g_variant_new_string ("desktop"));
+    check_variant_in_dict (params, "from-provider",
+                           g_variant_new_string ("yes"));
+    g_variant_unref (params);
+    ag_auth_data_unref (data);
+    data = NULL;
+    g_clear_object (&account);
+    g_clear_object (&account_service);
+
     /* reload the account and get the AccountService */
     account_services = ag_manager_get_account_services (manager);
     fail_unless (g_list_length(account_services) == 1);
