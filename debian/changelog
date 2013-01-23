@@ -1,0 +1,77 @@
+libaccounts-glib (1.5.1-0ubuntu1) UNRELEASED; urgency=low
+
+  * Inline packaging metadata.
+
+ -- Robert Bruce Park <robert.park@canonical.com>  Tue, 22 Jan 2013 16:15:56 -0800
+
+libaccounts-glib (1.5-0ubuntu2) raring; urgency=low
+
+  * debian/patches/python_super.patch
+    - Python2 requires explict type to be passed to super, which python3
+      also allows.
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Mon, 14 Jan 2013 12:11:30 -0500
+
+libaccounts-glib (1.5-0ubuntu1) raring; urgency=low
+
+  * New upstream release.
+    - Port to GDBus; drop the dependencies on libdbus and libdbus-glib.
+    - Added support for the <template> element in .provider files. This
+      allows one to specify default settings for the global account in the XML
+      file.
+    - Make some GObject properties readable.
+    - New method: ag_account_store_async(), which uses GAsyncResult and
+      allows for a GCancellable option.
+    - Generate and install man pages from documentation for the ag-tool and
+      ag-backup.  Add a --disable-man flag so that packagers can disable the
+      generation if necessary.
+    - Add GVariant-based APIs beside the GValue-based ones, which become
+      deprecated.
+    - Enhance Python overrides to provide a more Pythonic API.
+    - Let provider XML files specify which plugin manages the provider's
+      accounts.
+    - Include ag-auth-data.h in accounts-glib.h
+    - Tests: fix provider test
+  * debian/control
+    - Dropped build depends for libdbus-1-dev and libdbus-glib-1-dev
+  * debian/libaccounts-glib0.symbols
+    - new symbols
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Wed, 09 Jan 2013 09:07:06 -0500
+
+libaccounts-glib (1.3-0ubuntu2) quantal; urgency=low
+
+  * debian/patches/py3.patch
+    - support python3
+  * debian/rules
+    - install the GI override for both python2 and python3
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Tue, 21 Aug 2012 13:23:05 -0400
+
+libaccounts-glib (1.3-0ubuntu1) quantal; urgency=low
+
+  * New upstream release.
+    - Fixed a bug which could cause the same signal to be emitted
+      multiple times (LP: #1029378)
+    - Fixed an incorrect assumption in the AgAuthData unit test
+  * debian/patches/link_rt.patch
+    - fixed linker failing in tests
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Fri, 17 Aug 2012 16:43:37 -0400
+
+libaccounts-glib (1.2-0ubuntu2) quantal; urgency=low
+
+  * debian/rules
+    - use dh_python3
+    - run tests
+  * debian/control
+    - use debhelper 9
+    - build depend on dbus-test-runner
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Thu, 26 Jul 2012 17:24:33 -0400
+
+libaccounts-glib (1.2-0ubuntu1) quantal; urgency=low
+
+  * New package
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Thu, 26 Jul 2012 11:13:34 -0400
