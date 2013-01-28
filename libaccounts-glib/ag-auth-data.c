@@ -61,7 +61,7 @@ get_value_with_fallback (AgAccount *account, AgService *service,
     GVariant *value;
     ag_account_select_service (account, service);
     value = ag_account_get_variant (account, key, NULL);
-    if (value == NULL)
+    if (value == NULL && service != NULL)
     {
         /* fallback to the global account */
         ag_account_select_service (account, NULL);
@@ -122,7 +122,6 @@ _ag_auth_data_new (AgAccount *account, AgService *service)
     AgAuthData *data = NULL;
 
     g_return_val_if_fail (account != NULL, NULL);
-    g_return_val_if_fail (service != NULL, NULL);
 
     credentials_id = get_uint_with_fallback (account, service, "CredentialsId");
 
@@ -147,8 +146,11 @@ _ag_auth_data_new (AgAccount *account, AgService *service)
     read_auth_settings (account, key_prefix, parameters);
 
     /* next, the service-specific authentication settings */
-    ag_account_select_service (account, service);
-    read_auth_settings (account, key_prefix, parameters);
+    if (service != NULL)
+    {
+        ag_account_select_service (account, service);
+        read_auth_settings (account, key_prefix, parameters);
+    }
 
     g_free (key_prefix);
 
