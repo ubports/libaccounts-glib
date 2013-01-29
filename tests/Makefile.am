@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-AM_CPPFLAGS = -I$(top_srcdir) $(LIBACCOUNTS_CFLAGS)
+AM_CPPFLAGS = -I$(top_srcdir)
 
 check_PROGRAMS = \
 	accounts-glib-testsuite \
@@ -23,10 +23,12 @@ accounts_glib_testsuite_CPPFLAGS = \
 	$(AM_CPPFLAGS)
 accounts_glib_testsuite_LDADD = \
 	$(CHECK_LIBS) \
-	$(LIBACCOUNTS_LIBS) \
 	$(top_builddir)/libaccounts-glib/libaccounts-glib.la
 
 test_process_SOURCES = test-process.c
+test_process_CPPFLAGS = \
+	$(LIBACCOUNTS_CFLAGS) \
+	$(AM_CPPFLAGS)
 test_process_LDADD = \
 	$(LIBACCOUNTS_LIBS) \
 	$(top_builddir)/libaccounts-glib/libaccounts-glib.la

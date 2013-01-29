@@ -8,10 +8,8 @@ bin_PROGRAMS = \
 
 ag_tool_SOURCES = main.c
 ag_tool_CPPFLAGS = \
-	$(AM_CPPFLAGS) \
-	$(CHECK_FLAGS)
+	$(AM_CPPFLAGS)
 ag_tool_LDADD = \
-        $(CHECK_LIBS) \
         $(LIBACCOUNTS_LIBS) \
         $(top_builddir)/libaccounts-glib/libaccounts-glib.la
 

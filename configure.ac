@@ -23,14 +23,13 @@ LT_INIT([disable-static])
 # Gobject Introspection
 GOBJECT_INTROSPECTION_CHECK([1.30.0])
 
-PKG_CHECK_MODULES(
-    [LIBACCOUNTS],
-    [glib-2.0 >= 2.26
+LIBACCOUNTS_REQUIRED="glib-2.0 >= 2.26
      gio-2.0 >= 2.30
      gio-unix-2.0
      gobject-2.0
      libxml-2.0
-     sqlite3 >= 3.7.0])
+     sqlite3 >= 3.7.0"
+PKG_CHECK_MODULES([LIBACCOUNTS], [$LIBACCOUNTS_REQUIRED])
 AC_SUBST(LIBACCOUNTS_CFLAGS)
 AC_SUBST(LIBACCOUNTS_LIBS)
 
@@ -46,7 +45,7 @@ AS_IF([test "x$enable_tests" != "xno"],
   [have_check=no])
 
 AS_IF([test "x$have_check" = "xyes"],
-  [PKG_CHECK_MODULES([CHECK], [$CHECK_REQUIRED])
+  [PKG_CHECK_MODULES([CHECK], [$CHECK_REQUIRED $LIBACCOUNTS_REQUIRED])
    AC_SUBST([CHECK_CFLAGS])
    AC_SUBST([CHECK_LIBS])],
   [AS_IF([test "x$enable_tests" = "xyes"],
