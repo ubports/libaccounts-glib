@@ -1,5 +1,45 @@
 libaccounts-glib NEWS
 
+Version 1.6
+-----------
+
+* Fix the check for pyoverridesdir for python3
+* Also support Python 2.7
+
+Version 1.5
+-----------
+
+* Allow provider XML files to specify which plugin manages the accounts of the
+  provider
+* Include ag-auth-data.h in accounts-glib.h
+  Fixes: http://code.google.com/p/accounts-sso/issues/detail?id=136
+
+Version 1.4
+-----------
+
+* Port to GDBus; drop the dependencies on libdbus and libdbus-glib.
+* Added support for the <template> element in .provider files. This allows to
+  specify default settings for the global account in the XML file.
+  Fixes: http://code.google.com/p/accounts-sso/issues/detail?id=111
+* Make some GObject properties readable.
+  Fixes: http://code.google.com/p/accounts-sso/issues/detail?id=125
+* New method: ag_account_store_async(), which uses GAsyncResult and allows for
+  a GCancellable option.
+  Fixes: http://code.google.com/p/accounts-sso/issues/detail?id=116
+* Add a few GObject properties:
+  AgAccount:
+   - enabled
+   - display-name
+  AgAccountService:
+   - enabled
+* Generate and install man pages from documentation for ag-tool and ag-backup.
+  Add a --disable-man flag so that packagers can disable the generation if
+  necessary.
+* Add GVariant-based APIs beside the GValue-based ones, which become
+  deprecated.
+* Enhance Python overrides to provide a more Pythonic API.
+  Fixes: http://code.google.com/p/accounts-sso/issues/detail?id=109
+
 Version 1.3
 -----------
 
