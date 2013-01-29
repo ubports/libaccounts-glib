@@ -13,7 +13,9 @@ namespace Ag {
 		public unowned string get_provider_name ();
 		public Ag.Service get_selected_service ();
 		public Ag.AccountSettingIter get_settings_iter (string? key_prefix);
+		[Deprecated (replacement = "get_variant", since = "1.4")]
 		public Ag.SettingSource get_value (string key, ref GLib.Value value);
+		public GLib.Variant get_variant (string key, out Ag.SettingSource? source);
 		public GLib.List<Ag.Service> list_enabled_services ();
 		public GLib.List<Ag.Service> list_services ();
 		public GLib.List<Ag.Service> list_services_by_type (string service_type);
@@ -21,21 +23,29 @@ namespace Ag {
 		public void select_service (Ag.Service? service);
 		public void set_display_name (string display_name);
 		public void set_enabled (bool enabled);
+		[Deprecated (replacement = "set_variant", since = "1.4")]
 		public void set_value (string key, GLib.Value? value);
+		public void set_variant (string key, GLib.Variant? value);
 		public void settings_iter_init (Ag.AccountSettingIter iter, string? key_prefix);
 		public void sign (string key, string token);
+		[Deprecated (replacement = "store_async", since="1.4")]
 		public void store (Ag.AccountStoreCb callback);
+		public async void store_async (GLib.Cancellable? cancellable = null) throws Ag.AccountsError;
 		public bool store_blocking () throws Ag.AccountsError;
 		public bool supports_service (string service_type);
 		public bool verify (string key, string token);
 		public bool verify_with_tokens (string key, string tokens);
 		public unowned Ag.AccountWatch watch_dir (string key_prefix, Ag.AccountNotifyCb callback);
 		public unowned Ag.AccountWatch watch_key (string key, Ag.AccountNotifyCb callback);
+		public string display_name { get; }
+/* FIXME: Same name as a signal, so ignore for the moment.
+		public bool enabled { get; }
+ */
 		public bool foreign { construct; }
 		[NoAccessorMethod]
 		public uint id { get; construct; }
-		public Ag.Manager manager { construct; }
-		public string provider { construct; }
+		public Ag.Manager manager { get; construct; }
+		public string provider { get; construct; }
 		public signal void deleted ();
 		public signal void display_name_changed ();
 		public signal void enabled (string service, bool enabled);
@@ -51,11 +61,19 @@ namespace Ag {
 		public bool get_enabled ();
 		public unowned Ag.Service get_service ();
 		public Ag.AccountSettingIter get_settings_iter (string? key_prefix);
+		[Deprecated (replacement = "get_variant", since = "1.4")]
 		public Ag.SettingSource get_value (string key, ref GLib.Value value);
+		public GLib.Variant get_variant (string key, out Ag.SettingSource? source);
+		[Deprecated (replacement = "set_variant", since = "1.4")]
 		public void set_value (string key, GLib.Value? value);
+		public void set_variant (string key, GLib.Variant? value);
 		public void settings_iter_init (Ag.AccountSettingIter iter, string? key_prefix);
+		[Deprecated (since = "1.4")]
 		public static bool settings_iter_next (Ag.AccountSettingIter iter, out unowned string key, out GLib.Value value);
 		public Ag.Account account { construct; }
+/* FIXME: Same name as a signal, so ignore for the moment.
+		public bool enabled { get; }
+ */
 		public Ag.Service service { construct; }
 		public signal void changed ();
 		public signal void enabled (bool enabled);
@@ -88,7 +106,10 @@ namespace Ag {
 		public uint get_credentials_id ();
 		public unowned string get_mechanism ();
 		public unowned string get_method ();
+		public unowned GLib.Variant get_login_parameters (GLib.Variant variant);
+		[Deprecated (replacement = "get_login_parameters", since = "1.4")]
 		public unowned GLib.HashTable<string,GLib.Value?> get_parameters ();
+		[Deprecated (replacement = "get_login_parameters", since = "1.4")]
 		public void insert_parameters (GLib.HashTable<string,GLib.Value?> parameters);
 		public Ag.AuthData @ref ();
 		public void unref ();
@@ -139,6 +160,7 @@ namespace Ag {
 		public unowned string get_i18n_domain ();
 		public unowned string get_icon_name ();
 		public unowned string get_name ();
+		public unowned string get_plugin_name ();
 		public static void list_free (GLib.List<Ag.Provider> list);
 		public bool match_domain (string domain);
 		public Ag.Provider @ref ();
@@ -186,7 +208,8 @@ namespace Ag {
 		DISPOSED,
 		DELETED,
 		DB_LOCKED,
-		ACCOUNT_NOT_FOUND
+		ACCOUNT_NOT_FOUND,
+		STORE_IN_PROGRESS
 	}
 	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", cprefix = "AG_SETTING_SOURCE_")]
 	public enum SettingSource {
@@ -198,6 +221,7 @@ namespace Ag {
 	public delegate void AccountNotifyCb (Ag.Account account, string key);
 	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", instance_pos = 2.9)]
 	public delegate void AccountServiceNotifyCb (Ag.AccountService self, string key);
+	[Deprecated (since = "1.4")]
 	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", instance_pos = 2.9)]
 	public delegate void AccountStoreCb (Ag.Account account, GLib.Error error);
 	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h")]
