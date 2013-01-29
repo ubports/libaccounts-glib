@@ -33,6 +33,10 @@ PKG_CHECK_MODULES([LIBACCOUNTS], [$LIBACCOUNTS_REQUIRED])
 AC_SUBST(LIBACCOUNTS_CFLAGS)
 AC_SUBST(LIBACCOUNTS_LIBS)
 
+# Check for clock_gettime, as in glibc 2.17 it is in libc but in older versions
+# it was in librt.
+AC_SEARCH_LIBS([clock_gettime], [rt])
+
 # Build tests.
 
 CHECK_REQUIRED="check >= 0.9.4"
