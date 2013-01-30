@@ -1,5 +1,13 @@
 libaccounts-glib NEWS
 
+Version 1.7
+-----------
+
+* Link with rt only when necessary.
+* Remove AEGIS dead code.
+* Update VAPI file.
+* Allow creating AuthData for a global account.
+
 Version 1.6
 -----------
 
