@@ -8,11 +8,12 @@ libaccounts_glib_la_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\"accounts-glib\"
 libaccounts_glib_la_CFLAGS = \
 	$(LIBACCOUNTS_CFLAGS) \
-	$(AEGISCRYPTO_CFLAGS) \
 	-Wall -Werror
-libaccounts_glib_la_LIBADD = $(LIBACCOUNTS_LIBS) $(AEGISCRYPTO_LIBS) -lrt
+libaccounts_glib_la_LIBADD = \
+	$(LIBACCOUNTS_LIBS)
 libaccounts_glib_la_LDFLAGS = \
 	-version-info 1:3:1 \
+	--no-allow-shlib-undefined \
 	-export-symbols-regex '^ag_'
 
 BUILT_SOURCES = \
