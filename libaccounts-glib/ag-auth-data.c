@@ -126,15 +126,7 @@ _ag_auth_data_new (AgAccount *account, AgService *service)
     credentials_id = get_uint_with_fallback (account, service, "CredentialsId");
 
     method = get_string_with_fallback (account, service, "auth/method");
-    if (method == NULL)
-        return NULL;
-
     mechanism = get_string_with_fallback (account, service, "auth/mechanism");
-    if (mechanism == NULL)
-    {
-        g_free (method);
-        return NULL;
-    }
 
     parameters = g_hash_table_new_full (g_str_hash, g_str_equal,
                                         g_free,
