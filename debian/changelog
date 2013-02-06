@@ -1,8 +1,22 @@
-libaccounts-glib (1.5.1-0ubuntu1) UNRELEASED; urgency=low
+libaccounts-glib (1.8~-0ubuntu2) UNRELEASED; urgency=low
 
-  * Inline packaging metadata.
+  * Upstream snapshot:
+    - Do never return a NULL AgAuthData pointer.
 
- -- Robert Bruce Park <robert.park@canonical.com>  Tue, 22 Jan 2013 16:15:56 -0800
+ -- Alberto Mardegan <alberto.mardegan@canonical.com>  Wed, 06 Feb 2013 16:43:47 +0200
+
+libaccounts-glib (1.7-0ubuntu1) raring; urgency=low
+
+  * New upstream release.
+    - Link with rt only when necessary.
+    - Remove AEGIS dead code.
+    - Update VAPI file.
+    - Allow creating AuthData for a global account.
+  * -debian/patches/link_rt.patch: no longer needed
+  * -debian/patches/py3.patch: fixed upstream
+  * -debian/patches/python_super.patch: fixed upstream
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Thu, 31 Jan 2013 12:50:19 -0500
 
 libaccounts-glib (1.5-0ubuntu2) raring; urgency=low
 
