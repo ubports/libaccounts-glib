@@ -1,9 +1,11 @@
-libaccounts-glib (1.8~-0ubuntu2) UNRELEASED; urgency=low
+libaccounts-glib (1.8-0ubuntu1) UNRELEASED; urgency=low
 
-  * Upstream snapshot:
+  * New upstream release.
     - Do never return a NULL AgAuthData pointer.
+    - Account::enabled(): use NULL for global account
+      Fixes: http://code.google.com/p/accounts-sso/issues/detail?id=157
 
- -- Alberto Mardegan <alberto.mardegan@canonical.com>  Wed, 06 Feb 2013 16:43:47 +0200
+ -- Alberto Mardegan <alberto.mardegan@canonical.com>  Thu, 21 Feb 2013 18:14:39 +0200
 
 libaccounts-glib (1.7-0ubuntu1) raring; urgency=low
 

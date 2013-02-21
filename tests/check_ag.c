@@ -74,7 +74,7 @@ static guint idle_finish = 0;
 typedef struct {
     gboolean called;
     gchar *service;
-    gboolean enabled;
+    gboolean enabled_check;
 } EnabledCbData;
 
 static gboolean
@@ -2376,7 +2376,7 @@ on_enabled (AgAccount *account, const gchar *service, gboolean enabled,
 {
     ecd->called = TRUE;
     ecd->service = g_strdup (service);
-    ecd->enabled = ( ag_account_get_enabled (account) == enabled );
+    ecd->enabled_check = (ag_account_get_enabled (account) == enabled);
 }
 
 START_TEST(test_concurrency)
@@ -2578,7 +2578,7 @@ START_TEST(test_concurrency)
 
     /* verify that the signal has been emitted correctly */
     fail_unless (ecd.called == TRUE);
-    fail_unless (ecd.enabled == TRUE);
+    fail_unless (ecd.enabled_check == TRUE);
     fail_unless (g_strcmp0 (ecd.service, "MyService") == 0);
     g_free (ecd.service);
 
@@ -2901,16 +2901,9 @@ START_TEST(test_serviceid_regression)
 }
 END_TEST
 
-static void
-check_enabled (AgAccount *account, const gchar *service, gboolean enabled,
-               gboolean *check)
-{
-    *check = ( ag_account_get_enabled(account) == enabled );
-}
-
 START_TEST(test_enabled_regression)
 {
-    gboolean check = FALSE;
+    EnabledCbData ecd;
 
     g_type_init();
 
@@ -2920,18 +2913,24 @@ START_TEST(test_enabled_regression)
     fail_unless (account != NULL);
 
     g_signal_connect (account, "enabled",
-                      G_CALLBACK (check_enabled),
-                      &check);
+                      G_CALLBACK (on_enabled),
+                      &ecd);
 
+    memset (&ecd, 0, sizeof (ecd));
     ag_account_set_enabled (account, TRUE);
     ag_account_store (account, NULL, TEST_STRING);
 
-    fail_unless (check, "Settings are not updated!");
+    fail_unless (ecd.called == TRUE);
+    fail_unless (ecd.service == NULL);
+    fail_unless (ecd.enabled_check == TRUE, "Settings are not updated!");
 
+    memset (&ecd, 0, sizeof (ecd));
     ag_account_set_enabled (account, FALSE);
     ag_account_store (account, NULL, TEST_STRING);
 
-    fail_unless (check, "Settings are not updated!");
+    fail_unless (ecd.called == TRUE);
+    fail_unless (ecd.service == NULL);
+    fail_unless (ecd.enabled_check == TRUE, "Settings are not updated!");
 
     end_test ();
 }
