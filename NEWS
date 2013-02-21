@@ -1,5 +1,12 @@
 libaccounts-glib NEWS
 
+Version 1.8
+-----------
+
+* Account::enabled(): use NULL for global account
+  Fixes: http://code.google.com/p/accounts-sso/issues/detail?id=157
+* Do never return a NULL AgAuthData pointer
+
 Version 1.7
 -----------
 
