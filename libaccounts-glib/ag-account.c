@@ -631,7 +631,7 @@ update_settings (AgAccount *account, GHashTable *services)
                     priv->enabled =
                         value ? g_variant_get_boolean (value) : FALSE;
                     g_signal_emit (account, signals[ENABLED], 0,
-                                   service_name, priv->enabled);
+                                   NULL, priv->enabled);
                     g_object_notify_by_pspec ((GObject *)account,
                                               properties[PROP_ENABLED]);
                     continue;
