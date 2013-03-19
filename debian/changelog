@@ -1,4 +1,4 @@
-libaccounts-glib (1.8-0ubuntu1) UNRELEASED; urgency=low
+libaccounts-glib (1.8-0ubuntu1) raring; urgency=low
 
   * New upstream release.
     - Do never return a NULL AgAuthData pointer.
