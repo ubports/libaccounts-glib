@@ -2,6 +2,10 @@
 
 AM_CPPFLAGS = -I$(top_srcdir)
 
+test_PROGRAMS = \
+	accounts-glib-testsuite \
+	test-process
+
 check_PROGRAMS = \
 	accounts-glib-testsuite \
 	test-process
@@ -11,6 +15,9 @@ xml_test = xml-dtd-validate.sh
 else
 xml_test =
 endif
+
+test_SCRIPTS = \
+	accounts-glib-test.sh
 
 dist_check_SCRIPTS = \
 	accounts-glib-test.sh \
@@ -40,8 +47,18 @@ TESTS_ENVIRONMENT = \
 
 TESTS = $(dist_check_SCRIPTS)
 
+tests.xml: tests.xml.in Makefile
+	$(SED) -e 's|@''TESTDIR''@|$(testdir)|' \
+	       -e 's|@''TESTDATADIR''@|$(testdatadir)|' $< > $@
+CLEANFILES = tests.xml
+
 dist_noinst_DATA = \
-	tests.xml \
+	tests.xml.in
+
+test_DATA = \
+	tests.xml
+
+dist_testdata_DATA = \
 	e-mail.service-type \
 	Gallery.application \
 	Mailer.application \
