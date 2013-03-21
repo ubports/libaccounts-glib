@@ -67,3 +67,6 @@ dist_testdata_DATA = \
 	MyService2.service \
 	OtherService.service \
 	maemo.provider
+
+installcheck-local: $(TESTS)
+	cd "$(testdir)" && TESTDATADIR="$(testdatadir)" ./accounts-glib-test.sh
