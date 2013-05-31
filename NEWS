@@ -1,5 +1,12 @@
 libaccounts-glib NEWS
 
+Version 1.9
+-----------
+
+* Fix compilation with GCC 4.8
+* Install tests
+* Add installcheck target for installed tests
+
 Version 1.8
 -----------
 
