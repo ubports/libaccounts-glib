@@ -146,7 +146,7 @@ parse_service (xmlTextReaderPtr reader, AgService *service)
             }
             else if (strcmp (name, "type_data") == 0)
             {
-                static const gchar *element = "<type_data";
+                static const gchar element[] = "<type_data";
                 gsize offset;
 
                 /* find the offset in the file where this element begins */
