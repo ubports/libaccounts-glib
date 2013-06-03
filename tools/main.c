@@ -1268,8 +1268,6 @@ parse (int argc, char **argv)
 gint
 main (int argc, char **argv)
 {
-    g_type_init ();
-
     gl_app_name = g_path_get_basename (argv[0]);
 
     if (argc < 2)
