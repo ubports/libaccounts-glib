@@ -1,5 +1,10 @@
 libaccounts-glib NEWS
 
+Version 1.11
+------------
+
+* Tests: don't run tests in parallel
+
 Version 1.10
 ------------
 
