@@ -1,5 +1,6 @@
-libaccounts-glib (1.11-0ubuntu1) UNRELEASED; urgency=low
+libaccounts-glib (1.11daily13.06.05.2-0ubuntu1) saucy; urgency=low
 
+  [ Alberto Mardegan ]
   * New upstream release
     - Fix compilation with GCC 4.8
     - Install tests
@@ -11,7 +12,13 @@ libaccounts-glib (1.11-0ubuntu1) UNRELEASED; urgency=low
     - Tests: don't fail on critical warnings
     - Tests: don't run tests in parallel
 
- -- Alberto Mardegan <alberto.mardegan@canonical.com>  Wed, 05 Jun 2013 16:25:07 +0300
+  [ Ken VanDine ]
+  * Fixed cleanup for all arches .
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 173
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 05 Jun 2013 18:49:08 +0000
 
 libaccounts-glib (1.8daily13.05.01.1ubuntu.unity.next-0ubuntu1) raring; urgency=low
 
