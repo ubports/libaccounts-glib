@@ -15,6 +15,7 @@ override_dh_install:
 	rm debian/tmp/usr/lib/*/*.la
 	rm debian/tmp/usr/lib/python*/dist-packages/gi/overrides/*.pyc
 	rm debian/tmp/usr/lib/python*/dist-packages/gi/overrides/*.pyo
+	rm -rf debian/tmp/usr/lib/python3/dist-packages/gi/overrides/__pycache__/
 	rm debian/tmp/usr/share/backup-framework/applications/accounts.conf
 	# Remove the installed tests
 	rm -rf debian/tmp/usr/share/libaccounts-glib/testdata
