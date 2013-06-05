@@ -475,6 +475,9 @@ gboolean ag_service_has_tag (AgService *service, const gchar *tag)
 {
     g_return_val_if_fail (service != NULL, FALSE);
 
+    if (!service->file_data)
+        _ag_service_load_from_file (service);
+
     if (service->tags == NULL)
         copy_tags_from_type (service);
 
@@ -495,6 +498,9 @@ gboolean ag_service_has_tag (AgService *service, const gchar *tag)
 GList *ag_service_get_tags (AgService *service)
 {
     g_return_val_if_fail (service != NULL, NULL);
+
+    if (!service->file_data)
+        _ag_service_load_from_file (service);
 
     if (service->tags == NULL)
         copy_tags_from_type (service);
