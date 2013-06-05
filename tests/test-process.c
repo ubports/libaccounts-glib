@@ -372,8 +372,6 @@ int main(int argc, char **argv)
 {
     TestArgs args;
 
-    g_type_init ();
-
     if (argc >= 2)
     {
         const gchar *test_name = argv[1];

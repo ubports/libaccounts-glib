@@ -130,5 +130,5 @@ dist_dtd_DATA = \
 # Vala bindings
 vapidir = $(datadir)/vala/vapi
 dist_vapi_DATA = \
-	accounts.deps \
-	accounts.vapi
+	libaccounts-glib.deps \
+	libaccounts-glib.vapi
