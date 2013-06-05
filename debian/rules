@@ -19,7 +19,7 @@ override_dh_install:
 	rm debian/tmp/usr/share/backup-framework/applications/accounts.conf
 	# Remove the installed tests
 	rm -rf debian/tmp/usr/share/libaccounts-glib/testdata
-	rm -rf debian/tmp/usr/lib/x86_64-linux-gnu/libaccounts-glib
+	rm -rf debian/tmp/usr/lib/*/libaccounts-glib
 	dh_install --fail-missing
 	dh_python2 -pgir1.2-accounts-1.0
 
