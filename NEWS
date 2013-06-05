@@ -1,5 +1,26 @@
 libaccounts-glib NEWS
 
+Version 1.11
+------------
+
+* Tests: don't run tests in parallel
+
+Version 1.10
+------------
+
+* Vala: rename .vapi and .deps files
+  Fixes: http://code.google.com/p/accounts-sso/issues/detail?id=176
+* Tests: don't fail on critical warnings
+* AgService: load the XML file before returning tags
+* Removed deprecated g_type_init and bumped GObject dependency
+
+Version 1.9
+-----------
+
+* Fix compilation with GCC 4.8
+* Install tests
+* Add installcheck target for installed tests
+
 Version 1.8
 -----------
 

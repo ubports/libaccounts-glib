@@ -1,3 +1,4 @@
 accounts-glib-testsuite
 accounts_glib_testsuite-check_ag.c
 test-process
+tests.xml

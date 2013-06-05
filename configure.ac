@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.64])
 AC_INIT([libaccounts-glib],
-        [1.8],
+        [1.11],
         [http://code.google.com/p/accounts-sso/issues/entry],
         [libaccounts-glib],
         [http://code.google.com/p/accounts-sso/])
@@ -11,11 +11,12 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_SRCDIR([libaccounts-glib.pc.in])
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE([1.11 -Wall check-news nostdinc silent-rules subdir-objects])
+AM_INIT_AUTOMAKE([1.11 -Wall check-news nostdinc silent-rules subdir-objects serial-tests])
 
 AC_PROG_CC
 AC_PROG_CC_STDC
 AM_PROG_CC_C_O
+AC_PROG_SED
 
 LT_PREREQ([2.2])
 LT_INIT([disable-static])
@@ -26,7 +27,7 @@ GOBJECT_INTROSPECTION_CHECK([1.30.0])
 LIBACCOUNTS_REQUIRED="glib-2.0 >= 2.26
      gio-2.0 >= 2.30
      gio-unix-2.0
-     gobject-2.0
+     gobject-2.0 >= 2.35.1
      libxml-2.0
      sqlite3 >= 3.7.0"
 PKG_CHECK_MODULES([LIBACCOUNTS], [$LIBACCOUNTS_REQUIRED])
@@ -51,7 +52,24 @@ AS_IF([test "x$enable_tests" != "xno"],
 AS_IF([test "x$have_check" = "xyes"],
   [PKG_CHECK_MODULES([CHECK], [$CHECK_REQUIRED $LIBACCOUNTS_REQUIRED])
    AC_SUBST([CHECK_CFLAGS])
-   AC_SUBST([CHECK_LIBS])],
+   AC_SUBST([CHECK_LIBS])
+   AC_MSG_CHECKING([where to install tests])
+   AC_ARG_WITH([testdir],
+               [AS_HELP_STRING([--with-testdir=DIR],
+                               [installation directory for tests [default=PKGLIBDIR]])],
+               [testdir="$withval"],
+               [testdir="\${pkglibdir}"])
+   AC_MSG_RESULT([$testdir])
+   AC_SUBST([testdir])
+
+   AC_MSG_CHECKING([where to install test data])
+   AC_ARG_WITH([testdatadir],
+               [AS_HELP_STRING([--with-testdatadir=DIR],
+                               [installation directory for test data [default=PKGDATADIR/testdata]])],
+               [testdatadir="$withval"],
+               [testdatadir="\${pkgdatadir}/testdata"])
+   AC_MSG_RESULT([$testdatadir])
+   AC_SUBST([testdatadir])],
   [AS_IF([test "x$enable_tests" = "xyes"],
       [AC_MSG_ERROR([tests enabled but required dependencies were not found])])])
 
