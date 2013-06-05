@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.64])
 AC_INIT([libaccounts-glib],
-        [1.9],
+        [1.11],
         [http://code.google.com/p/accounts-sso/issues/entry],
         [libaccounts-glib],
         [http://code.google.com/p/accounts-sso/])
@@ -11,7 +11,7 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_SRCDIR([libaccounts-glib.pc.in])
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE([1.11 -Wall check-news nostdinc silent-rules subdir-objects])
+AM_INIT_AUTOMAKE([1.11 -Wall check-news nostdinc silent-rules subdir-objects serial-tests])
 
 AC_PROG_CC
 AC_PROG_CC_STDC
@@ -27,7 +27,7 @@ GOBJECT_INTROSPECTION_CHECK([1.30.0])
 LIBACCOUNTS_REQUIRED="glib-2.0 >= 2.26
      gio-2.0 >= 2.30
      gio-unix-2.0
-     gobject-2.0
+     gobject-2.0 >= 2.35.1
      libxml-2.0
      sqlite3 >= 3.7.0"
 PKG_CHECK_MODULES([LIBACCOUNTS], [$LIBACCOUNTS_REQUIRED])

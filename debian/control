@@ -1,7 +1,8 @@
 Source: libaccounts-glib
 Priority: optional
 Maintainer: Ubuntu Desktop Team <ubuntu-desktop@lists.ubuntu.com>
-Build-Depends: autotools-dev,
+Build-Depends: automake (>= 1:1.13),
+               autotools-dev,
                check,
                dbus-test-runner,
                debhelper (>= 9),
@@ -10,7 +11,7 @@ Build-Depends: autotools-dev,
                gtk-doc-tools,
                intltool,
                libgirepository1.0-dev,
-               libglib2.0-dev (>= 2.26),
+               libglib2.0-dev (>= 2.35.1),
                libsqlite3-dev (>= 3.7.0),
                libtool,
                libxml2-dev,

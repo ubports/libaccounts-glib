@@ -152,7 +152,6 @@ end_test ()
 
 START_TEST(test_init)
 {
-    g_type_init ();
     manager = ag_manager_new ();
 
     fail_unless (AG_IS_MANAGER (manager),
@@ -164,7 +163,6 @@ END_TEST
 
 START_TEST(test_object)
 {
-    g_type_init ();
     manager = ag_manager_new ();
 
     account = ag_manager_create_account (manager, NULL);
@@ -187,7 +185,6 @@ START_TEST(test_provider)
     GList *providers, *list;
     gboolean found;
 
-    g_type_init ();
     manager = ag_manager_new ();
 
     account = ag_manager_create_account (manager, PROVIDER);
@@ -245,7 +242,6 @@ START_TEST(test_provider_settings)
     AgProvider *provider;
     GVariant *variant;
 
-    g_type_init ();
     manager = ag_manager_new ();
 
     account = ag_manager_create_account (manager, "MyProvider");
@@ -285,7 +281,6 @@ void account_store_cb (AgAccount *account, const GError *error,
 
 START_TEST(test_store)
 {
-    g_type_init ();
     manager = ag_manager_new ();
 
     account = ag_manager_create_account (manager, PROVIDER);
@@ -331,7 +326,6 @@ START_TEST(test_store_locked)
 {
     sqlite3 *db;
 
-    g_type_init ();
     manager = ag_manager_new ();
 
     account = ag_manager_create_account (manager, PROVIDER);
@@ -394,7 +388,6 @@ START_TEST(test_store_locked_cancel)
     GCancellable *cancellable;
     gboolean cb_called = FALSE;
 
-    g_type_init ();
     manager = ag_manager_new ();
 
     account = ag_manager_create_account (manager, PROVIDER);
@@ -437,8 +430,6 @@ START_TEST(test_account_service)
     const gchar *display_name = "My test account";
     AgSettingSource source;
     AgAccountService *account_service;
-
-    g_type_init ();
 
     manager = ag_manager_new ();
     account = ag_manager_create_account (manager, PROVIDER);
@@ -525,8 +516,6 @@ START_TEST(test_account_service_enabledness)
     AgAccountService *account_service;
     gboolean service_enabled = FALSE;
     GError *error = NULL;
-
-    g_type_init ();
 
     manager = ag_manager_new ();
     account = ag_manager_create_account (manager, PROVIDER);
@@ -659,8 +648,6 @@ START_TEST(test_account_service_settings)
     AgSettingSource source;
     gchar **changed_fields = NULL;
 
-    g_type_init ();
-
     manager = ag_manager_new ();
     account = ag_manager_create_account (manager, PROVIDER);
 
@@ -781,8 +768,6 @@ START_TEST(test_account_service_list)
 
     /* delete the database */
     g_unlink (db_filename);
-
-    g_type_init ();
 
     manager = ag_manager_new ();
 
@@ -982,8 +967,6 @@ START_TEST(test_auth_data)
     /* delete the database */
     g_unlink (db_filename);
 
-    g_type_init ();
-
     manager = ag_manager_new ();
 
     key_prefix = g_strdup_printf ("auth/%s/%s", method, mechanism);
@@ -1087,8 +1070,6 @@ START_TEST(test_auth_data_get_login_parameters)
     const gchar *display = "desktop";
     const gchar *animal = "cat";
 
-    g_type_init ();
-
     manager = ag_manager_new_for_service_type ("e-mail");
 
     /* first, check the default parameters on a non-stored account */
@@ -1168,8 +1149,6 @@ START_TEST(test_auth_data_insert_parameters)
     const gchar *display = "desktop";
     const gchar *animal = "cat";
 
-    g_type_init ();
-
     manager = ag_manager_new_for_service_type ("e-mail");
 
     /* reload the account and get the AccountService */
@@ -1218,8 +1197,6 @@ START_TEST(test_application)
     AgApplication *application;
     GList *list;
     gint i;
-
-    g_type_init ();
 
     manager = ag_manager_new ();
 
@@ -1300,8 +1277,6 @@ START_TEST(test_service)
     };
     AgSettingSource source;
     GError *error = NULL;
-
-    g_type_init ();
 
     manager = ag_manager_new ();
     account = ag_manager_create_account (manager, PROVIDER);
@@ -1555,7 +1530,6 @@ START_TEST(test_account_services)
     GList *services;
     AgService *service;
 
-    g_type_init ();
     manager = ag_manager_new ();
 
     account = ag_manager_create_account (manager, "maemo");
@@ -1605,8 +1579,6 @@ START_TEST(test_signals)
     gboolean notify_display_name_called = FALSE;
     gboolean enabled = FALSE;
 
-    g_type_init ();
-
     manager = ag_manager_new ();
     account = ag_manager_create_account (manager, PROVIDER);
 
@@ -1651,8 +1623,6 @@ START_TEST(test_list)
     GValue value = { 0 };
     AgSettingSource source;
     GList *list;
-
-    g_type_init ();
 
     manager = ag_manager_new ();
     account = ag_manager_create_account (manager, PROVIDER);
@@ -1756,8 +1726,6 @@ START_TEST(test_settings_iter_gvalue)
     const GValue *val;
     gint i, n_values, n_read;
     const gint new_port_value = 432412;
-
-    g_type_init ();
 
     manager = ag_manager_new ();
     account = ag_manager_create_account (manager, PROVIDER);
@@ -1926,8 +1894,6 @@ START_TEST(test_settings_iter)
     gint i, n_values, n_read;
     const gint new_port_value = 32412;
 
-    g_type_init ();
-
     manager = ag_manager_new ();
     account = ag_manager_create_account (manager, PROVIDER);
 
@@ -2073,8 +2039,6 @@ START_TEST(test_list_services)
     AgService *service;
     const gchar *name;
 
-    g_type_init ();
-
     manager = ag_manager_new ();
 
     /* get all services */
@@ -2120,7 +2084,6 @@ START_TEST(test_list_service_types)
     AgServiceType *service_type;
     const gchar *name, *tag;
 
-    g_type_init ();
     manager = ag_manager_new ();
 
     service_types = ag_manager_list_service_types (manager);
@@ -2163,8 +2126,6 @@ START_TEST(test_delete)
 {
     AgAccountId id;
     gboolean enabled_called, deleted_called;
-
-    g_type_init ();
 
     manager = ag_manager_new ();
 
@@ -2246,8 +2207,6 @@ START_TEST(test_watches)
     gboolean dir_changed = FALSE;
     AgAccountWatch w_server, w_port, w_dir;
     GValue value = { 0 };
-
-    g_type_init ();
 
     manager = ag_manager_new ();
     account = ag_manager_create_account (manager, PROVIDER);
@@ -2397,8 +2356,6 @@ START_TEST(test_concurrency)
         "three",
         NULL
     };
-
-    g_type_init ();
 
     manager = ag_manager_new ();
 
@@ -2608,8 +2565,6 @@ START_TEST(test_service_regression)
      * reproducible only when the service was not yet in DB */
     g_unlink (db_filename);
 
-    g_type_init ();
-
     manager = ag_manager_new ();
     account = ag_manager_create_account (manager, PROVIDER);
 
@@ -2706,8 +2661,6 @@ START_TEST(test_blocking)
     gint fd;
     gint ret;
 
-    g_type_init ();
-
     /* create an account */
     manager = ag_manager_new ();
     account = ag_manager_create_account (manager, PROVIDER);
@@ -2793,8 +2746,6 @@ START_TEST(test_cache_regression)
     /* delete the database */
     g_unlink (db_filename);
 
-    g_type_init ();
-
     manager = ag_manager_new ();
     account = ag_manager_create_account (manager, provider1);
     fail_unless (account != NULL);
@@ -2858,8 +2809,6 @@ START_TEST(test_serviceid_regression)
     /* delete the database */
     g_unlink (db_filename);
 
-    g_type_init ();
-
     manager1 = ag_manager_new ();
     manager2 = ag_manager_new ();
 
@@ -2905,8 +2854,6 @@ START_TEST(test_enabled_regression)
 {
     EnabledCbData ecd;
 
-    g_type_init();
-
     manager = ag_manager_new ();
     account = ag_manager_create_account (manager, PROVIDER);
 
@@ -2941,8 +2888,6 @@ START_TEST(test_delete_regression)
     AgAccountId id;
     AgAccountService *account_service;
     gboolean enabled_called, deleted_called;
-
-    g_type_init ();
 
     manager = ag_manager_new_for_service_type ("e-mail");
 
@@ -3009,8 +2954,6 @@ START_TEST(test_duplicate_create_regression)
 {
     gint create_signal_counter;
 
-    g_type_init ();
-
     manager = ag_manager_new ();
 
     g_signal_connect (manager, "account-created",
@@ -3056,8 +2999,6 @@ START_TEST(test_manager_new_for_service_type)
 
     /* delete the database */
     g_unlink (db_filename);
-
-    g_type_init ();
 
     manager = ag_manager_new_for_service_type ("e-mail");
     fail_unless (g_strcmp0 (ag_manager_get_service_type (manager),
@@ -3141,8 +3082,6 @@ START_TEST(test_manager_enabled_event)
 {
     gint ret;
 
-    g_type_init();
-
     /* consume any still unprocessed D-Bus signals */
     run_main_loop_for_n_seconds (2);
 
@@ -3208,7 +3147,6 @@ START_TEST(test_list_enabled_account)
     AgAccount *account3 = NULL;
     const gchar *name = NULL;
 
-    g_type_init ();
     manager = ag_manager_new ();
     fail_unless (manager != NULL, "Manager should not be NULL");
 
@@ -3285,8 +3223,6 @@ START_TEST(test_account_list_enabled_services)
      * new account for the same manager
      * */
     AgAccount *account4;
-
-    g_type_init ();
 
     /* delete the database */
     g_unlink (db_filename);
@@ -3392,8 +3328,6 @@ START_TEST(test_service_type)
     const gchar *string;
     AgServiceType *service_type;
 
-    g_type_init ();
-
     manager = ag_manager_new ();
 
     service_type = ag_manager_load_service_type (manager, "I don't exist");
@@ -3472,7 +3406,6 @@ START_TEST(test_db_access)
      *   account-created signal and call
      *   ag_account_list_enabled_services(), we shouldn't be blocked.
      */
-    g_type_init ();
 
     /* first, create a lock file to synchronize the test */
     lock_filename = "/tmp/check_ag.lock";

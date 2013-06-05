@@ -1,11 +1,17 @@
-libaccounts-glib (1.9-0ubuntu1) UNRELEASED; urgency=low
+libaccounts-glib (1.11-0ubuntu1) UNRELEASED; urgency=low
 
-  * New upstream release.
+  * New upstream release
     - Fix compilation with GCC 4.8
     - Install tests
     - Add installcheck target for installed tests
+    - Vala: rename .vapi and .deps files
+      Fixes: http://code.google.com/p/accounts-sso/issues/detail?id=176
+    - AgService: load the XML file before returning tags
+    - Removed deprecated g_type_init and bumped GObject dependency
+    - Tests: don't fail on critical warnings
+    - Tests: don't run tests in parallel
 
- -- Alberto Mardegan <alberto.mardegan@canonical.com>  Fri, 31 May 2013 16:49:10 +0300
+ -- Alberto Mardegan <alberto.mardegan@canonical.com>  Wed, 05 Jun 2013 16:25:07 +0300
 
 libaccounts-glib (1.8daily13.05.01.1ubuntu.unity.next-0ubuntu1) raring; urgency=low
 
