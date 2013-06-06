@@ -603,12 +603,12 @@ dbus_filter_callback (G_GNUC_UNUSED GDBusConnection *dbus_conn,
          * created or deleted from another instance.
          * We must emit the signals, and cache the newly created account for a
          * while, because the application is likely to inspect it */
-        account = g_object_new (AG_TYPE_ACCOUNT,
-                                "manager", manager,
-                                "provider", provider_name,
-                                "id", account_id,
-                                "foreign", created,
-                                NULL);
+        account = g_initable_new (AG_TYPE_ACCOUNT, NULL, NULL,
+                                  "manager", manager,
+                                  "provider", provider_name,
+                                  "id", account_id,
+                                  "foreign", created,
+                                  NULL);
         g_return_if_fail (AG_IS_ACCOUNT (account));
 
         g_object_weak_ref (G_OBJECT (account), account_weak_notify, manager);
@@ -1859,23 +1859,17 @@ ag_manager_load_account (AgManager *manager, AgAccountId account_id,
         return g_object_ref (account);
 
     /* the account is not loaded; do it now */
-    account = g_object_new (AG_TYPE_ACCOUNT,
-                            "manager", manager,
-                            "id", account_id,
-                            NULL);
+    account = g_initable_new (AG_TYPE_ACCOUNT, NULL, error,
+                              "manager", manager,
+                              "id", account_id,
+                              NULL);
     if (G_LIKELY (account))
     {
         g_object_weak_ref (G_OBJECT (account), account_weak_notify, manager);
         g_hash_table_insert (priv->accounts, GUINT_TO_POINTER (account_id),
                              account);
     }
-    else if (priv->last_error != NULL)
-    {
-        g_set_error_literal (error,
-                             priv->last_error->domain,
-                             priv->last_error->code,
-                             priv->last_error->message);
-    }
+
     return account;
 }
 
@@ -1898,10 +1892,10 @@ ag_manager_create_account (AgManager *manager, const gchar *provider_name)
 
     g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
 
-    account = g_object_new (AG_TYPE_ACCOUNT,
-                            "manager", manager,
-                            "provider", provider_name,
-                            NULL);
+    account = g_initable_new (AG_TYPE_ACCOUNT, NULL, NULL,
+                              "manager", manager,
+                              "provider", provider_name,
+                              NULL);
     return account;
 }
 
