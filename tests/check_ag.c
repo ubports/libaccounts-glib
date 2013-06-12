@@ -77,6 +77,15 @@ typedef struct {
     gboolean enabled_check;
 } EnabledCbData;
 
+static void
+on_enabled (AgAccount *account, const gchar *service, gboolean enabled,
+            EnabledCbData *ecd)
+{
+    ecd->called = TRUE;
+    ecd->service = g_strdup (service);
+    ecd->enabled_check = (ag_account_get_enabled (account) == enabled);
+}
+
 static gboolean
 quit_loop_on_timeout(gpointer user_data)
 {
@@ -1615,6 +1624,61 @@ START_TEST(test_signals)
 }
 END_TEST
 
+START_TEST(test_signals_other_manager)
+{
+    AgAccountId account_id;
+    gboolean service_enabled = FALSE;
+    AgManager *manager2;
+    AgAccount *account2;
+    EnabledCbData ecd;
+    GError *error = NULL;
+
+    manager = ag_manager_new ();
+    account = ag_manager_create_account (manager, PROVIDER);
+
+    service = ag_manager_get_service (manager, "MyService");
+    fail_unless (service != NULL);
+
+    ag_account_set_enabled (account, FALSE);
+
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
+    fail_unless (data_stored, "Callback not invoked immediately");
+    account_id = account->id;
+
+    manager2 = ag_manager_new ();
+
+    /* reload the account and see that it's enabled */
+    account2 = ag_manager_load_account (manager2, account_id, &error);
+    fail_unless (AG_IS_ACCOUNT (account2),
+                 "Couldn't load account %u", account_id);
+    fail_unless (error == NULL, "Error is not NULL");
+
+    memset(&ecd, 0, sizeof(ecd));
+    g_signal_connect (account2, "enabled",
+                      G_CALLBACK (on_enabled),
+                      &ecd);
+
+    /* enable the service */
+    ag_account_select_service (account, service);
+    ag_account_set_enabled (account, TRUE);
+
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
+    fail_unless (data_stored, "Callback not invoked immediately");
+
+    fail_unless (ecd.called);
+    fail_unless (g_strcmp0 (ecd.service, "MyService") == 0);
+    g_free (ecd.service);
+
+    ag_service_unref (service);
+    g_object_unref (account2);
+    g_object_unref (manager2);
+
+    end_test ();
+}
+END_TEST
+
 START_TEST(test_list)
 {
     const gchar *display_name = "New account";
@@ -2327,15 +2391,6 @@ concurrency_test_failed (gpointer userdata)
     source_id = 0;
     g_main_loop_quit (main_loop);
     return FALSE;
-}
-
-static void
-on_enabled (AgAccount *account, const gchar *service, gboolean enabled,
-            EnabledCbData *ecd)
-{
-    ecd->called = TRUE;
-    ecd->service = g_strdup (service);
-    ecd->enabled_check = (ag_account_get_enabled (account) == enabled);
 }
 
 START_TEST(test_concurrency)
@@ -3524,6 +3579,7 @@ ag_suite(const char *test_case)
 
     tc = tcase_create("Signalling");
     tcase_add_test (tc, test_signals);
+    tcase_add_test (tc, test_signals_other_manager);
     tcase_add_test (tc, test_delete);
     tcase_add_test (tc, test_watches);
     IF_TEST_CASE_ENABLED("Signalling")
