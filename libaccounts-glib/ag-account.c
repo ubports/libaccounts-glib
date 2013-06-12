@@ -609,50 +609,52 @@ update_settings (AgAccount *account, GHashTable *services)
             if (!priv->services) continue;
             ss = g_hash_table_lookup (priv->services, service_name);
         }
-        if (!ss) continue;
 
         /* get the watches associated to this service */
-        if (priv->watches)
+        if (ss != NULL && priv->watches != NULL)
             watches = g_hash_table_lookup (priv->watches, ss->service);
 
         g_hash_table_iter_init (&si, sc->settings);
         while (g_hash_table_iter_next (&si,
                                        (gpointer)&key, (gpointer)&value))
         {
-            if (ss->service == NULL)
+            if (ss != NULL)
             {
-                if (strcmp (key, "name") == 0)
+                if (ss->service == NULL)
                 {
-                    g_free (priv->display_name);
-                    priv->display_name =
-                        value ? g_variant_dup_string (value, NULL) : NULL;
-                    g_signal_emit (account, signals[DISPLAY_NAME_CHANGED], 0);
-                    g_object_notify_by_pspec ((GObject *)account,
-                                              properties[PROP_DISPLAY_NAME]);
-                    continue;
+                    if (strcmp (key, "name") == 0)
+                    {
+                        g_free (priv->display_name);
+                        priv->display_name =
+                            value ? g_variant_dup_string (value, NULL) : NULL;
+                        g_signal_emit (account, signals[DISPLAY_NAME_CHANGED], 0);
+                        g_object_notify_by_pspec ((GObject *)account,
+                                                  properties[PROP_DISPLAY_NAME]);
+                        continue;
+                    }
+                    else if (strcmp (key, "enabled") == 0)
+                    {
+                        priv->enabled =
+                            value ? g_variant_get_boolean (value) : FALSE;
+                        g_signal_emit (account, signals[ENABLED], 0,
+                                       NULL, priv->enabled);
+                        g_object_notify_by_pspec ((GObject *)account,
+                                                  properties[PROP_ENABLED]);
+                        continue;
+                    }
                 }
-                else if (strcmp (key, "enabled") == 0)
-                {
-                    priv->enabled =
-                        value ? g_variant_get_boolean (value) : FALSE;
-                    g_signal_emit (account, signals[ENABLED], 0,
-                                   NULL, priv->enabled);
-                    g_object_notify_by_pspec ((GObject *)account,
-                                              properties[PROP_ENABLED]);
-                    continue;
-                }
+
+                if (value)
+                    g_hash_table_replace (ss->settings,
+                                          g_strdup (key),
+                                          g_variant_ref (value));
+                else
+                    g_hash_table_remove (ss->settings, key);
+
+                /* check for installed watches to be invoked */
+                if (watches)
+                    watch_list = match_watch_with_key (watches, key, watch_list);
             }
-
-            if (value)
-                g_hash_table_replace (ss->settings,
-                                      g_strdup (key),
-                                      g_variant_ref (value));
-            else
-                g_hash_table_remove (ss->settings, key);
-
-            /* check for installed watches to be invoked */
-            if (watches)
-                watch_list = match_watch_with_key (watches, key, watch_list);
 
             if (strcmp (key, "enabled") == 0)
             {
