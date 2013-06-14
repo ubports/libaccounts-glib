@@ -1204,6 +1204,7 @@ START_TEST(test_application)
 {
     AgService *email_service, *sharing_service;
     AgApplication *application;
+    GDesktopAppInfo *app_info;
     GList *list;
     gint i;
 
@@ -1234,6 +1235,12 @@ START_TEST(test_application)
     fail_unless (g_strcmp0 (ag_application_get_service_usage (application,
                                                               email_service),
                             "Mailer can retrieve your e-mails") == 0);
+    app_info = ag_application_get_desktop_app_info (application);
+    fail_unless (G_IS_DESKTOP_APP_INFO (app_info));
+    fail_unless (g_strcmp0 (g_app_info_get_display_name (G_APP_INFO (app_info)),
+                            "Easy Mailer") == 0);
+    g_object_unref (app_info);
+
     ag_application_unref (application);
     g_list_free (list);
 
