@@ -4,7 +4,7 @@
  * This file is part of libaccounts-glib
  *
  * Copyright (C) 2009-2010 Nokia Corporation.
- * Copyright (C) 2012 Canonical Ltd.
+ * Copyright (C) 2012-2013 Canonical Ltd.
  *
  * Contact: Alberto Mardegan <alberto.mardegan@canonical.com>
  *
@@ -61,6 +61,7 @@ typedef enum {
  * @AG_ACCOUNTS_ERROR_ACCOUNT_NOT_FOUND: the requested account was not found
  * @AG_ACCOUNTS_ERROR_STORE_IN_PROGRESS: an asynchronous store operation is
  * already in progress. Since 1.4
+ * @AG_ACCOUNTS_ERROR_READONLY: the accounts DB is in read-only mode. Since 1.4
  *
  * These identify the various errors that can occur with methods in
  * libaccounts-glib that return a #GError.
@@ -72,6 +73,7 @@ typedef enum {
     AG_ACCOUNTS_ERROR_DB_LOCKED = AG_ERROR_DB_LOCKED,
     AG_ACCOUNTS_ERROR_ACCOUNT_NOT_FOUND = AG_ERROR_ACCOUNT_NOT_FOUND,
     AG_ACCOUNTS_ERROR_STORE_IN_PROGRESS,
+    AG_ACCOUNTS_ERROR_READONLY,
 } AgAccountsError;
 
 G_END_DECLS

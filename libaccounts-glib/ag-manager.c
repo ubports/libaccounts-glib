@@ -4,7 +4,7 @@
  * This file is part of libaccounts-glib
  *
  * Copyright (C) 2009-2010 Nokia Corporation.
- * Copyright (C) 2012 Canonical Ltd.
+ * Copyright (C) 2012-2013 Canonical Ltd.
  * Copyright (C) 2012 Intel Corporation.
  *
  * Contact: Alberto Mardegan <alberto.mardegan@canonical.com>
@@ -54,9 +54,13 @@
 #include "ag-internals.h"
 #include "ag-service.h"
 #include "ag-util.h"
+#include <errno.h>
+#include <fcntl.h>
 #include <sched.h>
 #include <sqlite3.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #ifndef DATABASE_DIR
@@ -1133,6 +1137,30 @@ create_db (sqlite3 *db)
     return TRUE;
 }
 
+static inline gboolean
+file_is_read_only (const gchar *filename)
+{
+    int fd;
+
+    /* FIXME: Here we could just use access(); however, because of bug
+     * https://bugs.launchpad.net/bugs/1220713, if the access is blocked by
+     * apparmor the access() call would still report that the file is
+     * writeable.
+     */
+    fd = open (filename, O_RDWR);
+    if (fd == -1)
+    {
+        if (errno == EACCES || errno == EROFS)
+            return TRUE;
+    }
+    else
+    {
+        close (fd);
+    }
+
+    return FALSE;
+}
+
 static gboolean
 open_db (AgManager *manager)
 {
@@ -1141,7 +1169,7 @@ open_db (AgManager *manager)
     gchar *filename, *pathname;
     gint version;
     gboolean ok = TRUE;
-    int ret;
+    int ret, flags;
 
     basedir = g_getenv ("ACCOUNTS");
     if (G_LIKELY (!basedir))
@@ -1158,7 +1186,18 @@ open_db (AgManager *manager)
     {
         filename = g_build_filename (basedir, "accounts.db", NULL);
     }
-    ret = sqlite3_open (filename, &priv->db);
+
+    /* First, check if the file exists and is writeable */
+    if (file_is_read_only (filename))
+    {
+        DEBUG_INFO ("Opening DB in read-only mode");
+        flags = SQLITE_OPEN_READONLY;
+    }
+    else
+    {
+        flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
+    }
+    ret = sqlite3_open_v2 (filename, &priv->db, flags, NULL);
     g_free (filename);
 
     if (ret != SQLITE_OK)
@@ -2078,6 +2117,16 @@ ag_manager_list_services_by_type (AgManager *manager, const gchar *service_type)
     return services;
 }
 
+static GError *
+sqlite_error_to_gerror (int db_error, sqlite3 *db)
+{
+    AgAccountsError code = (db_error == SQLITE_READONLY) ?
+        AG_ACCOUNTS_ERROR_READONLY : AG_ACCOUNTS_ERROR_DB;
+    return g_error_new (AG_ACCOUNTS_ERROR, code,
+                        "Got error: %s (%d)",
+                        sqlite3_errmsg (db), db_error);
+}
+
 void
 _ag_manager_exec_transaction (AgManager *manager, const gchar *sql,
                               AgAccountChanges *changes, AgAccount *account,
@@ -2091,9 +2140,7 @@ _ag_manager_exec_transaction (AgManager *manager, const gchar *sql,
     ret = prepare_transaction_statements (priv);
     if (G_UNLIKELY (ret != SQLITE_OK))
     {
-        error = g_error_new (AG_ACCOUNTS_ERROR, AG_ACCOUNTS_ERROR_DB,
-                             "Got error: %s (%d)",
-                             sqlite3_errmsg (priv->db), ret);
+        error = sqlite_error_to_gerror (ret, priv->db);
         goto finish;
     }
 
@@ -2116,9 +2163,7 @@ _ag_manager_exec_transaction (AgManager *manager, const gchar *sql,
 
     if (ret != SQLITE_DONE)
     {
-        error = g_error_new (AG_ACCOUNTS_ERROR, AG_ACCOUNTS_ERROR_DB,
-                             "Got error: %s (%d)",
-                             sqlite3_errmsg (priv->db), ret);
+        error = sqlite_error_to_gerror (ret, priv->db);
         goto finish;
     }
 
@@ -2146,9 +2191,7 @@ _ag_manager_exec_transaction_blocking (AgManager *manager, const gchar *sql,
     ret = prepare_transaction_statements (priv);
     if (G_UNLIKELY (ret != SQLITE_OK))
     {
-        *error = g_error_new (AG_ACCOUNTS_ERROR, AG_ACCOUNTS_ERROR_DB,
-                              "Got error: %s (%d)",
-                              sqlite3_errmsg (priv->db), ret);
+        *error = sqlite_error_to_gerror (ret, priv->db);
         return;
     }
 
@@ -2171,9 +2214,7 @@ _ag_manager_exec_transaction_blocking (AgManager *manager, const gchar *sql,
 
     if (ret != SQLITE_DONE)
     {
-        *error = g_error_new (AG_ACCOUNTS_ERROR, AG_ACCOUNTS_ERROR_DB,
-                              "Got error: %s (%d)",
-                              sqlite3_errmsg (priv->db), ret);
+        *error = sqlite_error_to_gerror (ret, priv->db);
         return;
     }
 

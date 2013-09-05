@@ -182,6 +182,63 @@ START_TEST(test_object)
 }
 END_TEST
 
+START_TEST(test_read_only)
+{
+    GError *error = NULL;
+    gchar *filename;
+    gboolean ok;
+
+    manager = ag_manager_new ();
+    fail_unless (manager != NULL);
+
+    /* close the database, and make it read-only */
+    g_object_unref (manager);
+    chmod (db_filename, S_IRUSR | S_IRGRP | S_IROTH);
+
+    filename = g_strconcat (db_filename, "-shm", NULL);
+    chmod (filename, S_IRUSR | S_IRGRP | S_IROTH);
+    g_free (filename);
+
+    filename = g_strconcat (db_filename, "-wal", NULL);
+    chmod (filename, S_IRUSR | S_IRGRP | S_IROTH);
+    g_free (filename);
+    unlink (filename);
+
+    /* re-open the DB */
+    manager = ag_manager_new ();
+    fail_unless (manager != NULL);
+
+    /* create an account, and expect a failure */
+    account = ag_manager_create_account (manager, "bisbone");
+    fail_unless (AG_IS_ACCOUNT (account),
+                 "Failed to create the AgAccount.");
+
+    ok = ag_account_store_blocking (account, &error);
+    fail_unless (!ok);
+    fail_unless (error->code == AG_ACCOUNTS_ERROR_READONLY);
+
+    /* delete the DB */
+    g_object_unref (account);
+    account = NULL;
+    g_object_unref (manager);
+    manager = NULL;
+
+    unlink (db_filename);
+
+    filename = g_strconcat (db_filename, "-shm", NULL);
+    unlink (filename);
+    g_free (filename);
+
+    filename = g_strconcat (db_filename, "-wal", NULL);
+    unlink (filename);
+    g_free (filename);
+
+    g_debug("Ending read-only test");
+
+    end_test ();
+}
+END_TEST
+
 START_TEST(test_provider)
 {
     const gchar *provider_name, *display_name;
@@ -3530,6 +3587,7 @@ ag_suite(const char *test_case)
 
     tc = tcase_create("Create");
     tcase_add_test (tc, test_object);
+    tcase_add_test (tc, test_read_only);
     IF_TEST_CASE_ENABLED("Create")
         suite_add_tcase (s, tc);
 
