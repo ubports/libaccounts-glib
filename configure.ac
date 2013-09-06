@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.64])
 AC_INIT([libaccounts-glib],
-        [1.11],
+        [1.12],
         [http://code.google.com/p/accounts-sso/issues/entry],
         [libaccounts-glib],
         [http://code.google.com/p/accounts-sso/])
