@@ -77,6 +77,15 @@ typedef struct {
     gboolean enabled_check;
 } EnabledCbData;
 
+static void
+on_enabled (AgAccount *account, const gchar *service, gboolean enabled,
+            EnabledCbData *ecd)
+{
+    ecd->called = TRUE;
+    ecd->service = g_strdup (service);
+    ecd->enabled_check = (ag_account_get_enabled (account) == enabled);
+}
+
 static gboolean
 quit_loop_on_timeout(gpointer user_data)
 {
@@ -168,6 +177,63 @@ START_TEST(test_object)
     account = ag_manager_create_account (manager, NULL);
     fail_unless (AG_IS_ACCOUNT (account),
                  "Failed to create the AgAccount.");
+
+    end_test ();
+}
+END_TEST
+
+START_TEST(test_read_only)
+{
+    GError *error = NULL;
+    gchar *filename;
+    gboolean ok;
+
+    manager = ag_manager_new ();
+    fail_unless (manager != NULL);
+
+    /* close the database, and make it read-only */
+    g_object_unref (manager);
+    chmod (db_filename, S_IRUSR | S_IRGRP | S_IROTH);
+
+    filename = g_strconcat (db_filename, "-shm", NULL);
+    chmod (filename, S_IRUSR | S_IRGRP | S_IROTH);
+    g_free (filename);
+
+    filename = g_strconcat (db_filename, "-wal", NULL);
+    chmod (filename, S_IRUSR | S_IRGRP | S_IROTH);
+    g_free (filename);
+    unlink (filename);
+
+    /* re-open the DB */
+    manager = ag_manager_new ();
+    fail_unless (manager != NULL);
+
+    /* create an account, and expect a failure */
+    account = ag_manager_create_account (manager, "bisbone");
+    fail_unless (AG_IS_ACCOUNT (account),
+                 "Failed to create the AgAccount.");
+
+    ok = ag_account_store_blocking (account, &error);
+    fail_unless (!ok);
+    fail_unless (error->code == AG_ACCOUNTS_ERROR_READONLY);
+
+    /* delete the DB */
+    g_object_unref (account);
+    account = NULL;
+    g_object_unref (manager);
+    manager = NULL;
+
+    unlink (db_filename);
+
+    filename = g_strconcat (db_filename, "-shm", NULL);
+    unlink (filename);
+    g_free (filename);
+
+    filename = g_strconcat (db_filename, "-wal", NULL);
+    unlink (filename);
+    g_free (filename);
+
+    g_debug("Ending read-only test");
 
     end_test ();
 }
@@ -1195,6 +1261,7 @@ START_TEST(test_application)
 {
     AgService *email_service, *sharing_service;
     AgApplication *application;
+    GDesktopAppInfo *app_info;
     GList *list;
     gint i;
 
@@ -1225,6 +1292,12 @@ START_TEST(test_application)
     fail_unless (g_strcmp0 (ag_application_get_service_usage (application,
                                                               email_service),
                             "Mailer can retrieve your e-mails") == 0);
+    app_info = ag_application_get_desktop_app_info (application);
+    fail_unless (G_IS_DESKTOP_APP_INFO (app_info));
+    fail_unless (g_strcmp0 (g_app_info_get_display_name (G_APP_INFO (app_info)),
+                            "Easy Mailer") == 0);
+    g_object_unref (app_info);
+
     ag_application_unref (application);
     g_list_free (list);
 
@@ -1610,6 +1683,61 @@ START_TEST(test_signals)
     fail_unless (enabled == TRUE, "Account not enabled!");
     fail_unless (notify_display_name_called,
                  "DisplayName property not notified!");
+
+    end_test ();
+}
+END_TEST
+
+START_TEST(test_signals_other_manager)
+{
+    AgAccountId account_id;
+    gboolean service_enabled = FALSE;
+    AgManager *manager2;
+    AgAccount *account2;
+    EnabledCbData ecd;
+    GError *error = NULL;
+
+    manager = ag_manager_new ();
+    account = ag_manager_create_account (manager, PROVIDER);
+
+    service = ag_manager_get_service (manager, "MyService");
+    fail_unless (service != NULL);
+
+    ag_account_set_enabled (account, FALSE);
+
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
+    fail_unless (data_stored, "Callback not invoked immediately");
+    account_id = account->id;
+
+    manager2 = ag_manager_new ();
+
+    /* reload the account and see that it's enabled */
+    account2 = ag_manager_load_account (manager2, account_id, &error);
+    fail_unless (AG_IS_ACCOUNT (account2),
+                 "Couldn't load account %u", account_id);
+    fail_unless (error == NULL, "Error is not NULL");
+
+    memset(&ecd, 0, sizeof(ecd));
+    g_signal_connect (account2, "enabled",
+                      G_CALLBACK (on_enabled),
+                      &ecd);
+
+    /* enable the service */
+    ag_account_select_service (account, service);
+    ag_account_set_enabled (account, TRUE);
+
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
+    fail_unless (data_stored, "Callback not invoked immediately");
+
+    fail_unless (ecd.called);
+    fail_unless (g_strcmp0 (ecd.service, "MyService") == 0);
+    g_free (ecd.service);
+
+    ag_service_unref (service);
+    g_object_unref (account2);
+    g_object_unref (manager2);
 
     end_test ();
 }
@@ -2327,15 +2455,6 @@ concurrency_test_failed (gpointer userdata)
     source_id = 0;
     g_main_loop_quit (main_loop);
     return FALSE;
-}
-
-static void
-on_enabled (AgAccount *account, const gchar *service, gboolean enabled,
-            EnabledCbData *ecd)
-{
-    ecd->called = TRUE;
-    ecd->service = g_strdup (service);
-    ecd->enabled_check = (ag_account_get_enabled (account) == enabled);
 }
 
 START_TEST(test_concurrency)
@@ -3468,6 +3587,7 @@ ag_suite(const char *test_case)
 
     tc = tcase_create("Create");
     tcase_add_test (tc, test_object);
+    tcase_add_test (tc, test_read_only);
     IF_TEST_CASE_ENABLED("Create")
         suite_add_tcase (s, tc);
 
@@ -3524,6 +3644,7 @@ ag_suite(const char *test_case)
 
     tc = tcase_create("Signalling");
     tcase_add_test (tc, test_signals);
+    tcase_add_test (tc, test_signals_other_manager);
     tcase_add_test (tc, test_delete);
     tcase_add_test (tc, test_watches);
     IF_TEST_CASE_ENABLED("Signalling")

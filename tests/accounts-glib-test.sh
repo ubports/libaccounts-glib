@@ -7,11 +7,9 @@ export AG_PROVIDERS=$TESTDATADIR
 export ACCOUNTS=/tmp/
 export AG_DEBUG=all
 export G_MESSAGES_DEBUG=all
-# Since https://mail.gnome.org/archives/commits-list/2013-April/msg08256.html
-# returning NULL from a constructor will emit a critical warning; until we take
-# GInitable into use, disable failing on critical messages:
-#   export G_DEBUG=fatal-criticals
+export G_DEBUG=fatal-criticals
 export G_SLICE=debug-blocks
+export XDG_DATA_HOME=$TESTDATADIR
 export PATH=.:$PATH
 
 # If dbus-test-runner exists, use it to run the tests in a separate D-Bus

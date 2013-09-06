@@ -1,3 +1,16 @@
+libaccounts-glib (1.12-0ubuntu1) UNRELEASED; urgency=low
+
+  * New upstream release
+    - Allow opening the DB in read-only mode (LP: #1220552)
+      Fixes: http://code.google.com/p/accounts-sso/issues/detail?id=199
+    - Application: do not require ".desktop" suffix
+      Fixes: http://code.google.com/p/accounts-sso/issues/detail?id=193
+    - Account: emit "enabled" signal also on non-selected services
+    - AgAccount: implement the GInitable interface
+    - Tests: revert "don't run tests in parallel", disable gtkdoc tests
+
+ -- Alberto Mardegan <alberto.mardegan@canonical.com>  Fri, 06 Sep 2013 11:16:24 +0300
+
 libaccounts-glib (1.11daily13.06.05.2-0ubuntu1) saucy; urgency=low
 
   [ Alberto Mardegan ]

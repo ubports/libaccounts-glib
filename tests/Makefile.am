@@ -68,5 +68,8 @@ dist_testdata_DATA = \
 	OtherService.service \
 	maemo.provider
 
+nobase_dist_testdata_DATA = \
+	applications/Mailer.desktop
+
 installcheck-local: $(TESTS)
 	cd "$(testdir)" && TESTDATADIR="$(testdatadir)" ./accounts-glib-test.sh

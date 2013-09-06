@@ -230,7 +230,12 @@ typedef struct {
 #define AG_ITER_STAGE_ACCOUNT   1
 #define AG_ITER_STAGE_SERVICE   2
 
-G_DEFINE_TYPE (AgAccount, ag_account, G_TYPE_OBJECT);
+static void ag_account_initable_iface_init(gpointer g_iface,
+                                           gpointer iface_data);
+
+G_DEFINE_TYPE_WITH_CODE (AgAccount, ag_account, G_TYPE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
+                                            ag_account_initable_iface_init));
 
 #define AG_ACCOUNT_PRIV(obj) (AG_ACCOUNT(obj)->priv)
 
@@ -604,50 +609,52 @@ update_settings (AgAccount *account, GHashTable *services)
             if (!priv->services) continue;
             ss = g_hash_table_lookup (priv->services, service_name);
         }
-        if (!ss) continue;
 
         /* get the watches associated to this service */
-        if (priv->watches)
+        if (ss != NULL && priv->watches != NULL)
             watches = g_hash_table_lookup (priv->watches, ss->service);
 
         g_hash_table_iter_init (&si, sc->settings);
         while (g_hash_table_iter_next (&si,
                                        (gpointer)&key, (gpointer)&value))
         {
-            if (ss->service == NULL)
+            if (ss != NULL)
             {
-                if (strcmp (key, "name") == 0)
+                if (ss->service == NULL)
                 {
-                    g_free (priv->display_name);
-                    priv->display_name =
-                        value ? g_variant_dup_string (value, NULL) : NULL;
-                    g_signal_emit (account, signals[DISPLAY_NAME_CHANGED], 0);
-                    g_object_notify_by_pspec ((GObject *)account,
-                                              properties[PROP_DISPLAY_NAME]);
-                    continue;
+                    if (strcmp (key, "name") == 0)
+                    {
+                        g_free (priv->display_name);
+                        priv->display_name =
+                            value ? g_variant_dup_string (value, NULL) : NULL;
+                        g_signal_emit (account, signals[DISPLAY_NAME_CHANGED], 0);
+                        g_object_notify_by_pspec ((GObject *)account,
+                                                  properties[PROP_DISPLAY_NAME]);
+                        continue;
+                    }
+                    else if (strcmp (key, "enabled") == 0)
+                    {
+                        priv->enabled =
+                            value ? g_variant_get_boolean (value) : FALSE;
+                        g_signal_emit (account, signals[ENABLED], 0,
+                                       NULL, priv->enabled);
+                        g_object_notify_by_pspec ((GObject *)account,
+                                                  properties[PROP_ENABLED]);
+                        continue;
+                    }
                 }
-                else if (strcmp (key, "enabled") == 0)
-                {
-                    priv->enabled =
-                        value ? g_variant_get_boolean (value) : FALSE;
-                    g_signal_emit (account, signals[ENABLED], 0,
-                                   NULL, priv->enabled);
-                    g_object_notify_by_pspec ((GObject *)account,
-                                              properties[PROP_ENABLED]);
-                    continue;
-                }
+
+                if (value)
+                    g_hash_table_replace (ss->settings,
+                                          g_strdup (key),
+                                          g_variant_ref (value));
+                else
+                    g_hash_table_remove (ss->settings, key);
+
+                /* check for installed watches to be invoked */
+                if (watches)
+                    watch_list = match_watch_with_key (watches, key, watch_list);
             }
-
-            if (value)
-                g_hash_table_replace (ss->settings,
-                                      g_strdup (key),
-                                      g_variant_ref (value));
-            else
-                g_hash_table_remove (ss->settings, key);
-
-            /* check for installed watches to be invoked */
-            if (watches)
-                watch_list = match_watch_with_key (watches, key, watch_list);
 
             if (strcmp (key, "enabled") == 0)
             {
@@ -825,7 +832,7 @@ got_account (sqlite3_stmt *stmt, AgAccountPrivate *priv)
 }
 
 static gboolean
-ag_account_load (AgAccount *account)
+ag_account_load (AgAccount *account, GError **error)
 {
     AgAccountPrivate *priv = account->priv;
     gchar sql[128];
@@ -838,29 +845,24 @@ ag_account_load (AgAccount *account)
                                    (AgQueryCallback)got_account, priv, sql);
     /* if the query succeeded but we didn't get a row, we must set the
      * NOT_FOUND error */
-    if (_ag_manager_get_last_error (priv->manager) == NULL && rows != 1)
+    if (rows != 1)
     {
-        GError *error = g_error_new (AG_ACCOUNTS_ERROR,
-                                     AG_ACCOUNTS_ERROR_ACCOUNT_NOT_FOUND,
-                                     "Account %u not found in DB", account->id);
-        _ag_manager_take_error (priv->manager, error);
+        g_set_error (error,
+                     AG_ACCOUNTS_ERROR,
+                     AG_ACCOUNTS_ERROR_ACCOUNT_NOT_FOUND,
+                     "Account %u not found in DB", account->id);
     }
 
     return rows == 1;
 }
 
-static GObject *
-ag_account_constructor (GType type, guint n_params,
-                        GObjectConstructParam *params)
+static gboolean
+ag_account_initable_init (GInitable *initable,
+                          G_GNUC_UNUSED GCancellable *cancellable,
+                          GError **error)
 {
-    GObjectClass *object_class = (GObjectClass *)ag_account_parent_class;
-    GObject *object;
-    AgAccount *account;
+    AgAccount *account = AG_ACCOUNT (initable);
 
-    object = object_class->constructor (type, n_params, params);
-    g_return_val_if_fail (AG_IS_ACCOUNT (object), NULL);
-
-    account = AG_ACCOUNT (object);
     if (account->id)
     {
         if (account->priv->changes && account->priv->changes->created)
@@ -869,18 +871,25 @@ ag_account_constructor (GType type, guint n_params,
             _ag_account_changes_free (account->priv->changes);
             account->priv->changes = NULL;
         }
-        else if (!ag_account_load (account))
+        else if (!ag_account_load (account, error))
         {
             g_warning ("Unable to load account %u", account->id);
-            g_object_unref (object);
-            return NULL;
+            return FALSE;
         }
     }
 
     if (!account->priv->foreign)
         ag_account_select_service (account, NULL);
 
-    return object;
+    return TRUE;
+}
+
+static void
+ag_account_initable_iface_init (gpointer g_iface,
+                                G_GNUC_UNUSED gpointer iface_data)
+{
+    GInitableIface *iface = (GInitableIface *)g_iface;
+    iface->init = ag_account_initable_init;
 }
 
 static void
@@ -1004,7 +1013,6 @@ ag_account_class_init (AgAccountClass *klass)
 
     g_type_class_add_private (object_class, sizeof (AgAccountPrivate));
 
-    object_class->constructor = ag_account_constructor;
     object_class->get_property = ag_account_get_property;
     object_class->set_property = ag_account_set_property;
     object_class->dispose = ag_account_dispose;
