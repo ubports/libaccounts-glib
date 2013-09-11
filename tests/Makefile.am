@@ -47,8 +47,6 @@ TESTS_ENVIRONMENT = \
 
 TESTS = $(dist_check_SCRIPTS)
 
-VERBOSE=1
-
 tests.xml: tests.xml.in Makefile
 	$(SED) -e 's|@''TESTDIR''@|$(testdir)|' \
 	       -e 's|@''TESTDATADIR''@|$(testdatadir)|' $< > $@
