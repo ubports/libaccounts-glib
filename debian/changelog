@@ -10,6 +10,7 @@ libaccounts-glib (1.12-0ubuntu1) UNRELEASED; urgency=low
     - Tests: revert "don't run tests in parallel", disable gtkdoc tests
   * debian/rules
     - support patching with quilt
+    - run tests verbosely
   * debian/patches/0001-Tests-allow-some-time-for-D-Bus-signals-to-arrive.patch
     - Bugfix patch, submitted upstream as issue #200:
       http://code.google.com/p/accounts-sso/issues/detail?id=200
