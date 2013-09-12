@@ -96,5 +96,6 @@ CLEANFILES += $(nodist_man_MANS)
 endif
 
 if ENABLE_GTK_DOC
-TESTS = $(GTKDOC_CHECK)
+# Disabled until https://bugzilla.gnome.org/show_bug.cgi?id=701638 is fixed.
+#TESTS = $(GTKDOC_CHECK)
 endif

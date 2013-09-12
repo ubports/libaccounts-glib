@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.64])
 AC_INIT([libaccounts-glib],
-        [1.11],
+        [1.12],
         [http://code.google.com/p/accounts-sso/issues/entry],
         [libaccounts-glib],
         [http://code.google.com/p/accounts-sso/])
@@ -11,7 +11,7 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_SRCDIR([libaccounts-glib.pc.in])
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE([1.11 -Wall check-news nostdinc silent-rules subdir-objects serial-tests])
+AM_INIT_AUTOMAKE([1.11 -Wall check-news nostdinc silent-rules subdir-objects])
 
 AC_PROG_CC
 AC_PROG_CC_STDC

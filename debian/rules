@@ -29,7 +29,7 @@ override_dh_autoreconf:
 override_dh_auto_test:
 	# Tests often fail in Jenkins for timeout reasons; therefore, increase
 	# the timeout value
-	CK_TIMEOUT_MULTIPLIER=2 dh_auto_test
+	CK_TIMEOUT_MULTIPLIER=2 VERBOSE=1 dh_auto_test
 
 %:
-	dh $@ --with autoreconf,python2
+	dh $@ --with autoreconf,python2,quilt

@@ -1,0 +1,62 @@
+From b49c2dedde474eb9a00d8106c711f44d4e4a2707 Mon Sep 17 00:00:00 2001
+From: Alberto Mardegan <alberto.mardegan@canonical.com>
+Date: Mon, 9 Sep 2013 15:41:26 +0300
+Subject: [PATCH] Tests: allow some time for D-Bus signals to arrive
+
+The unit test test_signals_other_manager() sends one signal over D-Bus
+and expects to read it back as soon as the main loop is re-entered, but
+this is not a given.
+Modify the test to wait for up to two seconds for the signal to arrive.
+---
+ tests/check_ag.c | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/tests/check_ag.c b/tests/check_ag.c
+index d8dd7d1..b8b8ccd 100644
+--- a/tests/check_ag.c
++++ b/tests/check_ag.c
+@@ -87,7 +87,7 @@ on_enabled (AgAccount *account, const gchar *service, gboolean enabled,
+ }
+ 
+ static gboolean
+-quit_loop_on_timeout(gpointer user_data)
++quit_loop (gpointer user_data)
+ {
+     GMainLoop *loop = user_data;
+     g_main_loop_quit (loop);
+@@ -98,7 +98,7 @@ static void
+ run_main_loop_for_n_seconds(guint seconds)
+ {
+     GMainLoop *loop = g_main_loop_new (NULL, FALSE);
+-    g_timeout_add_seconds (seconds, quit_loop_on_timeout, loop);
++    g_timeout_add_seconds (seconds, quit_loop, loop);
+     g_main_loop_run (loop);
+     g_main_loop_unref (loop);
+ }
+@@ -1731,6 +1731,14 @@ START_TEST(test_signals_other_manager)
+     run_main_loop_for_n_seconds(0);
+     fail_unless (data_stored, "Callback not invoked immediately");
+ 
++    main_loop = g_main_loop_new (NULL, FALSE);
++    g_timeout_add_seconds (2, quit_loop, main_loop);
++    g_signal_connect_swapped (account2, "enabled",
++                              G_CALLBACK (quit_loop), main_loop);
++    g_main_loop_run (main_loop);
++    g_main_loop_unref (main_loop);
++    main_loop = NULL;
++
+     fail_unless (ecd.called);
+     fail_unless (g_strcmp0 (ecd.service, "MyService") == 0);
+     g_free (ecd.service);
+@@ -3098,7 +3106,7 @@ START_TEST(test_duplicate_create_regression)
+     ag_account_store_blocking (account, NULL);
+ 
+     main_loop = g_main_loop_new (NULL, FALSE);
+-    source_id = g_timeout_add_seconds (2, quit_loop_on_timeout, main_loop);
++    source_id = g_timeout_add_seconds (2, quit_loop, main_loop);
+     g_debug ("Running loop");
+     g_main_loop_run (main_loop);
+ 
+-- 
+1.8.3.2
+

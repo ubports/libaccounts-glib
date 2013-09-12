@@ -120,10 +120,18 @@ _ag_application_ensure_desktop_app_info (AgApplication *self)
 {
     if (!self->desktop_app_info_loaded)
     {
-        self->desktop_app_info =
-            g_desktop_app_info_new (self->desktop_entry != NULL ?
-                                    self->desktop_entry : self->name);
+        const char *filename = self->desktop_entry != NULL ?
+            self->desktop_entry : self->name;
+        gchar *filename_tmp = NULL;
+        if (!g_str_has_suffix (filename, ".desktop"))
+        {
+            filename_tmp = g_strconcat (filename, ".desktop", NULL);
+            filename = filename_tmp;
+        }
+
+        self->desktop_app_info = g_desktop_app_info_new (filename);
         self->desktop_app_info_loaded = TRUE;
+        g_free (filename_tmp);
     }
 }
 
