@@ -1,5 +1,6 @@
-libaccounts-glib (1.12-0ubuntu1) UNRELEASED; urgency=low
+libaccounts-glib (1.12+13.10.20130918.1-0ubuntu1) saucy; urgency=low
 
+  [ Alberto Mardegan ]
   * New upstream release
     - Allow opening the DB in read-only mode (LP: #1220552)
       Fixes: http://code.google.com/p/accounts-sso/issues/detail?id=199
@@ -15,7 +16,10 @@ libaccounts-glib (1.12-0ubuntu1) UNRELEASED; urgency=low
     - Bugfix patch, submitted upstream as issue #200:
       http://code.google.com/p/accounts-sso/issues/detail?id=200
 
- -- Alberto Mardegan <alberto.mardegan@canonical.com>  Fri, 06 Sep 2013 11:16:24 +0300
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 175
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 18 Sep 2013 18:08:22 +0000
 
 libaccounts-glib (1.11daily13.06.05.2-0ubuntu1) saucy; urgency=low
 
