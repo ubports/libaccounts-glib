@@ -122,6 +122,12 @@ AC_ARG_ENABLE([coverage],
 AS_IF([test "x$enable_coverage" = "xyes"],
     [CFLAGS="$CFLAGS -g -fprofile-arcs -ftest-coverage"])
 
+# SQLite's WAL journaling mode
+AC_ARG_ENABLE([wal],
+    [AS_HELP_STRING([--disable-wal], [Disable WAL journal mode in SQLite])])
+AS_IF([test "x$enable_wal" = "xno"],
+    [CFLAGS="$CFLAGS -DDISABLE_WAL"])
+
 # Python support
 
 PYGOBJECT_REQUIRED=2.90

@@ -67,6 +67,12 @@
 #define DATABASE_DIR "libaccounts-glib"
 #endif
 
+#ifdef DISABLE_WAL
+#define JOURNAL_MODE "TRUNCATE"
+#else
+#define JOURNAL_MODE "WAL"
+#endif
+
 enum
 {
     PROP_0,
@@ -1036,10 +1042,11 @@ setup_db_options (sqlite3 *db)
     }
 
     error = NULL;
-    ret = sqlite3_exec (db, "PRAGMA journal_mode = WAL", NULL, NULL, &error);
+    ret = sqlite3_exec (db, "PRAGMA journal_mode = " JOURNAL_MODE, NULL, NULL,
+                        &error);
     if (ret != SQLITE_OK)
     {
-        g_warning ("%s: couldn't set journal mode to WAL (%s)",
+        g_warning ("%s: couldn't set journal mode to " JOURNAL_MODE " (%s)",
                    G_STRFUNC, error);
         sqlite3_free (error);
     }
