@@ -1,5 +1,13 @@
 libaccounts-glib NEWS
 
+Version 1.13
+------------
+
+* Allow disabling WAL journaling mode at configuration time; this is needed
+  in order to support accessing the DB in read-only mode
+* Tests: make test_signals_other_manager() more stable
+  Fixes: http://code.google.com/p/accounts-sso/issues/detail?id=200
+
 Version 1.12
 ------------
 
