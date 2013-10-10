@@ -2846,12 +2846,8 @@ START_TEST(test_blocking)
      * fail_unless (block_ms > timeout_ms - 100);
      *
      * Instead, let's just check that we haven't been locking for too long.
-     *
-     * Note: Increased expected blocking time with 1000 ms ((+ 500) + 1000).
-     *       Investigate whether this is needed because of a fault in the accounts-glib
-     *       system or not!
      */
-    fail_unless (block_ms < timeout_ms + 1500);
+    fail_unless (block_ms < timeout_ms + 2000);
 
     end_test ();
 }
