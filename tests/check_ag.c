@@ -249,6 +249,7 @@ START_TEST(test_provider)
     AgProvider *provider;
     GVariant *variant;
     GList *providers, *list;
+    gboolean single_account;
     gboolean found;
 
     manager = ag_manager_new ();
@@ -269,6 +270,17 @@ START_TEST(test_provider)
 
     description = ag_provider_get_description (provider);
     fail_unless (g_strcmp0 (description, "My Provider Description") == 0);
+
+    single_account = ag_provider_get_single_account (provider);
+    fail_unless (single_account);
+
+    ag_provider_unref (provider);
+
+    provider = ag_manager_get_provider (manager, "maemo");
+    fail_unless (provider != NULL);
+
+    single_account = ag_provider_get_single_account (provider);
+    fail_unless (!single_account);
 
     ag_provider_unref (provider);
 

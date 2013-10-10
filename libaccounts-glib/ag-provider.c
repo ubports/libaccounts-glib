@@ -134,6 +134,10 @@ parse_provider (xmlTextReaderPtr reader, AgProvider *provider)
             {
                 ok = _ag_xml_dup_element_data (reader, &provider->plugin_name);
             }
+            else if (strcmp (name, "single-account") == 0)
+            {
+                ok = _ag_xml_get_boolean (reader, &provider->single_account);
+            }
             else if (strcmp (name, "template") == 0)
             {
                 ok = parse_template (reader, provider);
@@ -418,6 +422,24 @@ ag_provider_get_plugin_name (AgProvider *provider)
 {
     g_return_val_if_fail (provider != NULL, NULL);
     return provider->plugin_name;
+}
+
+/**
+ * ag_provider_get_single_account:
+ * @provider: the #AgProvider.
+ *
+ * Tell whether the provider doesn't support creating more than one account.
+ *
+ * Returns: %FALSE if multiple accounts can be created from this provider,
+ * %TRUE otherwise.
+ *
+ * Since: 1.14
+ */
+gboolean
+ag_provider_get_single_account (AgProvider *provider)
+{
+    g_return_val_if_fail (provider != NULL, NULL);
+    return provider->single_account;
 }
 
 /**
