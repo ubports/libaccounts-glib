@@ -1,3 +1,18 @@
+libaccounts-glib (1.13-0ubuntu1) UNRELEASED; urgency=low
+
+  * New upstream release
+    - Allow disabling WAL journaling mode at configuration time; this is
+      needed in order to support accessing the DB in read-only mode
+      (LP: #1232097)
+    - Tests: make test_signals_other_manager() more stable
+      Fixes: http://code.google.com/p/accounts-sso/issues/detail?id=200
+  * debian/rules
+    - removed quilt usage
+  * debian/patches/0001-Tests-allow-some-time-for-D-Bus-signals-to-arrive.patch
+    - removed, merged upstream
+
+ -- Alberto Mardegan <alberto.mardegan@canonical.com>  Mon, 07 Oct 2013 10:47:17 +0300
+
 libaccounts-glib (1.12+13.10.20130918.1-0ubuntu1) saucy; urgency=low
 
   [ Alberto Mardegan ]

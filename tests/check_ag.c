@@ -87,7 +87,7 @@ on_enabled (AgAccount *account, const gchar *service, gboolean enabled,
 }
 
 static gboolean
-quit_loop_on_timeout(gpointer user_data)
+quit_loop (gpointer user_data)
 {
     GMainLoop *loop = user_data;
     g_main_loop_quit (loop);
@@ -98,7 +98,7 @@ static void
 run_main_loop_for_n_seconds(guint seconds)
 {
     GMainLoop *loop = g_main_loop_new (NULL, FALSE);
-    g_timeout_add_seconds (seconds, quit_loop_on_timeout, loop);
+    g_timeout_add_seconds (seconds, quit_loop, loop);
     g_main_loop_run (loop);
     g_main_loop_unref (loop);
 }
@@ -1731,6 +1731,14 @@ START_TEST(test_signals_other_manager)
     run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
 
+    main_loop = g_main_loop_new (NULL, FALSE);
+    g_timeout_add_seconds (2, quit_loop, main_loop);
+    g_signal_connect_swapped (account2, "enabled",
+                              G_CALLBACK (quit_loop), main_loop);
+    g_main_loop_run (main_loop);
+    g_main_loop_unref (main_loop);
+    main_loop = NULL;
+
     fail_unless (ecd.called);
     fail_unless (g_strcmp0 (ecd.service, "MyService") == 0);
     g_free (ecd.service);
@@ -2838,12 +2846,8 @@ START_TEST(test_blocking)
      * fail_unless (block_ms > timeout_ms - 100);
      *
      * Instead, let's just check that we haven't been locking for too long.
-     *
-     * Note: Increased expected blocking time with 1000 ms ((+ 500) + 1000).
-     *       Investigate whether this is needed because of a fault in the accounts-glib
-     *       system or not!
      */
-    fail_unless (block_ms < timeout_ms + 1500);
+    fail_unless (block_ms < timeout_ms + 2000);
 
     end_test ();
 }
@@ -3098,7 +3102,7 @@ START_TEST(test_duplicate_create_regression)
     ag_account_store_blocking (account, NULL);
 
     main_loop = g_main_loop_new (NULL, FALSE);
-    source_id = g_timeout_add_seconds (2, quit_loop_on_timeout, main_loop);
+    source_id = g_timeout_add_seconds (2, quit_loop, main_loop);
     g_debug ("Running loop");
     g_main_loop_run (main_loop);
 

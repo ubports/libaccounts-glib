@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.64])
 AC_INIT([libaccounts-glib],
-        [1.12],
+        [1.13],
         [http://code.google.com/p/accounts-sso/issues/entry],
         [libaccounts-glib],
         [http://code.google.com/p/accounts-sso/])
@@ -121,6 +121,12 @@ AC_ARG_ENABLE([coverage],
     [AS_HELP_STRING([--enable-coverage], [compile with coverage info])])
 AS_IF([test "x$enable_coverage" = "xyes"],
     [CFLAGS="$CFLAGS -g -fprofile-arcs -ftest-coverage"])
+
+# SQLite's WAL journaling mode
+AC_ARG_ENABLE([wal],
+    [AS_HELP_STRING([--disable-wal], [Disable WAL journal mode in SQLite])])
+AS_IF([test "x$enable_wal" = "xno"],
+    [CFLAGS="$CFLAGS -DDISABLE_WAL"])
 
 # Python support
 

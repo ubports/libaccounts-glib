@@ -6,7 +6,7 @@
 export DPKG_GENSYMBOLS_CHECK_LEVEL=4
 
 override_dh_auto_configure:
-	dh_auto_configure -- --enable-gtk-doc
+	dh_auto_configure -- --enable-gtk-doc --disable-wal
 
 override_dh_install:
 	# install the python3 gir override file as well
@@ -29,7 +29,7 @@ override_dh_autoreconf:
 override_dh_auto_test:
 	# Tests often fail in Jenkins for timeout reasons; therefore, increase
 	# the timeout value
-	CK_TIMEOUT_MULTIPLIER=2 VERBOSE=1 dh_auto_test
+	CK_TIMEOUT_MULTIPLIER=10 CK_DEFAULT_TIMEOUT=0 VERBOSE=1 dh_auto_test
 
 %:
-	dh $@ --with autoreconf,python2,quilt
+	dh $@ --with autoreconf,python2
