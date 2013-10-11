@@ -5,6 +5,7 @@
   <description>My Service Description</description>
   <icon>general_myservice</icon>
   <provider>maemo</provider>
+  <translations>myservice_i18n</translations>
   
   <!-- default settings (account settings have precedence over these) -->
   <template>

@@ -265,6 +265,12 @@ START_TEST(test_provider)
     provider = ag_manager_get_provider (manager, "MyProvider");
     fail_unless (provider != NULL);
 
+    ck_assert_str_eq (ag_provider_get_name (provider), "MyProvider");
+    ck_assert_str_eq (ag_provider_get_i18n_domain (provider),
+                      "provider_i18n");
+    ck_assert_str_eq (ag_provider_get_icon_name (provider),
+                      "general_myprovider");
+
     display_name = ag_provider_get_display_name (provider);
     fail_unless (g_strcmp0 (display_name, "My Provider") == 0);
 
@@ -273,6 +279,11 @@ START_TEST(test_provider)
 
     single_account = ag_provider_get_single_account (provider);
     fail_unless (single_account);
+
+    /* The next couple of lines serve only to add coverage for
+     * ag_provider_ref() */
+    ag_provider_ref (provider);
+    ag_provider_unref (provider);
 
     ag_provider_unref (provider);
 
@@ -718,13 +729,17 @@ string_in_array (gchar **array, const gchar *string)
 
 START_TEST(test_account_service_settings)
 {
+    AgAccountSettingIter iter, *dyn_iter;
     GValue value = { 0 };
+    GVariant *variant;
     const gchar *username = "me@myhome.com";
     const gboolean check_automatically = TRUE;
     const gchar *display_name = "My test account";
+    const gchar *key;
     AgAccountService *account_service;
     AgSettingSource source;
     gchar **changed_fields = NULL;
+    gint known_keys_count, total_keys_count;
 
     manager = ag_manager_new ();
     account = ag_manager_create_account (manager, PROVIDER);
@@ -751,10 +766,9 @@ START_TEST(test_account_service_settings)
     ag_account_service_set_value (account_service, "username", &value);
     g_value_unset (&value);
 
-    g_value_init (&value, G_TYPE_BOOLEAN);
-    g_value_set_boolean (&value, check_automatically);
-    ag_account_service_set_value (account_service, "check_automatically", &value);
-    g_value_unset (&value);
+    variant = g_variant_new_boolean (check_automatically);
+    ag_account_service_set_variant (account_service, "check_automatically",
+                                    variant);
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
     run_main_loop_for_n_seconds(0);
@@ -800,16 +814,74 @@ START_TEST(test_account_service_settings)
      * is now.
      */
     fail_unless (string_in_array (changed_fields, "check_automatically"));
-    g_value_init (&value, G_TYPE_BOOLEAN);
-    source = ag_account_service_get_value (account_service,
-                                           "check_automatically", &value);
+    variant = ag_account_service_get_variant (account_service,
+                                              "check_automatically", &source);
     fail_unless (source == AG_SETTING_SOURCE_ACCOUNT);
-    fail_unless (g_value_get_boolean (&value) == check_automatically);
-    g_value_unset (&value);
+    fail_unless (g_variant_is_of_type (variant, G_VARIANT_TYPE_BOOLEAN));
+    ck_assert_int_eq (g_variant_get_boolean (variant), check_automatically);
 
     fail_unless (string_in_array (changed_fields, "day"));
     fail_unless (string_in_array (changed_fields, "ForReal"));
     g_strfreev (changed_fields);
+
+    /* Enumerate the account service settings */
+    known_keys_count = 0;
+    total_keys_count = 0;
+    ag_account_service_settings_iter_init (account_service, &iter, NULL);
+    while (ag_account_settings_iter_get_next (&iter, &key, &variant))
+    {
+        fail_unless (key != NULL);
+        fail_unless (variant != NULL);
+
+        total_keys_count++;
+
+        if (g_strcmp0 (key, "check_automatically") == 0)
+        {
+            known_keys_count++;
+            fail_unless (g_variant_is_of_type (variant,
+                                               G_VARIANT_TYPE_BOOLEAN));
+            ck_assert_int_eq (g_variant_get_boolean (variant),
+                              check_automatically);
+        }
+        else if (g_strcmp0 (key, "username") == 0)
+        {
+            known_keys_count++;
+            fail_unless (g_variant_is_of_type (variant,
+                                               G_VARIANT_TYPE_STRING));
+            ck_assert_str_eq (g_variant_get_string (variant, NULL),
+                              username);
+        }
+        else if (g_strcmp0 (key, "day") == 0)
+        {
+            known_keys_count++;
+            fail_unless (g_variant_is_of_type (variant,
+                                               G_VARIANT_TYPE_STRING));
+            ck_assert_str_eq (g_variant_get_string (variant, NULL),
+                              "Wednesday");
+        }
+        else if (g_strcmp0 (key, "ForReal") == 0)
+        {
+            known_keys_count++;
+            fail_unless (g_variant_is_of_type (variant,
+                                               G_VARIANT_TYPE_BOOLEAN));
+            ck_assert_int_eq (g_variant_get_boolean (variant), TRUE);
+        }
+    }
+
+    ck_assert_int_eq (known_keys_count, 4);
+
+    /* Now try the same with the dynamically allocated iterator; let's just
+     * check that it returns the same number of keys. */
+    dyn_iter = ag_account_service_get_settings_iter (account_service, NULL);
+    fail_unless (dyn_iter != NULL);
+
+    while (ag_account_settings_iter_get_next (dyn_iter, &key, &variant))
+    {
+        total_keys_count--;
+    }
+    ck_assert_int_eq (total_keys_count, 0);
+
+    g_boxed_free (ag_account_settings_iter_get_type (), dyn_iter);
 
     g_object_unref (account_service);
     end_test ();
@@ -1366,6 +1438,8 @@ START_TEST(test_service)
     manager = ag_manager_new ();
     account = ag_manager_create_account (manager, PROVIDER);
 
+    fail_unless (ag_account_get_selected_service (account) == NULL);
+
     g_value_init (&value, G_TYPE_STRING);
     g_value_set_static_string (&value, description);
     ag_account_set_value (account, "description", &value);
@@ -1398,6 +1472,8 @@ START_TEST(test_service)
     fail_unless (g_strcmp0 (icon_name, "general_myservice") == 0,
                  "Wrong service icon name: %s", icon_name);
 
+    ck_assert_str_eq (ag_service_get_i18n_domain (service), "myservice_i18n");
+
     tag_list = ag_service_get_tags (service);
     fail_unless (tag_list != NULL);
     for (list = tag_list; list != NULL; list = list->next)
@@ -1416,6 +1492,7 @@ START_TEST(test_service)
     ag_account_set_display_name (account, display_name);
 
     ag_account_select_service (account, service);
+    ck_assert_ptr_eq (ag_account_get_selected_service (account), service);
 
     /* test getting default setting from template */
     g_value_init (&value, G_TYPE_INT);
