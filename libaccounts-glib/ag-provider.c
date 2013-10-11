@@ -429,6 +429,9 @@ ag_provider_get_plugin_name (AgProvider *provider)
  * @provider: the #AgProvider.
  *
  * Tell whether the provider doesn't support creating more than one account.
+ * Note that libaccounts itself does not enforce preventing the creation of
+ * multiple accounts when this flag is set: the flag is only informative, and
+ * its implementation is left to the client.
  *
  * Returns: %FALSE if multiple accounts can be created from this provider,
  * %TRUE otherwise.
