@@ -6,6 +6,8 @@ if ENABLE_TESTS
 SUBDIRS += tests
 endif
 
+include $(top_srcdir)/Makefile.am.coverage
+
 ACLOCAL_AMFLAGS = -I m4
 
 DISTCHECK_CONFIGURE_FLAGS = \
