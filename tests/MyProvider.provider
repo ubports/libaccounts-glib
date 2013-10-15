@@ -2,9 +2,12 @@
 <provider id="MyProvider">
   <name>My Provider</name>
   <description>My Provider Description</description>
+  <translations>provider_i18n</translations>
   <icon>general_myprovider</icon>
   <domains>.*provider\.com</domains>
   <plugin>oauth2</plugin>
+  <single-account>true</single-account>
+
   <!-- default settings (account settings have precedence over these) -->
   <template>
     <group name="login">
