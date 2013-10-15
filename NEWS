@@ -1,5 +1,14 @@
 libaccounts-glib NEWS
 
+Version 1.14
+------------
+
+* Add ag_provider_get_single_account
+  Fixes: http://code.google.com/p/accounts-sso/issues/detail?id=202
+* Add coverage reporting using lcov
+* Tests: increase test coverage
+* Tests: increase tolerance on blocking time
+
 Version 1.13
 ------------
 

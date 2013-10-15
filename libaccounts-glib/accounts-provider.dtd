@@ -3,7 +3,7 @@
 
 <!-- Root element for provider files. -->
 <!ELEMENT provider (name?, description?, translations?, icon?, domains?,
-                    plugin?, template?)>
+                    plugin?, single-account?, template?)>
 
 <!-- The ID is optional, and only used if it differs from the basename of
      the service file. -->
@@ -32,6 +32,9 @@
 <!-- Name of the account plugin which manages the accounts from this
      provider. -->
 <!ELEMENT plugin (#PCDATA)>
+
+<!-- Whether the provider supports creating only a single account. -->
+<!ELEMENT single-account (#PCDATA)>
 
 <!-- Optional template settings. Account settings have a higher priority
      than settings listed in the template. -->

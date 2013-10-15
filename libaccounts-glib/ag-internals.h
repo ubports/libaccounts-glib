@@ -162,6 +162,7 @@ struct _AgProvider {
     gchar *domains;
     gchar *plugin_name;
     gchar *file_data;
+    gboolean single_account;
     GHashTable *default_settings;
 };
 

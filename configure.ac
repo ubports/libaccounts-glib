@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.64])
 AC_INIT([libaccounts-glib],
-        [1.13],
+        [1.14],
         [http://code.google.com/p/accounts-sso/issues/entry],
         [libaccounts-glib],
         [http://code.google.com/p/accounts-sso/])
@@ -69,7 +69,15 @@ AS_IF([test "x$have_check" = "xyes"],
                [testdatadir="$withval"],
                [testdatadir="\${pkgdatadir}/testdata"])
    AC_MSG_RESULT([$testdatadir])
-   AC_SUBST([testdatadir])],
+   AC_SUBST([testdatadir])
+
+   # gcov coverage reporting
+   m4_include([m4/gcov.m4])
+   AC_TDD_GCOV
+   AC_SUBST(COVERAGE_CFLAGS)
+   AC_SUBST(COVERAGE_CXXFLAGS)
+   AC_SUBST(COVERAGE_LDFLAGS)
+   ],
   [AS_IF([test "x$enable_tests" = "xyes"],
       [AC_MSG_ERROR([tests enabled but required dependencies were not found])])])
 
@@ -116,11 +124,6 @@ AC_ARG_ENABLE([debug],
     [AS_HELP_STRING([--enable-debug], [enable printing of debug messages])])
 AS_IF([test "x$enable_debug" = "xyes"],
     [CFLAGS="$CFLAGS -DENABLE_DEBUG"])
-
-AC_ARG_ENABLE([coverage],
-    [AS_HELP_STRING([--enable-coverage], [compile with coverage info])])
-AS_IF([test "x$enable_coverage" = "xyes"],
-    [CFLAGS="$CFLAGS -g -fprofile-arcs -ftest-coverage"])
 
 # SQLite's WAL journaling mode
 AC_ARG_ENABLE([wal],

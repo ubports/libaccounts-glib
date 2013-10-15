@@ -275,6 +275,26 @@ _ag_xml_dup_element_data (xmlTextReaderPtr reader, gchar **dest_ptr)
     return ret;
 }
 
+gboolean
+_ag_xml_get_boolean (xmlTextReaderPtr reader, gboolean *dest_boolean)
+{
+    GVariant *variant;
+    const gchar *data;
+    gboolean ok;
+
+    ok = _ag_xml_get_element_data (reader, &data);
+    if (G_UNLIKELY (!ok)) return FALSE;
+
+    variant = _ag_value_from_string ("b", data);
+    if (G_UNLIKELY (variant == NULL)) return FALSE;
+
+    *dest_boolean = g_variant_get_boolean (variant);
+
+    ok = close_element (reader);
+
+    return ok;
+}
+
 static gboolean
 parse_param (xmlTextReaderPtr reader, GVariant **value)
 {

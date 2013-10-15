@@ -1,0 +1,27 @@
+
+# Coverage targets
+
+if HAVE_GCOV
+
+.PHONY: clean-gcda
+clean-gcda:
+	@echo Removing old coverage results
+	-$(AM_V_at)find -name '*.gcda' -print | xargs -r rm
+
+.PHONY: coverage-html generate-coverage-html clean-coverage-html
+coverage-html: clean-gcda
+	-$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -k check
+	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) generate-coverage-html
+
+generate-coverage-html:
+	@echo Collecting coverage data
+	$(AM_V_at)$(LCOV) --directory $(top_builddir) --capture --output-file coverage.info --no-checksum --compat-libtool
+	$(AM_V_at)LANG=C $(GENHTML) --prefix $(top_builddir) --output-directory coveragereport --title "Code Coverage" --legend --show-details coverage.info
+
+clean-coverage-html: clean-gcda
+	-$(AM_V_at)$(LCOV) --directory $(top_builddir) -z
+	-$(AM_V_at)rm -rf coverage.info coveragereport
+
+clean-local: clean-coverage-html
+
+endif # HAVE_GCOV

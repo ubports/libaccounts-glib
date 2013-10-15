@@ -7,6 +7,8 @@ autom4te.cache
 /build-aux
 /configure
 /config.*
+/coverage.info
+/coveragereport
 debian/
 gtk-doc.make
 /INSTALL
@@ -18,6 +20,8 @@ patches
 stamp-h1
 *~
 *.core
+*.gcda
+*.gcno
 *.gir
 *.la
 *.lo

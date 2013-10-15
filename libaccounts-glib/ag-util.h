@@ -60,6 +60,9 @@ G_GNUC_INTERNAL
 const GVariantType *_ag_type_from_g_type (GType type);
 
 G_GNUC_INTERNAL
+gboolean _ag_xml_get_boolean (xmlTextReaderPtr reader, gboolean *dest_boolean);
+
+G_GNUC_INTERNAL
 gboolean _ag_xml_get_element_data (xmlTextReaderPtr reader,
                                    const gchar **dest_ptr);
 
