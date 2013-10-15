@@ -2,6 +2,7 @@
 <provider id="MyProvider">
   <name>My Provider</name>
   <description>My Provider Description</description>
+  <translations>provider_i18n</translations>
   <icon>general_myprovider</icon>
   <domains>.*provider\.com</domains>
   <plugin>oauth2</plugin>
