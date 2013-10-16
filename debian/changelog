@@ -1,5 +1,6 @@
-libaccounts-glib (1.14-0ubuntu1) UNRELEASED; urgency=low
+libaccounts-glib (1.14+13.10.20131016.2-0ubuntu1) saucy; urgency=low
 
+  [ Alberto Mardegan ]
   * New upstream release (1.14)
     - Add ag_provider_get_single_account
       Fixes: http://code.google.com/p/accounts-sso/issues/detail?id=202
@@ -17,7 +18,10 @@ libaccounts-glib (1.14-0ubuntu1) UNRELEASED; urgency=low
   * debian/patches/0001-Tests-allow-some-time-for-D-Bus-signals-to-arrive.patch
     - removed, merged upstream
 
- -- Alberto Mardegan <alberto.mardegan@canonical.com>  Tue, 15 Oct 2013 16:43:11 +0300
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 178
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 16 Oct 2013 14:15:26 +0000
 
 libaccounts-glib (1.12+13.10.20130918.1-0ubuntu1) saucy; urgency=low
 
