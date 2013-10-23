@@ -1,8 +1,6 @@
 
 # Coverage targets
 
-if HAVE_GCOV
-
 .PHONY: clean-gcda
 clean-gcda:
 	@echo Removing old coverage results
@@ -13,6 +11,8 @@ coverage-html: clean-gcda
 	-$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -k check
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) generate-coverage-html
 
+if HAVE_GCOV
+
 generate-coverage-html:
 	@echo Collecting coverage data
 	$(AM_V_at)$(LCOV) --directory $(top_builddir) --capture --output-file coverage.info --no-checksum --compat-libtool
@@ -20,6 +20,16 @@ generate-coverage-html:
 
 clean-coverage-html: clean-gcda
 	-$(AM_V_at)$(LCOV) --directory $(top_builddir) -z
+	-$(AM_V_at)rm -rf coverage.info coveragereport
+
+clean-local: clean-coverage-html
+
+else
+
+generate-coverage-html:
+	$(AM_V_at)echo "Code coverage reporting not available"
+
+clean-coverage-html: clean-gcda
 	-$(AM_V_at)rm -rf coverage.info coveragereport
 
 clean-local: clean-coverage-html
