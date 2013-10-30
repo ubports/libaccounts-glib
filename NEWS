@@ -1,5 +1,11 @@
 libaccounts-glib NEWS
 
+Version 1.15
+------------
+
+* Fix SQL query for ag_manager_list_by_service_type()
+  Fixes: http://code.google.com/p/accounts-sso/issues/detail?id=208
+
 Version 1.14
 ------------
 
