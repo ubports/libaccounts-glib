@@ -1843,6 +1843,8 @@ END_TEST
 START_TEST(test_list)
 {
     const gchar *display_name = "New account";
+    const gchar *provider_name = "other_provider";
+    const gchar *my_service_name = "MyService";
     const gchar *service_name = "OtherService";
     const gchar *service_type;
     GValue value = { 0 };
@@ -1850,7 +1852,7 @@ START_TEST(test_list)
     GList *list;
 
     manager = ag_manager_new ();
-    account = ag_manager_create_account (manager, PROVIDER);
+    account = ag_manager_create_account (manager, provider_name);
 
     ag_account_set_enabled (account, TRUE);
     ag_account_set_display_name (account, display_name);
@@ -1874,7 +1876,7 @@ START_TEST(test_list)
                       NULL);
         fail_unless (id_prop == account->id);
         fail_unless (manager_prop == manager);
-        fail_unless (g_strcmp0 (provider_prop, PROVIDER) == 0);
+        fail_unless (g_strcmp0 (provider_prop, provider_name) == 0);
         g_object_unref (manager);
         g_free (provider_prop);
     }
@@ -1886,36 +1888,23 @@ START_TEST(test_list)
     g_list_free (list);
 
     /* check that it doesn't support the service type provided by MyService */
-    service = ag_manager_get_service (manager, service_name);
+    service = ag_manager_get_service (manager, my_service_name);
     service_type = ag_service_get_service_type (service);
-    fail_unless (service_type != NULL, "Service %s has no type", service_name);
+    fail_unless (service_type != NULL,
+                 "Service %s has no type", my_service_name);
 
     list = ag_manager_list_by_service_type (manager, service_type);
     fail_unless (g_list_find (list, GUINT_TO_POINTER (account->id)) == NULL,
                  "New account supports %s service type, but shouldn't",
                  service_type);
     g_list_free (list);
+    ag_service_unref(service);
 
-    /* Add the service to the account */
-    fail_unless (service != NULL);
+    service = ag_manager_get_service (manager, service_name);
+    service_type = ag_service_get_service_type (service);
+    fail_unless (service_type != NULL,
+                 "Service %s has no type", service_name);
 
-    ag_account_select_service (account, service);
-    ag_account_set_enabled (account, TRUE);
-
-    /* test getting default setting from template */
-    g_value_init (&value, G_TYPE_INT);
-    source = ag_account_get_value (account, "parameters/port", &value);
-    fail_unless (source == AG_SETTING_SOURCE_PROFILE,
-                 "Cannot get port from profile");
-    fail_unless (g_value_get_int (&value) == 5223,
-                 "Wrong port number: %d", g_value_get_int (&value));
-    g_value_unset (&value);
-
-    ag_account_store (account, account_store_now_cb, TEST_STRING);
-    run_main_loop_for_n_seconds(0);
-    fail_unless (data_stored, "Callback not invoked immediately");
-
-    /* check that the service is now there */
     list = ag_manager_list_by_service_type (manager, service_type);
     fail_unless (g_list_find (list, GUINT_TO_POINTER (account->id)) != NULL,
                  "New account doesn't supports %s service type, but should",

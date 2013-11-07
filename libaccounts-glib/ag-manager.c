@@ -1699,9 +1699,8 @@ ag_manager_list_by_service_type (AgManager *manager,
 
     g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
     sqlite3_snprintf (sizeof (sql), sql,
-                      "SELECT DISTINCT account FROM Settings "
-                      "JOIN Services ON Settings.service = Services.id "
-                      "WHERE Services.type = %Q;",
+                      "SELECT id FROM Accounts WHERE provider IN ("
+                      "SELECT provider FROM Services WHERE type = %Q);",
                       service_type);
     _ag_manager_exec_query (manager, (AgQueryCallback)add_id_to_list,
                             &list, sql);
