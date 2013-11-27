@@ -1,10 +1,14 @@
-libaccounts-glib (1.15-0ubuntu1) UNRELEASED; urgency=low
+libaccounts-glib (1.15+14.04.20131126.2-0ubuntu1) trusty; urgency=low
 
+  [ Alberto Mardegan ]
   * New upstream release
     - Fix SQL query for ag_manager_list_by_service_type()
       Fixes: http://code.google.com/p/accounts-sso/issues/detail?id=208
 
- -- Alberto Mardegan <alberto.mardegan@canonical.com>  Wed, 30 Oct 2013 15:42:48 +0200
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 180
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 26 Nov 2013 19:08:54 +0000
 
 libaccounts-glib (1.14+13.10.20131016.2-0ubuntu1) saucy; urgency=low
 
