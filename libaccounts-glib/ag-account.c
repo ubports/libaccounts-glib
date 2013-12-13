@@ -2494,9 +2494,6 @@ ag_account_store_async (AgAccount *account, GCancellable *cancellable,
         return;
     }
 
-    changes = priv->changes;
-    priv->changes = NULL;
-
     if (G_UNLIKELY (!sql))
     {
         /* Nothing to do: invoke the callback immediately */
@@ -2504,6 +2501,9 @@ ag_account_store_async (AgAccount *account, GCancellable *cancellable,
         g_clear_object (&priv->store_async_result);
         return;
     }
+
+    changes = priv->changes;
+    priv->changes = NULL;
 
     _ag_manager_exec_transaction (priv->manager, sql, changes, account,
                                   priv->store_async_result, cancellable);
@@ -2564,14 +2564,14 @@ ag_account_store_blocking (AgAccount *account, GError **error)
         return FALSE;
     }
 
-    changes = priv->changes;
-    priv->changes = NULL;
-
     if (G_UNLIKELY (!sql))
     {
         /* Nothing to do: return immediately */
         return TRUE;
     }
+
+    changes = priv->changes;
+    priv->changes = NULL;
 
     _ag_manager_exec_transaction_blocking (priv->manager, sql,
                                            changes, account,
