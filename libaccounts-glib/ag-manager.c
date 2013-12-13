@@ -2227,6 +2227,80 @@ _ag_manager_exec_transaction_blocking (AgManager *manager, const gchar *sql,
     exec_transaction (manager, account, sql, changes, error);
 }
 
+void
+_ag_manager_store_async (AgManager *manager, AgAccount *account,
+                         GSimpleAsyncResult *async_result,
+                         GCancellable *cancellable)
+{
+    AgAccountChanges *changes;
+    GError *error = NULL;
+    gchar *sql;
+
+    sql = _ag_account_get_store_sql (account, &error);
+    if (G_UNLIKELY (error))
+    {
+        g_simple_async_result_take_error (async_result,
+                                          error);
+        g_simple_async_result_complete_in_idle (async_result);
+        g_object_unref (async_result);
+        return;
+    }
+
+    if (G_UNLIKELY (!sql))
+    {
+        /* Nothing to do: invoke the callback immediately */
+        g_simple_async_result_complete_in_idle (async_result);
+        g_object_unref (async_result);
+        return;
+    }
+
+    changes = _ag_account_steal_changes (account);
+
+    _ag_manager_exec_transaction (manager, sql, changes, account,
+                                  async_result, cancellable);
+    g_free (sql);
+}
+
+gboolean
+_ag_manager_store_sync (AgManager *manager, AgAccount *account,
+                        GError **error)
+{
+    AgAccountChanges *changes;
+    GError *error_int = NULL;
+    gchar *sql;
+
+    sql = _ag_account_get_store_sql (account, &error_int);
+    if (G_UNLIKELY (error_int))
+    {
+        g_warning ("%s: %s", G_STRFUNC, error_int->message);
+        g_propagate_error (error, error_int);
+        return FALSE;
+    }
+
+    if (G_UNLIKELY (!sql))
+    {
+        /* Nothing to do: return immediately */
+        return TRUE;
+    }
+
+    changes = _ag_account_steal_changes (account);
+
+    _ag_manager_exec_transaction_blocking (manager, sql,
+                                           changes, account,
+                                           &error_int);
+    g_free (sql);
+    _ag_account_changes_free (changes);
+
+    if (G_UNLIKELY (error_int))
+    {
+        g_warning ("%s: %s", G_STRFUNC, error_int->message);
+        g_propagate_error (error, error_int);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 static guint
 timespec_diff_ms(struct timespec *ts1, struct timespec *ts0)
 {
