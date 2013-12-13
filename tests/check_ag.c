@@ -78,6 +78,42 @@ typedef struct {
 } EnabledCbData;
 
 static void
+set_read_only()
+{
+    gchar *filename;
+
+    /* This is just to ensure that the DB exists */
+    manager = ag_manager_new ();
+    g_object_unref (manager);
+
+    chmod (db_filename, S_IRUSR | S_IRGRP | S_IROTH);
+
+    filename = g_strconcat (db_filename, "-shm", NULL);
+    chmod (filename, S_IRUSR | S_IRGRP | S_IROTH);
+    g_free (filename);
+
+    filename = g_strconcat (db_filename, "-wal", NULL);
+    unlink (filename);
+    g_free (filename);
+}
+
+static void
+delete_db()
+{
+    gchar *filename;
+
+    unlink (db_filename);
+
+    filename = g_strconcat (db_filename, "-shm", NULL);
+    unlink (filename);
+    g_free (filename);
+
+    filename = g_strconcat (db_filename, "-wal", NULL);
+    unlink (filename);
+    g_free (filename);
+}
+
+static void
 on_enabled (AgAccount *account, const gchar *service, gboolean enabled,
             EnabledCbData *ecd)
 {
@@ -185,26 +221,10 @@ END_TEST
 START_TEST(test_read_only)
 {
     GError *error = NULL;
-    gchar *filename;
     gboolean ok;
 
-    manager = ag_manager_new ();
-    fail_unless (manager != NULL);
+    set_read_only ();
 
-    /* close the database, and make it read-only */
-    g_object_unref (manager);
-    chmod (db_filename, S_IRUSR | S_IRGRP | S_IROTH);
-
-    filename = g_strconcat (db_filename, "-shm", NULL);
-    chmod (filename, S_IRUSR | S_IRGRP | S_IROTH);
-    g_free (filename);
-
-    filename = g_strconcat (db_filename, "-wal", NULL);
-    chmod (filename, S_IRUSR | S_IRGRP | S_IROTH);
-    g_free (filename);
-    unlink (filename);
-
-    /* re-open the DB */
     manager = ag_manager_new ();
     fail_unless (manager != NULL);
 
@@ -223,15 +243,7 @@ START_TEST(test_read_only)
     g_object_unref (manager);
     manager = NULL;
 
-    unlink (db_filename);
-
-    filename = g_strconcat (db_filename, "-shm", NULL);
-    unlink (filename);
-    g_free (filename);
-
-    filename = g_strconcat (db_filename, "-wal", NULL);
-    unlink (filename);
-    g_free (filename);
+    delete_db ();
 
     g_debug("Ending read-only test");
 
