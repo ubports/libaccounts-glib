@@ -2493,6 +2493,14 @@ ag_account_store_async (AgAccount *account, GCancellable *cancellable,
     g_object_add_weak_pointer ((GObject *)priv->store_async_result,
                                (gpointer *)&priv->store_async_result);
 
+    if (G_UNLIKELY (priv->changes == NULL))
+    {
+        /* Nothing to do: invoke the callback immediately */
+        g_simple_async_result_complete_in_idle (priv->store_async_result);
+        g_clear_object (&priv->store_async_result);
+        return;
+    }
+
     _ag_manager_store_async (priv->manager, account,
                              priv->store_async_result, cancellable);
 }
@@ -2539,6 +2547,12 @@ ag_account_store_blocking (AgAccount *account, GError **error)
 
     g_return_val_if_fail (AG_IS_ACCOUNT (account), FALSE);
     priv = account->priv;
+
+    if (G_UNLIKELY (priv->changes == NULL))
+    {
+        /* Nothing to do: return immediately */
+        return TRUE;
+    }
 
     return _ag_manager_store_sync (priv->manager, account, error);
 }

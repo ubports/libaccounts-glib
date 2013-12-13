@@ -2246,14 +2246,6 @@ _ag_manager_store_async (AgManager *manager, AgAccount *account,
         return;
     }
 
-    if (G_UNLIKELY (!sql))
-    {
-        /* Nothing to do: invoke the callback immediately */
-        g_simple_async_result_complete_in_idle (async_result);
-        g_object_unref (async_result);
-        return;
-    }
-
     changes = _ag_account_steal_changes (account);
 
     _ag_manager_exec_transaction (manager, sql, changes, account,
@@ -2275,12 +2267,6 @@ _ag_manager_store_sync (AgManager *manager, AgAccount *account,
         g_warning ("%s: %s", G_STRFUNC, error_int->message);
         g_propagate_error (error, error_int);
         return FALSE;
-    }
-
-    if (G_UNLIKELY (!sql))
-    {
-        /* Nothing to do: return immediately */
-        return TRUE;
     }
 
     changes = _ag_account_steal_changes (account);
