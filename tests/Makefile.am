@@ -19,6 +19,9 @@ endif
 test_SCRIPTS = \
 	accounts-glib-test.sh
 
+dist_test_SCRIPTS = \
+	accounts-glib-test-wrapper.sh
+
 dist_check_SCRIPTS = \
 	accounts-glib-test.sh \
 	$(xml_test)
@@ -50,6 +53,7 @@ BUILT_SOURCES = \
 TESTS_ENVIRONMENT = \
 	DTDDIR=$(top_srcdir)/libaccounts-glib/ \
 	TESTDATADIR=$(top_srcdir)/tests/ \
+	TESTDIR=$(top_srcdir)/tests/ \
 	XMLLINT=$(XMLLINT)
 
 TESTS = $(dist_check_SCRIPTS)
