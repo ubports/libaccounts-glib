@@ -72,9 +72,9 @@ G_GNUC_INTERNAL
 void _ag_account_done_changes (AgAccount *account, AgAccountChanges *changes);
 
 G_GNUC_INTERNAL
-GVariant *_ag_account_build_signal (AgAccount *account,
-                                    AgAccountChanges *changes,
-                                    const struct timespec *ts);
+GVariant *_ag_account_build_dbus_changes (AgAccount *account,
+                                          AgAccountChanges *changes,
+                                          const struct timespec *ts);
 G_GNUC_INTERNAL
 AgAccountChanges *_ag_account_changes_from_dbus (AgManager *manager,
                                                  GVariant *v_services,

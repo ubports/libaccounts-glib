@@ -24,9 +24,13 @@ dist_check_SCRIPTS = \
 	$(xml_test)
 
 accounts_glib_testsuite_SOURCES = check_ag.c
+nodist_accounts_glib_testsuite_SOURCES = \
+	test-manager.c \
+	test-manager.h
 accounts_glib_testsuite_CPPFLAGS = \
 	$(CHECK_CFLAGS) \
 	-I$(top_builddir) \
+	-I$(top_builddir)/tests \
 	$(AM_CPPFLAGS)
 accounts_glib_testsuite_LDADD = \
 	$(CHECK_LIBS) \
@@ -40,6 +44,9 @@ test_process_LDADD = \
 	$(LIBACCOUNTS_LIBS) \
 	$(top_builddir)/libaccounts-glib/libaccounts-glib.la
 
+BUILT_SOURCES = \
+	$(nodist_accounts_glib_testsuite_SOURCES)
+
 TESTS_ENVIRONMENT = \
 	DTDDIR=$(top_srcdir)/libaccounts-glib/ \
 	TESTDATADIR=$(top_srcdir)/tests/ \
@@ -50,7 +57,9 @@ TESTS = $(dist_check_SCRIPTS)
 tests.xml: tests.xml.in Makefile
 	$(SED) -e 's|@''TESTDIR''@|$(testdir)|' \
 	       -e 's|@''TESTDATADIR''@|$(testdatadir)|' $< > $@
-CLEANFILES = tests.xml
+CLEANFILES = \
+	$(BUILT_SOURCES) \
+	tests.xml
 
 dist_noinst_DATA = \
 	tests.xml.in
@@ -73,3 +82,11 @@ nobase_dist_testdata_DATA = \
 
 installcheck-local: $(TESTS)
 	cd "$(testdir)" && TESTDATADIR="$(testdatadir)" ./accounts-glib-test.sh
+
+test-manager.h test-manager.c: $(top_srcdir)/libaccounts-glib/com.google.code.AccountsSSO.Accounts.Manager.xml
+	$(AM_V_GEN)gdbus-codegen \
+		--generate-c-code test-manager \
+		--c-generate-object-manager \
+		--c-namespace Test \
+		--annotate "com.google.code.AccountsSSO.Accounts.Manager" org.gtk.GDBus.C.Name Manager \
+		$<
