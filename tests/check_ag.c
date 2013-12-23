@@ -1978,6 +1978,7 @@ START_TEST(test_signals_other_manager)
     g_free (ecd.service);
 
     ag_service_unref (service);
+    service = NULL;
     g_object_unref (account2);
     g_object_unref (manager2);
 
