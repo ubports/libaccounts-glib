@@ -43,6 +43,8 @@
 #include "libaccounts-glib/ag-application.h"
 #include "libaccounts-glib/ag-service-type.h"
 
+#include "test-manager.h"
+
 #include <glib.h>
 #include <glib/gstdio.h>
 #include <check.h>
@@ -76,6 +78,23 @@ typedef struct {
     gchar *service;
     gboolean enabled_check;
 } EnabledCbData;
+
+typedef struct {
+    gboolean called;
+    guint account_id;
+    gboolean created;
+    gboolean deleted;
+    gchar *provider;
+    GVariant *settings;
+} StoreCbData;
+
+static void
+store_cb_data_unset (StoreCbData *data)
+{
+    g_free (data->provider);
+    g_variant_unref (data->settings);
+    memset (data, 0, sizeof (data));
+}
 
 static void
 set_read_only()
@@ -236,6 +255,7 @@ START_TEST(test_read_only)
     ok = ag_account_store_blocking (account, &error);
     fail_unless (!ok);
     fail_unless (error->code == AG_ACCOUNTS_ERROR_READONLY);
+    g_debug ("Error message: %s", error->message);
 
     /* delete the DB */
     g_object_unref (account);
@@ -508,6 +528,119 @@ START_TEST(test_store_locked_cancel)
     fail_unless (cb_called, "Callback not invoked");
     sqlite3_close (db);
     g_object_unref (cancellable);
+}
+END_TEST
+
+static gboolean
+test_store_read_only_handle_store_cb (TestManager *test_manager,
+                                      GDBusMethodInvocation *invocation,
+                                      guint account_id,
+                                      gboolean created,
+                                      gboolean deleted,
+                                      const gchar *provider,
+                                      GVariant *settings,
+                                      StoreCbData *store_data)
+{
+    g_debug ("%s called", G_STRFUNC);
+
+    store_data->called = TRUE;
+    store_data->account_id = account_id;
+    store_data->created = created;
+    store_data->deleted = deleted;
+    store_data->provider = g_strdup (provider);
+    store_data->settings = g_variant_ref (settings);
+    test_manager_complete_store (test_manager, invocation);
+    return TRUE;
+}
+
+static void
+test_store_read_only_store_cb (GObject *object, GAsyncResult *res,
+                               gpointer user_data)
+{
+    GMainLoop *loop = user_data;
+    GError *error = NULL;
+
+    g_debug ("%s called", G_STRFUNC);
+
+    ag_account_store_finish (AG_ACCOUNT (object), res, &error);
+    ck_assert (error == NULL);
+    g_main_loop_quit (loop);
+}
+
+START_TEST(test_store_read_only)
+{
+    TestManager *test_manager;
+    TestObjectSkeleton *test_object;
+    StoreCbData store_data = { 0 };
+    GDBusObjectManagerServer *object_manager;
+    GDBusConnection *conn;
+    GError *error = NULL;
+    guint reg_id;
+
+    set_read_only ();
+
+    main_loop = g_main_loop_new (NULL, FALSE);
+
+    /* Register the D-Bus account manager service */
+    conn = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
+    ck_assert (error == NULL);
+    ck_assert (conn != NULL);
+
+    reg_id = g_bus_own_name_on_connection (conn,
+                                           AG_MANAGER_SERVICE_NAME,
+                                           G_BUS_NAME_OWNER_FLAGS_REPLACE,
+                                           NULL, NULL, NULL, NULL);
+
+    test_manager = test_manager_skeleton_new ();
+    g_signal_connect (test_manager, "handle-store",
+                      G_CALLBACK (test_store_read_only_handle_store_cb),
+                      &store_data);
+
+    test_object = test_object_skeleton_new (AG_MANAGER_OBJECT_PATH);
+    test_object_skeleton_set_manager (test_object, test_manager);
+
+    object_manager =
+        g_dbus_object_manager_server_new ("/com/google/code/AccountsSSO");
+    g_dbus_object_manager_server_export (object_manager,
+                                         G_DBUS_OBJECT_SKELETON (test_object));
+    g_dbus_object_manager_server_set_connection (object_manager, conn);
+
+    manager = ag_manager_new ();
+    ck_assert (manager != NULL);
+
+    /* create an account, and expect a failure */
+    account = ag_manager_create_account (manager, "fakebook");
+    fail_unless (AG_IS_ACCOUNT (account),
+                 "Failed to create the AgAccount.");
+
+    ag_account_store_async (account, NULL,
+                            test_store_read_only_store_cb,
+                            main_loop);
+    g_main_loop_run (main_loop);
+
+    ck_assert (store_data.called);
+    ck_assert (store_data.created);
+    ck_assert (!store_data.deleted);
+    ck_assert_uint_eq (store_data.account_id, 0);
+    ck_assert_str_eq (store_data.provider, "fakebook");
+    store_cb_data_unset (&store_data);
+
+    /* cleaning up */
+    g_object_unref (object_manager);
+    g_object_unref (test_object);
+    g_object_unref (test_manager);
+    g_bus_unown_name (reg_id);
+    g_object_unref (conn);
+
+    /* delete the DB */
+    g_object_unref (account);
+    account = NULL;
+    g_object_unref (manager);
+    manager = NULL;
+
+    delete_db ();
+
+    end_test ();
 }
 END_TEST
 
@@ -3695,6 +3828,7 @@ ag_suite(const char *test_case)
     tcase_add_test (tc, test_store);
     tcase_add_test (tc, test_store_locked);
     tcase_add_test (tc, test_store_locked_cancel);
+    tcase_add_test (tc, test_store_read_only);
     IF_TEST_CASE_ENABLED("Store")
         suite_add_tcase (s, tc);
 

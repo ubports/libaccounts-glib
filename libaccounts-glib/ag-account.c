@@ -278,8 +278,8 @@ ag_variant_safe_unref (gpointer variant)
 }
 
 GVariant *
-_ag_account_build_signal (AgAccount *account, AgAccountChanges *changes,
-                          const struct timespec *ts)
+_ag_account_build_dbus_changes (AgAccount *account, AgAccountChanges *changes,
+                                const struct timespec *ts)
 {
     GVariantBuilder builder;
     const gchar *provider_name;
@@ -289,8 +289,11 @@ _ag_account_build_signal (AgAccount *account, AgAccountChanges *changes,
     provider_name = account->priv->provider_name;
     if (!provider_name) provider_name = "";
 
-    g_variant_builder_add (&builder, "u", ts->tv_sec);
-    g_variant_builder_add (&builder, "u", ts->tv_nsec);
+    if (ts)
+    {
+        g_variant_builder_add (&builder, "u", ts->tv_sec);
+        g_variant_builder_add (&builder, "u", ts->tv_nsec);
+    }
     g_variant_builder_add (&builder, "u", account->id);
     g_variant_builder_add (&builder, "b", changes->created);
     g_variant_builder_add (&builder, "b", changes->deleted);

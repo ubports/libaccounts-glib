@@ -99,6 +99,11 @@ typedef guint AgAccountId;
 #define AG_DEPRECATED_FOR(x)    G_DEPRECATED_FOR(x)
 #endif
 
+/* Expected address of the D-Bus account manager service */
+#define AG_MANAGER_SERVICE_NAME "com.google.code.AccountsSSO.Accounts.Manager"
+#define AG_MANAGER_OBJECT_PATH "/com/google/code/AccountsSSO/Accounts/Manager"
+#define AG_MANAGER_INTERFACE "com.google.code.AccountsSSO.Accounts.Manager"
+
 G_END_DECLS
 
 #endif /* _AG_TYPES_H_ */
