@@ -130,6 +130,7 @@ struct _AgManagerPrivate {
 
     guint abort_on_db_timeout : 1;
     guint is_disposed : 1;
+    guint is_readonly : 1;
 
     gchar *service_type;
 };
@@ -162,6 +163,102 @@ static void account_weak_notify (gpointer userdata, GObject *dead_account);
 
 typedef gpointer (*AgDataFileLoadFunc) (AgManager *self,
                                         const gchar *base_name);
+
+static void
+on_dbus_store_done (GObject *object, GAsyncResult *res,
+                    gpointer user_data)
+{
+    GDBusConnection *conn = G_DBUS_CONNECTION (object);
+    GSimpleAsyncResult *async_result = user_data;
+    GVariant *result;
+    GError *error_int = NULL;
+
+    result = g_dbus_connection_call_finish (conn, res, &error_int);
+    if (G_UNLIKELY (error_int))
+    {
+        /* We always report a read-only error here */
+        GError error = {
+            AG_ACCOUNTS_ERROR,
+            AG_ACCOUNTS_ERROR_READONLY,
+            error_int->message
+        };
+        g_simple_async_result_set_from_error (async_result, &error);
+        g_error_free (error_int);
+    }
+    else
+    {
+        g_variant_unref (result);
+    }
+
+    g_simple_async_result_complete_in_idle (async_result);
+    g_object_unref (async_result);
+}
+
+static void
+ag_manager_store_dbus_async (AgManager *manager, AgAccount *account,
+                             GSimpleAsyncResult *async_result,
+                             GCancellable *cancellable)
+{
+    AgAccountChanges *changes;
+    GVariant *dbus_changes;
+
+    changes = _ag_account_steal_changes (account);
+    dbus_changes = _ag_account_build_dbus_changes (account, changes, NULL);
+
+    g_dbus_connection_call (manager->priv->dbus_conn,
+                            AG_MANAGER_SERVICE_NAME,
+                            AG_MANAGER_OBJECT_PATH,
+                            AG_MANAGER_INTERFACE,
+                            "store",
+                            dbus_changes,
+                            NULL,
+                            G_DBUS_CALL_FLAGS_NONE,
+                            -1,
+                            cancellable,
+                            (GAsyncReadyCallback)on_dbus_store_done,
+                            async_result);
+
+    _ag_account_changes_free (changes);
+}
+
+static gboolean
+ag_manager_store_dbus_sync (AgManager *manager, AgAccount *account,
+                            GError **error)
+{
+    AgAccountChanges *changes;
+    GVariant *dbus_changes;
+    GError *error_int = NULL;
+
+    changes = _ag_account_steal_changes (account);
+    dbus_changes = _ag_account_build_dbus_changes (account, changes, NULL);
+
+    g_dbus_connection_call_sync (manager->priv->dbus_conn,
+                            AG_MANAGER_SERVICE_NAME,
+                            AG_MANAGER_OBJECT_PATH,
+                            AG_MANAGER_INTERFACE,
+                            "store",
+                            dbus_changes,
+                            NULL,
+                            G_DBUS_CALL_FLAGS_NONE,
+                            -1,
+                            NULL,
+                            &error_int);
+
+    _ag_account_changes_free (changes);
+
+    if (G_UNLIKELY (error_int))
+    {
+        /* We always report a read-only error here */
+        g_set_error_literal (error,
+                             AG_ACCOUNTS_ERROR,
+                             AG_ACCOUNTS_ERROR_READONLY,
+                             error_int->message);
+        g_error_free (error_int);
+        return FALSE;
+    }
+
+    return TRUE;
+}
 
 static void
 add_data_files_from_dir (AgManager *manager, const gchar *dirname,
@@ -474,6 +571,7 @@ check_signal_processed (AgManagerPrivate *priv, struct timespec *ts)
          list != NULL;
          list = g_list_nth (priv->processed_signals, 2))
     {
+        g_slice_free (ProcessedSignalData, list->data);
         priv->processed_signals = g_list_delete_link (priv->processed_signals,
                                                       list);
     }
@@ -697,7 +795,7 @@ signal_account_changes (AgManager *manager, AgAccount *account,
 
     clock_gettime(CLOCK_MONOTONIC, &eds.ts);
 
-    msg = _ag_account_build_signal (account, changes, &eds.ts);
+    msg = _ag_account_build_dbus_changes (account, changes, &eds.ts);
     if (G_UNLIKELY (!msg))
     {
         g_warning ("Creation of D-Bus signal failed");
@@ -1199,10 +1297,12 @@ open_db (AgManager *manager)
     {
         DEBUG_INFO ("Opening DB in read-only mode");
         flags = SQLITE_OPEN_READONLY;
+        priv->is_readonly = TRUE;
     }
     else
     {
         flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
+        priv->is_readonly = FALSE;
     }
     ret = sqlite3_open_v2 (filename, &priv->db, flags, NULL);
     g_free (filename);
@@ -2225,6 +2325,97 @@ _ag_manager_exec_transaction_blocking (AgManager *manager, const gchar *sql,
     }
 
     exec_transaction (manager, account, sql, changes, error);
+}
+
+static void
+ag_manager_store_local_async (AgManager *manager, AgAccount *account,
+                              GSimpleAsyncResult *async_result,
+                              GCancellable *cancellable)
+{
+    AgAccountChanges *changes;
+    GError *error = NULL;
+    gchar *sql;
+
+    sql = _ag_account_get_store_sql (account, &error);
+    if (G_UNLIKELY (error))
+    {
+        g_simple_async_result_take_error (async_result,
+                                          error);
+        g_simple_async_result_complete_in_idle (async_result);
+        g_object_unref (async_result);
+        return;
+    }
+
+    changes = _ag_account_steal_changes (account);
+
+    _ag_manager_exec_transaction (manager, sql, changes, account,
+                                  async_result, cancellable);
+    g_free (sql);
+}
+
+static gboolean
+ag_manager_store_local_sync (AgManager *manager, AgAccount *account,
+                             GError **error)
+{
+    AgAccountChanges *changes;
+    GError *error_int = NULL;
+    gchar *sql;
+
+    sql = _ag_account_get_store_sql (account, &error_int);
+    if (G_UNLIKELY (error_int))
+    {
+        g_warning ("%s: %s", G_STRFUNC, error_int->message);
+        g_propagate_error (error, error_int);
+        return FALSE;
+    }
+
+    changes = _ag_account_steal_changes (account);
+
+    _ag_manager_exec_transaction_blocking (manager, sql,
+                                           changes, account,
+                                           &error_int);
+    g_free (sql);
+    _ag_account_changes_free (changes);
+
+    if (G_UNLIKELY (error_int))
+    {
+        g_warning ("%s: %s", G_STRFUNC, error_int->message);
+        g_propagate_error (error, error_int);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+void
+_ag_manager_store_async (AgManager *manager, AgAccount *account,
+                         GSimpleAsyncResult *async_result,
+                         GCancellable *cancellable)
+{
+    if (manager->priv->is_readonly)
+    {
+        ag_manager_store_dbus_async (manager, account, async_result,
+                                     cancellable);
+    }
+    else
+    {
+        ag_manager_store_local_async (manager, account, async_result,
+                                      cancellable);
+    }
+}
+
+gboolean
+_ag_manager_store_sync (AgManager *manager, AgAccount *account,
+                        GError **error)
+{
+    if (manager->priv->is_readonly)
+    {
+        return ag_manager_store_dbus_sync (manager, account, error);
+    }
+    else
+    {
+        return ag_manager_store_local_sync (manager, account, error);
+    }
 }
 
 static guint

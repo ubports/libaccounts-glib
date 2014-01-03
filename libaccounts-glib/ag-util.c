@@ -289,6 +289,7 @@ _ag_xml_get_boolean (xmlTextReaderPtr reader, gboolean *dest_boolean)
     if (G_UNLIKELY (variant == NULL)) return FALSE;
 
     *dest_boolean = g_variant_get_boolean (variant);
+    g_variant_unref (variant);
 
     ok = close_element (reader);
 
@@ -321,14 +322,19 @@ parse_param (xmlTextReaderPtr reader, GVariant **value)
     *value = _ag_value_from_string (type, str_value);
 
     ok = close_element (reader);
-    if (G_UNLIKELY (!ok)) goto error;
+    if (G_UNLIKELY (!ok))
+    {
+        g_variant_unref (*value);
+        *value = NULL;
+        goto error;
+    }
 
 finish:
     ok = TRUE;
 error:
     if (str_type != NULL)
         xmlFree(str_type);
-    return TRUE;
+    return ok;
 }
 
 gboolean
@@ -367,11 +373,14 @@ _ag_xml_parse_settings (xmlTextReaderPtr reader, const gchar *group,
                 ok = parse_param (reader, &value);
                 if (ok && value != NULL)
                 {
-                    g_variant_ref_sink (value);
+                    g_variant_take_ref (value);
                     g_hash_table_insert (settings, key, value);
                 }
                 else
+                {
+                    if (value != NULL) g_variant_unref (value);
                     g_free (key);
+                }
             }
             else if (strcmp (name, "group") == 0 &&
                      xmlTextReaderHasAttributes (reader))

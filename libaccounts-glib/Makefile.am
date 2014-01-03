@@ -134,3 +134,8 @@ vapidir = $(datadir)/vala/vapi
 dist_vapi_DATA = \
 	libaccounts-glib.deps \
 	libaccounts-glib.vapi
+
+# D-Bus Account Manager interface
+dbusinterfacedir = $(datadir)/dbus-1/interfaces
+dist_dbusinterface_DATA = \
+	com.google.code.AccountsSSO.Accounts.Manager.xml

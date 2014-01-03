@@ -278,8 +278,8 @@ ag_variant_safe_unref (gpointer variant)
 }
 
 GVariant *
-_ag_account_build_signal (AgAccount *account, AgAccountChanges *changes,
-                          const struct timespec *ts)
+_ag_account_build_dbus_changes (AgAccount *account, AgAccountChanges *changes,
+                                const struct timespec *ts)
 {
     GVariantBuilder builder;
     const gchar *provider_name;
@@ -289,8 +289,11 @@ _ag_account_build_signal (AgAccount *account, AgAccountChanges *changes,
     provider_name = account->priv->provider_name;
     if (!provider_name) provider_name = "";
 
-    g_variant_builder_add (&builder, "u", ts->tv_sec);
-    g_variant_builder_add (&builder, "u", ts->tv_nsec);
+    if (ts)
+    {
+        g_variant_builder_add (&builder, "u", ts->tv_sec);
+        g_variant_builder_add (&builder, "u", ts->tv_nsec);
+    }
     g_variant_builder_add (&builder, "u", account->id);
     g_variant_builder_add (&builder, "b", changes->created);
     g_variant_builder_add (&builder, "b", changes->deleted);
@@ -521,6 +524,9 @@ static void
 ag_service_changes_free (AgServiceChanges *sc)
 {
     g_free (sc->service_type);
+
+    if (sc->service)
+        ag_service_unref (sc->service);
 
     if (sc->settings)
         g_hash_table_unref (sc->settings);
@@ -763,7 +769,7 @@ account_service_changes_get (AgAccountPrivate *priv, AgService *service,
     if (!sc)
     {
         sc = g_slice_new0 (AgServiceChanges);
-        sc->service = service;
+        sc->service = service ? ag_service_ref (service) : NULL;
         sc->service_type = g_strdup (service_type);
 
         sc->settings = g_hash_table_new_full
@@ -1208,6 +1214,16 @@ _ag_account_changes_from_dbus (AgManager *manager, GVariant *v_services,
     return changes;
 }
 
+AgAccountChanges *
+_ag_account_steal_changes (AgAccount *account)
+{
+    AgAccountChanges *changes;
+
+    changes = account->priv->changes;
+    account->priv->changes = NULL;
+    return changes;
+}
+
 static void
 add_service_type (GPtrArray *types, const gchar *service_type)
 {
@@ -1336,8 +1352,8 @@ ag_account_store_signature (AgAccount *account, AgServiceChanges *sc, GString *s
     }
 }
 
-static gchar *
-ag_account_get_store_sql (AgAccount *account, GError **error)
+gchar *
+_ag_account_get_store_sql (AgAccount *account, GError **error)
 {
     AgAccountPrivate *priv;
     AgAccountChanges *changes;
@@ -2028,6 +2044,10 @@ ag_account_set_value (AgAccount *account, const gchar *key,
     }
 
     change_selected_service_value (priv, key, variant);
+    if (variant != NULL)
+    {
+        g_variant_unref (variant);
+    }
 }
 
 /**
@@ -2458,9 +2478,6 @@ ag_account_store_async (AgAccount *account, GCancellable *cancellable,
                         GAsyncReadyCallback callback, gpointer user_data)
 {
     AgAccountPrivate *priv;
-    AgAccountChanges *changes;
-    GError *error = NULL;
-    gchar *sql;
 
     g_return_if_fail (AG_IS_ACCOUNT (account));
     priv = account->priv;
@@ -2483,21 +2500,10 @@ ag_account_store_async (AgAccount *account, GCancellable *cancellable,
                                    ag_account_store_async);
     g_simple_async_result_set_check_cancellable (priv->store_async_result,
                                                  cancellable);
+    g_object_add_weak_pointer ((GObject *)priv->store_async_result,
+                               (gpointer *)&priv->store_async_result);
 
-    sql = ag_account_get_store_sql (account, &error);
-    if (G_UNLIKELY (error))
-    {
-        g_simple_async_result_take_error (priv->store_async_result,
-                                          error);
-        g_simple_async_result_complete_in_idle (priv->store_async_result);
-        g_clear_object (&priv->store_async_result);
-        return;
-    }
-
-    changes = priv->changes;
-    priv->changes = NULL;
-
-    if (G_UNLIKELY (!sql))
+    if (G_UNLIKELY (priv->changes == NULL))
     {
         /* Nothing to do: invoke the callback immediately */
         g_simple_async_result_complete_in_idle (priv->store_async_result);
@@ -2505,9 +2511,8 @@ ag_account_store_async (AgAccount *account, GCancellable *cancellable,
         return;
     }
 
-    _ag_manager_exec_transaction (priv->manager, sql, changes, account,
-                                  priv->store_async_result, cancellable);
-    g_free (sql);
+    _ag_manager_store_async (priv->manager, account,
+                             priv->store_async_result, cancellable);
 }
 
 /**
@@ -2549,44 +2554,17 @@ gboolean
 ag_account_store_blocking (AgAccount *account, GError **error)
 {
     AgAccountPrivate *priv;
-    AgAccountChanges *changes;
-    GError *error_int = NULL;
-    gchar *sql;
 
     g_return_val_if_fail (AG_IS_ACCOUNT (account), FALSE);
     priv = account->priv;
 
-    sql = ag_account_get_store_sql (account, &error_int);
-    if (G_UNLIKELY (error_int))
-    {
-        g_warning ("%s: %s", G_STRFUNC, error_int->message);
-        g_propagate_error (error, error_int);
-        return FALSE;
-    }
-
-    changes = priv->changes;
-    priv->changes = NULL;
-
-    if (G_UNLIKELY (!sql))
+    if (G_UNLIKELY (priv->changes == NULL))
     {
         /* Nothing to do: return immediately */
         return TRUE;
     }
 
-    _ag_manager_exec_transaction_blocking (priv->manager, sql,
-                                           changes, account,
-                                           &error_int);
-    g_free (sql);
-    _ag_account_changes_free (changes);
-
-    if (G_UNLIKELY (error_int))
-    {
-        g_warning ("%s: %s", G_STRFUNC, error_int->message);
-        g_propagate_error (error, error_int);
-        return FALSE;
-    }
-
-    return TRUE;
+    return _ag_manager_store_sync (priv->manager, account, error);
 }
 
 /**

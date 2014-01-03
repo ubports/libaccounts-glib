@@ -147,6 +147,7 @@ _ag_auth_data_new (AgAccount *account, AgService *service)
     g_free (key_prefix);
 
     data = g_slice_new (AgAuthData);
+    data->ref_count = 1;
     data->credentials_id = credentials_id;
     data->method = method;
     data->mechanism = mechanism;
@@ -353,6 +354,7 @@ ag_auth_data_get_login_parameters (AgAuthData *self, GVariant *extra_parameters)
         while (g_variant_iter_next (&i_extra, "{&sv}", &key, &value))
         {
             g_variant_builder_add (&builder, "{sv}", key, value);
+            g_variant_unref (value);
 
             /* Make sure we are not going to add the same key later */
             if (g_hash_table_lookup (self->parameters, key))

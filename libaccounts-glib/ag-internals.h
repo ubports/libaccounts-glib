@@ -72,14 +72,20 @@ G_GNUC_INTERNAL
 void _ag_account_done_changes (AgAccount *account, AgAccountChanges *changes);
 
 G_GNUC_INTERNAL
-GVariant *_ag_account_build_signal (AgAccount *account,
-                                    AgAccountChanges *changes,
-                                    const struct timespec *ts);
+GVariant *_ag_account_build_dbus_changes (AgAccount *account,
+                                          AgAccountChanges *changes,
+                                          const struct timespec *ts);
 G_GNUC_INTERNAL
 AgAccountChanges *_ag_account_changes_from_dbus (AgManager *manager,
                                                  GVariant *v_services,
                                                  gboolean created,
                                                  gboolean deleted);
+
+G_GNUC_INTERNAL
+gchar *_ag_account_get_store_sql (AgAccount *account, GError **error);
+
+G_GNUC_INTERNAL
+AgAccountChanges *_ag_account_steal_changes (AgAccount *account);
 
 G_GNUC_INTERNAL
 GHashTable *_ag_account_get_service_changes (AgAccount *account,
@@ -116,6 +122,14 @@ AgService *_ag_manager_get_service_lazy (AgManager *manager,
                                          const gint service_id);
 G_GNUC_INTERNAL
 guint _ag_manager_get_service_id (AgManager *manager, AgService *service);
+
+G_GNUC_INTERNAL
+void _ag_manager_store_async (AgManager *manager, AgAccount *account,
+                              GSimpleAsyncResult *async_result,
+                              GCancellable *cancellable);
+G_GNUC_INTERNAL
+gboolean _ag_manager_store_sync (AgManager *manager, AgAccount *account,
+                                 GError **error);
 
 struct _AgService {
     /*< private >*/

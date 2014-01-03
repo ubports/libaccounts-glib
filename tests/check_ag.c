@@ -43,6 +43,8 @@
 #include "libaccounts-glib/ag-application.h"
 #include "libaccounts-glib/ag-service-type.h"
 
+#include "test-manager.h"
+
 #include <glib.h>
 #include <glib/gstdio.h>
 #include <check.h>
@@ -76,6 +78,59 @@ typedef struct {
     gchar *service;
     gboolean enabled_check;
 } EnabledCbData;
+
+typedef struct {
+    gboolean called;
+    guint account_id;
+    gboolean created;
+    gboolean deleted;
+    gchar *provider;
+    GVariant *settings;
+} StoreCbData;
+
+static void
+store_cb_data_unset (StoreCbData *data)
+{
+    g_free (data->provider);
+    g_variant_unref (data->settings);
+    memset (data, 0, sizeof (data));
+}
+
+static void
+set_read_only()
+{
+    gchar *filename;
+
+    /* This is just to ensure that the DB exists */
+    manager = ag_manager_new ();
+    g_object_unref (manager);
+
+    chmod (db_filename, S_IRUSR | S_IRGRP | S_IROTH);
+
+    filename = g_strconcat (db_filename, "-shm", NULL);
+    chmod (filename, S_IRUSR | S_IRGRP | S_IROTH);
+    g_free (filename);
+
+    filename = g_strconcat (db_filename, "-wal", NULL);
+    unlink (filename);
+    g_free (filename);
+}
+
+static void
+delete_db()
+{
+    gchar *filename;
+
+    unlink (db_filename);
+
+    filename = g_strconcat (db_filename, "-shm", NULL);
+    unlink (filename);
+    g_free (filename);
+
+    filename = g_strconcat (db_filename, "-wal", NULL);
+    unlink (filename);
+    g_free (filename);
+}
 
 static void
 on_enabled (AgAccount *account, const gchar *service, gboolean enabled,
@@ -185,26 +240,10 @@ END_TEST
 START_TEST(test_read_only)
 {
     GError *error = NULL;
-    gchar *filename;
     gboolean ok;
 
-    manager = ag_manager_new ();
-    fail_unless (manager != NULL);
+    set_read_only ();
 
-    /* close the database, and make it read-only */
-    g_object_unref (manager);
-    chmod (db_filename, S_IRUSR | S_IRGRP | S_IROTH);
-
-    filename = g_strconcat (db_filename, "-shm", NULL);
-    chmod (filename, S_IRUSR | S_IRGRP | S_IROTH);
-    g_free (filename);
-
-    filename = g_strconcat (db_filename, "-wal", NULL);
-    chmod (filename, S_IRUSR | S_IRGRP | S_IROTH);
-    g_free (filename);
-    unlink (filename);
-
-    /* re-open the DB */
     manager = ag_manager_new ();
     fail_unless (manager != NULL);
 
@@ -216,6 +255,8 @@ START_TEST(test_read_only)
     ok = ag_account_store_blocking (account, &error);
     fail_unless (!ok);
     fail_unless (error->code == AG_ACCOUNTS_ERROR_READONLY);
+    g_debug ("Error message: %s", error->message);
+    g_error_free (error);
 
     /* delete the DB */
     g_object_unref (account);
@@ -223,15 +264,7 @@ START_TEST(test_read_only)
     g_object_unref (manager);
     manager = NULL;
 
-    unlink (db_filename);
-
-    filename = g_strconcat (db_filename, "-shm", NULL);
-    unlink (filename);
-    g_free (filename);
-
-    filename = g_strconcat (db_filename, "-wal", NULL);
-    unlink (filename);
-    g_free (filename);
+    delete_db ();
 
     g_debug("Ending read-only test");
 
@@ -496,6 +529,119 @@ START_TEST(test_store_locked_cancel)
     fail_unless (cb_called, "Callback not invoked");
     sqlite3_close (db);
     g_object_unref (cancellable);
+}
+END_TEST
+
+static gboolean
+test_store_read_only_handle_store_cb (TestManager *test_manager,
+                                      GDBusMethodInvocation *invocation,
+                                      guint account_id,
+                                      gboolean created,
+                                      gboolean deleted,
+                                      const gchar *provider,
+                                      GVariant *settings,
+                                      StoreCbData *store_data)
+{
+    g_debug ("%s called", G_STRFUNC);
+
+    store_data->called = TRUE;
+    store_data->account_id = account_id;
+    store_data->created = created;
+    store_data->deleted = deleted;
+    store_data->provider = g_strdup (provider);
+    store_data->settings = g_variant_ref (settings);
+    test_manager_complete_store (test_manager, invocation);
+    return TRUE;
+}
+
+static void
+test_store_read_only_store_cb (GObject *object, GAsyncResult *res,
+                               gpointer user_data)
+{
+    GMainLoop *loop = user_data;
+    GError *error = NULL;
+
+    g_debug ("%s called", G_STRFUNC);
+
+    ag_account_store_finish (AG_ACCOUNT (object), res, &error);
+    ck_assert (error == NULL);
+    g_main_loop_quit (loop);
+}
+
+START_TEST(test_store_read_only)
+{
+    TestManager *test_manager;
+    TestObjectSkeleton *test_object;
+    StoreCbData store_data = { 0 };
+    GDBusObjectManagerServer *object_manager;
+    GDBusConnection *conn;
+    GError *error = NULL;
+    guint reg_id;
+
+    set_read_only ();
+
+    main_loop = g_main_loop_new (NULL, FALSE);
+
+    /* Register the D-Bus account manager service */
+    conn = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
+    ck_assert (error == NULL);
+    ck_assert (conn != NULL);
+
+    reg_id = g_bus_own_name_on_connection (conn,
+                                           AG_MANAGER_SERVICE_NAME,
+                                           G_BUS_NAME_OWNER_FLAGS_REPLACE,
+                                           NULL, NULL, NULL, NULL);
+
+    test_manager = test_manager_skeleton_new ();
+    g_signal_connect (test_manager, "handle-store",
+                      G_CALLBACK (test_store_read_only_handle_store_cb),
+                      &store_data);
+
+    test_object = test_object_skeleton_new (AG_MANAGER_OBJECT_PATH);
+    test_object_skeleton_set_manager (test_object, test_manager);
+
+    object_manager =
+        g_dbus_object_manager_server_new ("/com/google/code/AccountsSSO");
+    g_dbus_object_manager_server_export (object_manager,
+                                         G_DBUS_OBJECT_SKELETON (test_object));
+    g_dbus_object_manager_server_set_connection (object_manager, conn);
+
+    manager = ag_manager_new ();
+    ck_assert (manager != NULL);
+
+    /* create an account, and expect a failure */
+    account = ag_manager_create_account (manager, "fakebook");
+    fail_unless (AG_IS_ACCOUNT (account),
+                 "Failed to create the AgAccount.");
+
+    ag_account_store_async (account, NULL,
+                            test_store_read_only_store_cb,
+                            main_loop);
+    g_main_loop_run (main_loop);
+
+    ck_assert (store_data.called);
+    ck_assert (store_data.created);
+    ck_assert (!store_data.deleted);
+    ck_assert_uint_eq (store_data.account_id, 0);
+    ck_assert_str_eq (store_data.provider, "fakebook");
+    store_cb_data_unset (&store_data);
+
+    /* cleaning up */
+    g_object_unref (object_manager);
+    g_object_unref (test_object);
+    g_object_unref (test_manager);
+    g_bus_unown_name (reg_id);
+    g_object_unref (conn);
+
+    /* delete the DB */
+    g_object_unref (account);
+    account = NULL;
+    g_object_unref (manager);
+    manager = NULL;
+
+    delete_db ();
+
+    end_test ();
 }
 END_TEST
 
@@ -967,6 +1113,7 @@ START_TEST(test_account_service_list)
     ag_account_store (account, account_store_now_cb, TEST_STRING);
     run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
+    g_object_unref (account);
 
     account = ag_manager_get_account (manager, account_id[1]);
     fail_unless (AG_IS_ACCOUNT(account));
@@ -978,6 +1125,7 @@ START_TEST(test_account_service_list)
     ag_account_store (account, account_store_now_cb, TEST_STRING);
     run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
+    g_object_unref (account);
 
     account = ag_manager_get_account (manager, account_id[2]);
     fail_unless (AG_IS_ACCOUNT(account));
@@ -1247,6 +1395,7 @@ START_TEST(test_auth_data_get_login_parameters)
     fail_unless (g_list_length(account_services) == 1);
     account_service = AG_ACCOUNT_SERVICE (account_services->data);
     fail_unless (AG_IS_ACCOUNT_SERVICE (account_service));
+    g_list_free (account_services);
 
     /* get the auth data */
     data = ag_account_service_get_auth_data (account_service);
@@ -1306,6 +1455,7 @@ START_TEST(test_auth_data_insert_parameters)
     fail_unless (g_list_length(account_services) == 1);
     account_service = AG_ACCOUNT_SERVICE (account_services->data);
     fail_unless (AG_IS_ACCOUNT_SERVICE (account_service));
+    g_list_free (account_services);
 
     /* get the auth data */
     data = ag_account_service_get_auth_data (account_service);
@@ -1400,6 +1550,9 @@ START_TEST(test_application)
                             "Publish images on OtherService") == 0);
     ag_application_unref (application);
     g_list_free (list);
+
+    ag_service_unref (email_service);
+    ag_service_unref (sharing_service);
 
     end_test ();
 }
@@ -1833,6 +1986,7 @@ START_TEST(test_signals_other_manager)
     g_free (ecd.service);
 
     ag_service_unref (service);
+    service = NULL;
     g_object_unref (account2);
     g_object_unref (manager2);
 
@@ -2938,6 +3092,7 @@ START_TEST(test_cache_regression)
     const gchar *provider2 = "second_provider";
     const gchar *display_name1 = "first_displayname";
     const gchar *display_name2 = "second_displayname";
+    AgAccount *deleted_account;
 
     /* This test is to catch a bug that happened when deleting the account
      * with the highest ID without letting the object die, and creating a
@@ -2961,6 +3116,7 @@ START_TEST(test_cache_regression)
 
     /* now remove the account, but don't destroy the object */
     ag_account_delete (account);
+    deleted_account = account;
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
     run_main_loop_for_n_seconds(0);
@@ -2989,6 +3145,8 @@ START_TEST(test_cache_regression)
 
     fail_unless (g_strcmp0 (ag_account_get_provider_name (account),
                          provider2) == 0);
+
+    g_object_unref (deleted_account);
 
     end_test ();
 }
@@ -3263,6 +3421,7 @@ on_enabled_event (AgManager *manager, AgAccountId account_id,
     fail_unless (service != NULL);
     ag_account_select_service (acc, service);
     fail_unless (ag_account_get_enabled (acc));
+    ag_service_unref (service);
 
     *id = account_id;
 
@@ -3457,7 +3616,7 @@ START_TEST(test_account_list_enabled_services)
     services = ag_account_list_enabled_services (account);
     n_services = g_list_length (services);
     fail_unless (n_services == 1, "Got %d services, expecting 1", n_services);
-    ag_manager_list_free (services);
+    ag_service_list_free (services);
 
     /* 2 services, 2 enabled  */
     ag_account_select_service (account, service2);
@@ -3468,7 +3627,7 @@ START_TEST(test_account_list_enabled_services)
 
     n_services = g_list_length (services);
     fail_unless (n_services == 2, "Got %d services, expecting 2", n_services);
-    ag_manager_list_free (services);
+    ag_service_list_free (services);
 
     account2 = ag_manager_get_account (manager2, account->id);
     fail_unless (account2 != NULL);
@@ -3480,13 +3639,13 @@ START_TEST(test_account_list_enabled_services)
 
     n_services = g_list_length (services);
     fail_unless (n_services == 1, "Got %d services, expecting 1", n_services);
-    ag_manager_list_free (services);
+    ag_service_list_free (services);
 
     services = ag_account_list_enabled_services (account3);
 
     n_services = g_list_length (services);
     fail_unless (n_services == 1, "Got %d services, expecting 1", n_services);
-    ag_manager_list_free (services);
+    ag_service_list_free (services);
 
     /* 2 services, 0 enabled  */
     account4 = ag_manager_create_account (manager, "maemo");
@@ -3512,7 +3671,7 @@ START_TEST(test_account_list_enabled_services)
     /* clear up */
     ag_service_unref (service1);
     ag_service_unref (service2);
-    ag_manager_list_free (services);
+    ag_service_list_free (services);
 
     g_object_unref (account2);
     g_object_unref (account3);
@@ -3556,6 +3715,8 @@ START_TEST(test_service_type)
     string = ag_service_type_get_i18n_domain (service_type);
     fail_unless (g_strcmp0 (string, "translation_file") == 0,
                  "Wrong service type i18n name: %s", string);
+
+    ag_service_type_unref (service_type);
 
     end_test ();
 }
@@ -3683,6 +3844,7 @@ ag_suite(const char *test_case)
     tcase_add_test (tc, test_store);
     tcase_add_test (tc, test_store_locked);
     tcase_add_test (tc, test_store_locked_cancel);
+    tcase_add_test (tc, test_store_read_only);
     IF_TEST_CASE_ENABLED("Store")
         suite_add_tcase (s, tc);
 

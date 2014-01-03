@@ -1,5 +1,12 @@
 libaccounts-glib NEWS
 
+Version 1.16
+------------
+
+* Deliver store events to D-Bus Account Manager when DB is R/O
+* Fix all memory leaks reported by valgrind
+* Allow running the test suite in a wrapper program such as gdb and valgrind
+
 Version 1.15
 ------------
 
