@@ -518,7 +518,10 @@ ag_provider_unref (AgProvider *provider)
         g_free (provider->description);
         g_free (provider->display_name);
         g_free (provider->domains);
+        g_free (provider->plugin_name);
         g_free (provider->file_data);
+        if (provider->default_settings != NULL)
+            g_hash_table_unref (provider->default_settings);
         g_slice_free (AgProvider, provider);
     }
 }
