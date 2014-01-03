@@ -8,7 +8,14 @@ export ACCOUNTS=/tmp/
 export AG_DEBUG=all
 export G_MESSAGES_DEBUG=all
 export G_DEBUG=fatal-criticals
-export G_SLICE=debug-blocks
+# If running the test executable under a wrapper, setup the tests so that the
+# wrapper can debug them more easily.
+if [ -n "$WRAPPER" ]; then
+    export G_SLICE=always-malloc
+    export CK_FORK="no"
+else
+    export G_SLICE=debug-blocks
+fi
 export XDG_DATA_HOME=$TESTDATADIR
 export PATH=.:$PATH
 
@@ -16,8 +23,8 @@ export PATH=.:$PATH
 # session
 if command -v dbus-test-runner > /dev/null ; then
     echo "Using dbus-test-runner"
-    dbus-test-runner -m 180 -t ./accounts-glib-testsuite
+    dbus-test-runner -m 180 -t "$TESTDIR"/accounts-glib-test-wrapper.sh
 else
     echo "Using existing D-Bus session"
-    ./accounts-glib-testsuite "$@"
+    "$TESTDIR"/accounts-glib-test-wrapper.sh
 fi
