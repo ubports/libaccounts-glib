@@ -147,6 +147,7 @@ _ag_auth_data_new (AgAccount *account, AgService *service)
     g_free (key_prefix);
 
     data = g_slice_new (AgAuthData);
+    data->ref_count = 1;
     data->credentials_id = credentials_id;
     data->method = method;
     data->mechanism = mechanism;
