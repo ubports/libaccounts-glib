@@ -525,6 +525,9 @@ ag_service_changes_free (AgServiceChanges *sc)
 {
     g_free (sc->service_type);
 
+    if (sc->service)
+        ag_service_unref (sc->service);
+
     if (sc->settings)
         g_hash_table_unref (sc->settings);
 
@@ -766,7 +769,7 @@ account_service_changes_get (AgAccountPrivate *priv, AgService *service,
     if (!sc)
     {
         sc = g_slice_new0 (AgServiceChanges);
-        sc->service = service;
+        sc->service = service ? ag_service_ref (service) : NULL;
         sc->service_type = g_strdup (service_type);
 
         sc->settings = g_hash_table_new_full
