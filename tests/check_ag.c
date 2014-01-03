@@ -256,6 +256,7 @@ START_TEST(test_read_only)
     fail_unless (!ok);
     fail_unless (error->code == AG_ACCOUNTS_ERROR_READONLY);
     g_debug ("Error message: %s", error->message);
+    g_error_free (error);
 
     /* delete the DB */
     g_object_unref (account);
@@ -1112,6 +1113,7 @@ START_TEST(test_account_service_list)
     ag_account_store (account, account_store_now_cb, TEST_STRING);
     run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
+    g_object_unref (account);
 
     account = ag_manager_get_account (manager, account_id[1]);
     fail_unless (AG_IS_ACCOUNT(account));
@@ -1123,6 +1125,7 @@ START_TEST(test_account_service_list)
     ag_account_store (account, account_store_now_cb, TEST_STRING);
     run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
+    g_object_unref (account);
 
     account = ag_manager_get_account (manager, account_id[2]);
     fail_unless (AG_IS_ACCOUNT(account));
@@ -1392,6 +1395,7 @@ START_TEST(test_auth_data_get_login_parameters)
     fail_unless (g_list_length(account_services) == 1);
     account_service = AG_ACCOUNT_SERVICE (account_services->data);
     fail_unless (AG_IS_ACCOUNT_SERVICE (account_service));
+    g_list_free (account_services);
 
     /* get the auth data */
     data = ag_account_service_get_auth_data (account_service);
@@ -1451,6 +1455,7 @@ START_TEST(test_auth_data_insert_parameters)
     fail_unless (g_list_length(account_services) == 1);
     account_service = AG_ACCOUNT_SERVICE (account_services->data);
     fail_unless (AG_IS_ACCOUNT_SERVICE (account_service));
+    g_list_free (account_services);
 
     /* get the auth data */
     data = ag_account_service_get_auth_data (account_service);
@@ -1545,6 +1550,9 @@ START_TEST(test_application)
                             "Publish images on OtherService") == 0);
     ag_application_unref (application);
     g_list_free (list);
+
+    ag_service_unref (email_service);
+    ag_service_unref (sharing_service);
 
     end_test ();
 }
@@ -3084,6 +3092,7 @@ START_TEST(test_cache_regression)
     const gchar *provider2 = "second_provider";
     const gchar *display_name1 = "first_displayname";
     const gchar *display_name2 = "second_displayname";
+    AgAccount *deleted_account;
 
     /* This test is to catch a bug that happened when deleting the account
      * with the highest ID without letting the object die, and creating a
@@ -3107,6 +3116,7 @@ START_TEST(test_cache_regression)
 
     /* now remove the account, but don't destroy the object */
     ag_account_delete (account);
+    deleted_account = account;
 
     ag_account_store (account, account_store_now_cb, TEST_STRING);
     run_main_loop_for_n_seconds(0);
@@ -3135,6 +3145,8 @@ START_TEST(test_cache_regression)
 
     fail_unless (g_strcmp0 (ag_account_get_provider_name (account),
                          provider2) == 0);
+
+    g_object_unref (deleted_account);
 
     end_test ();
 }
@@ -3409,6 +3421,7 @@ on_enabled_event (AgManager *manager, AgAccountId account_id,
     fail_unless (service != NULL);
     ag_account_select_service (acc, service);
     fail_unless (ag_account_get_enabled (acc));
+    ag_service_unref (service);
 
     *id = account_id;
 
@@ -3603,7 +3616,7 @@ START_TEST(test_account_list_enabled_services)
     services = ag_account_list_enabled_services (account);
     n_services = g_list_length (services);
     fail_unless (n_services == 1, "Got %d services, expecting 1", n_services);
-    ag_manager_list_free (services);
+    ag_service_list_free (services);
 
     /* 2 services, 2 enabled  */
     ag_account_select_service (account, service2);
@@ -3614,7 +3627,7 @@ START_TEST(test_account_list_enabled_services)
 
     n_services = g_list_length (services);
     fail_unless (n_services == 2, "Got %d services, expecting 2", n_services);
-    ag_manager_list_free (services);
+    ag_service_list_free (services);
 
     account2 = ag_manager_get_account (manager2, account->id);
     fail_unless (account2 != NULL);
@@ -3626,13 +3639,13 @@ START_TEST(test_account_list_enabled_services)
 
     n_services = g_list_length (services);
     fail_unless (n_services == 1, "Got %d services, expecting 1", n_services);
-    ag_manager_list_free (services);
+    ag_service_list_free (services);
 
     services = ag_account_list_enabled_services (account3);
 
     n_services = g_list_length (services);
     fail_unless (n_services == 1, "Got %d services, expecting 1", n_services);
-    ag_manager_list_free (services);
+    ag_service_list_free (services);
 
     /* 2 services, 0 enabled  */
     account4 = ag_manager_create_account (manager, "maemo");
@@ -3658,7 +3671,7 @@ START_TEST(test_account_list_enabled_services)
     /* clear up */
     ag_service_unref (service1);
     ag_service_unref (service2);
-    ag_manager_list_free (services);
+    ag_service_list_free (services);
 
     g_object_unref (account2);
     g_object_unref (account3);
@@ -3702,6 +3715,8 @@ START_TEST(test_service_type)
     string = ag_service_type_get_i18n_domain (service_type);
     fail_unless (g_strcmp0 (string, "translation_file") == 0,
                  "Wrong service type i18n name: %s", string);
+
+    ag_service_type_unref (service_type);
 
     end_test ();
 }
