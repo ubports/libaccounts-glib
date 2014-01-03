@@ -571,6 +571,7 @@ check_signal_processed (AgManagerPrivate *priv, struct timespec *ts)
          list != NULL;
          list = g_list_nth (priv->processed_signals, 2))
     {
+        g_slice_free (ProcessedSignalData, list->data);
         priv->processed_signals = g_list_delete_link (priv->processed_signals,
                                                       list);
     }
