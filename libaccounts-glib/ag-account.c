@@ -2044,6 +2044,10 @@ ag_account_set_value (AgAccount *account, const gchar *key,
     }
 
     change_selected_service_value (priv, key, variant);
+    if (variant != NULL)
+    {
+        g_variant_unref (variant);
+    }
 }
 
 /**
