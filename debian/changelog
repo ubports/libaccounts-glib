@@ -1,3 +1,13 @@
+libaccounts-glib (1.16-0ubuntu1) UNRELEASED; urgency=medium
+
+  * New upstream release
+    - Deliver store events to D-Bus Account Manager when DB is R/O
+    - Fix all memory leaks reported by valgrind
+    - Allow running the test suite in a wrapper program such as gdb and
+      valgrind
+
+ -- Alberto Mardegan <alberto.mardegan@canonical.com>  Fri, 03 Jan 2014 18:33:21 +0200
+
 libaccounts-glib (1.15+14.04.20131126.2-0ubuntu1) trusty; urgency=low
 
   [ Alberto Mardegan ]

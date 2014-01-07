@@ -1,6 +1,7 @@
 usr/include/*
 usr/lib/*/lib*.so
 usr/lib/*/pkgconfig/*
+usr/share/dbus-1/interfaces/com.google.code.AccountsSSO.Accounts.Manager.xml
 usr/share/gir-1.0/Accounts-1.0.gir
 usr/share/vala/vapi
 usr/share/xml/accounts/schema/dtd/*.dtd

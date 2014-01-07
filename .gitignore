@@ -19,6 +19,7 @@ m4/lt*.m4
 patches
 stamp-h1
 *~
+*.bak
 *.core
 *.gcda
 *.gcno
@@ -41,3 +42,5 @@ stamp-h1
 /docs/reference/xml/
 /libaccounts-glib/ag-marshal.c
 /libaccounts-glib/ag-marshal.h
+/tests/test-manager.c
+/tests/test-manager.h
