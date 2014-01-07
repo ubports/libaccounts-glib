@@ -3079,7 +3079,7 @@ START_TEST(test_blocking)
      *
      * Instead, let's just check that we haven't been locking for too long.
      */
-    fail_unless (block_ms < timeout_ms + 2000);
+    fail_unless (block_ms < timeout_ms + 10000);
 
     end_test ();
 }
