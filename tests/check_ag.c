@@ -521,8 +521,8 @@ START_TEST(test_store_locked_cancel)
     main_loop = g_main_loop_new (NULL, FALSE);
     cancellable = g_cancellable_new ();
     ag_account_store_async (account, cancellable, account_store_locked_cancel_cb, &cb_called);
-    g_timeout_add (10, (GSourceFunc)cancel_store, cancellable);
-    g_timeout_add (20, (GSourceFunc)release_lock_cancel, db);
+    g_timeout_add (100, (GSourceFunc)cancel_store, cancellable);
+    g_timeout_add (200, (GSourceFunc)release_lock_cancel, db);
     fail_unless (main_loop != NULL, "Callback invoked too early");
     g_debug ("Running loop");
     g_main_loop_run (main_loop);
