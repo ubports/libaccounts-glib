@@ -2683,6 +2683,43 @@ START_TEST(test_watches)
 }
 END_TEST
 
+START_TEST(test_no_dbus)
+{
+    gchar *bus_address;
+    gboolean use_dbus = TRUE;
+
+    /* Unset the DBUS_SESSION_BUS_ADDRESS variable, so that the connection
+     * to D-Bus will fail.
+     */
+    bus_address = g_strdup (g_getenv ("DBUS_SESSION_BUS_ADDRESS"));
+    g_unsetenv("DBUS_SESSION_BUS_ADDRESS");
+
+    manager = g_initable_new (AG_TYPE_MANAGER, NULL, NULL,
+                              "use-dbus", FALSE,
+                              NULL);
+    ck_assert_msg (manager != NULL, "AgManager creation failed even "
+                   "with use-dbus set to FALSE");
+
+    g_object_get (manager, "use-dbus", &use_dbus, NULL);
+    ck_assert (!use_dbus);
+
+    /* Test creating an account */
+    account = ag_manager_create_account (manager, PROVIDER);
+    ag_account_set_enabled (account, TRUE);
+    ag_account_store (account, account_store_now_cb, TEST_STRING);
+    run_main_loop_for_n_seconds(0);
+    ck_assert_msg (data_stored, "Callback not invoked immediately");
+    ck_assert_msg (account->id != 0, "Account ID is still 0!");
+
+    /* Restore the initial value */
+    g_setenv ("DBUS_SESSION_BUS_ADDRESS", bus_address, TRUE);
+
+    g_free (bus_address);
+
+    end_test ();
+}
+END_TEST
+
 static void
 on_account_created (AgManager *manager, AgAccountId account_id,
                     AgAccountId *id)
@@ -3924,6 +3961,7 @@ ag_suite(const char *test_case)
         suite_add_tcase (s, tc);
 
     tc = tcase_create("Concurrency");
+    tcase_add_test (tc, test_no_dbus);
     tcase_add_test (tc, test_concurrency);
     tcase_add_test (tc, test_blocking);
     tcase_add_test (tc, test_manager_new_for_service_type);
