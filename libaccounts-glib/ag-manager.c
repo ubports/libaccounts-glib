@@ -159,7 +159,12 @@ typedef struct {
     struct timespec ts;
 } ProcessedSignalData;
 
-G_DEFINE_TYPE (AgManager, ag_manager, G_TYPE_OBJECT);
+static void ag_manager_initable_iface_init(gpointer g_iface,
+                                           gpointer iface_data);
+
+G_DEFINE_TYPE_WITH_CODE (AgManager, ag_manager, G_TYPE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
+                                            ag_manager_initable_iface_init));
 
 #define AG_MANAGER_PRIV(obj) (AG_MANAGER(obj)->priv)
 
@@ -1392,16 +1397,16 @@ add_typeless_match (AgManager *manager)
 }
 
 static gboolean
-setup_dbus (AgManager *manager)
+setup_dbus (AgManager *manager, GError **error)
 {
     AgManagerPrivate *priv = manager->priv;
-    GError *error = NULL;
+    GError *error_int = NULL;
 
-    priv->dbus_conn = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
-    if (G_UNLIKELY (error != NULL))
+    priv->dbus_conn = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error_int);
+    if (G_UNLIKELY (error_int != NULL))
     {
-        g_warning ("Failed to get D-Bus connection (%s)", error->message);
-        g_error_free (error);
+        g_warning ("Failed to get D-Bus connection (%s)", error_int->message);
+        g_propagate_error (error, error_int);
         return FALSE;
     }
 
@@ -1449,28 +1454,6 @@ ag_manager_init (AgManager *manager)
     priv->db_timeout = MAX_SQLITE_BUSY_LOOP_TIME_MS; /* 5 seconds */
 
     priv->object_paths = g_ptr_array_new_with_free_func (g_free);
-}
-
-static GObject *
-ag_manager_constructor (GType type, guint n_params,
-                        GObjectConstructParam *params)
-{
-    GObjectClass *object_class = (GObjectClass *)ag_manager_parent_class;
-    AgManager *manager;
-    GObject *object;
-
-    object = object_class->constructor (type, n_params, params);
-
-    g_return_val_if_fail (object != NULL, NULL);
-
-    manager = AG_MANAGER (object);
-    if (G_UNLIKELY (!open_db (manager) || !setup_dbus (manager)))
-    {
-        g_object_unref (object);
-        return NULL;
-    }
-
-    return object;
 }
 
 static void
@@ -1605,6 +1588,36 @@ ag_manager_finalize (GObject *object)
     G_OBJECT_CLASS (ag_manager_parent_class)->finalize (object);
 }
 
+static gboolean
+ag_manager_initable_init (GInitable *initable,
+                          G_GNUC_UNUSED GCancellable *cancellable,
+                          GError **error)
+{
+    AgManager *manager = AG_MANAGER (initable);
+
+    if (G_UNLIKELY (!open_db (manager)))
+    {
+        g_set_error_literal (error, AG_ACCOUNTS_ERROR, AG_ACCOUNTS_ERROR_DB,
+                             "Could not open accounts DB file");
+        return FALSE;
+    }
+
+    if (G_UNLIKELY (!setup_dbus (manager, error)))
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+static void
+ag_manager_initable_iface_init (gpointer g_iface,
+                                G_GNUC_UNUSED gpointer iface_data)
+{
+    GInitableIface *iface = (GInitableIface *)g_iface;
+    iface->init = ag_manager_initable_init;
+}
+
 static void
 ag_manager_account_deleted (AgManager *manager, AgAccountId id)
 {
@@ -1623,7 +1636,6 @@ ag_manager_class_init (AgManagerClass *klass)
     g_type_class_add_private (object_class, sizeof (AgManagerPrivate));
 
     klass->account_deleted = ag_manager_account_deleted;
-    object_class->constructor = ag_manager_constructor;
     object_class->dispose = ag_manager_dispose;
     object_class->get_property = ag_manager_get_property;
     object_class->set_property = ag_manager_set_property;
@@ -1759,7 +1771,8 @@ ag_manager_class_init (AgManagerClass *klass)
 AgManager *
 ag_manager_new ()
 {
-    return g_object_new (AG_TYPE_MANAGER, NULL);
+    return g_initable_new (AG_TYPE_MANAGER, NULL, NULL,
+                           NULL);
 }
 
 GList *
@@ -2592,14 +2605,11 @@ ag_manager_list_providers (AgManager *manager)
 AgManager *
 ag_manager_new_for_service_type (const gchar *service_type)
 {
-    AgManager *manager;
-
     g_return_val_if_fail (service_type != NULL, NULL);
 
-    manager = g_object_new (AG_TYPE_MANAGER, "service-type", service_type, NULL);
-    g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
-
-    return manager;
+    return g_initable_new (AG_TYPE_MANAGER, NULL, NULL,
+                           "service-type", service_type,
+                           NULL);
 }
 
 /**
