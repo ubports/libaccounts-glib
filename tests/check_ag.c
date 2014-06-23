@@ -225,6 +225,34 @@ START_TEST(test_init)
 }
 END_TEST
 
+START_TEST(test_timeout_properties)
+{
+    gboolean abort_on_db_timeout;
+    guint db_timeout;
+
+    manager = ag_manager_new ();
+    ck_assert (AG_IS_MANAGER (manager));
+
+    g_object_get (manager,
+                  "db-timeout", &db_timeout,
+                  "abort-on-db-timeout", &abort_on_db_timeout,
+                  NULL);
+
+    ck_assert (!abort_on_db_timeout);
+    ck_assert (!ag_manager_get_abort_on_db_timeout (manager));
+    ck_assert_uint_eq (db_timeout, ag_manager_get_db_timeout (manager));
+
+    g_object_set (manager,
+                  "db-timeout", 120,
+                  "abort_on_db_timeout", TRUE,
+                  NULL);
+    ck_assert (ag_manager_get_abort_on_db_timeout (manager));
+    ck_assert_uint_eq (ag_manager_get_db_timeout (manager), 120);
+
+    end_test ();
+}
+END_TEST
+
 START_TEST(test_object)
 {
     manager = ag_manager_new ();
@@ -3825,6 +3853,7 @@ ag_suite(const char *test_case)
 
     tc = tcase_create("Core");
     tcase_add_test (tc, test_init);
+    tcase_add_test (tc, test_timeout_properties);
     IF_TEST_CASE_ENABLED("Core")
         suite_add_tcase (s, tc);
 

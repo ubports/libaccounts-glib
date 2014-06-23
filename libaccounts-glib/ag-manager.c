@@ -78,7 +78,12 @@ enum
     PROP_0,
 
     PROP_SERVICE_TYPE,
+    PROP_DB_TIMEOUT,
+    PROP_ABORT_ON_DB_TIMEOUT,
+    N_PROPERTIES
 };
+
+static GParamSpec *properties[N_PROPERTIES];
 
 enum
 {
@@ -1480,6 +1485,12 @@ ag_manager_get_property (GObject *object, guint property_id,
     case PROP_SERVICE_TYPE:
         g_value_set_string (value, priv->service_type);
         break;
+    case PROP_DB_TIMEOUT:
+        g_value_set_uint (value, priv->db_timeout);
+        break;
+    case PROP_ABORT_ON_DB_TIMEOUT:
+        g_value_set_boolean (value, priv->abort_on_db_timeout);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
@@ -1498,6 +1509,12 @@ ag_manager_set_property (GObject *object, guint property_id,
     case PROP_SERVICE_TYPE:
         g_assert (priv->service_type == NULL);
         priv->service_type = g_value_dup_string (value);
+        break;
+    case PROP_DB_TIMEOUT:
+        priv->db_timeout = g_value_get_uint (value);
+        break;
+    case PROP_ABORT_ON_DB_TIMEOUT:
+        priv->abort_on_db_timeout = g_value_get_boolean (value);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -1619,11 +1636,37 @@ ag_manager_class_init (AgManagerClass *klass)
      * as ag_manager_list() and ag_manager_list_services(), will be restricted
      * to only affect accounts or services with that service type.
      */
-    g_object_class_install_property
-        (object_class, PROP_SERVICE_TYPE,
-         g_param_spec_string ("service-type", "service type", "Set service type",
-                              NULL,
-                              G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+    properties[PROP_SERVICE_TYPE] =
+        g_param_spec_string ("service-type", "service type", "Set service type",
+                             NULL,
+                             G_PARAM_STATIC_STRINGS |
+                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
+
+    /**
+     * AgManager:db-timeout:
+     *
+     * Timeout for database operations, in milliseconds.
+     */
+    properties[PROP_DB_TIMEOUT] =
+        g_param_spec_uint ("db-timeout", "DB timeout",
+                           "Timeout for DB operations (ms)",
+                           0, G_MAXUINT, MAX_SQLITE_BUSY_LOOP_TIME_MS,
+                           G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
+
+    /**
+     * AgManager:abort-on-db-timeout:
+     *
+     * Whether to abort the application when a database timeout occurs.
+     */
+    properties[PROP_ABORT_ON_DB_TIMEOUT] =
+        g_param_spec_boolean ("abort-on-db-timeout", "Abort on DB timeout",
+                              "Whether to abort the application on DB timeout",
+                              FALSE,
+                              G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
+
+    g_object_class_install_properties (object_class,
+                                       N_PROPERTIES,
+                                       properties);
 
     /**
      * AgManager::account-created:
