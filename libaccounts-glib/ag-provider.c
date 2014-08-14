@@ -441,7 +441,7 @@ ag_provider_get_plugin_name (AgProvider *provider)
 gboolean
 ag_provider_get_single_account (AgProvider *provider)
 {
-    g_return_val_if_fail (provider != NULL, NULL);
+    g_return_val_if_fail (provider != NULL, FALSE);
     return provider->single_account;
 }
 

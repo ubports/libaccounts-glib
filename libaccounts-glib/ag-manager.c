@@ -78,7 +78,13 @@ enum
     PROP_0,
 
     PROP_SERVICE_TYPE,
+    PROP_DB_TIMEOUT,
+    PROP_ABORT_ON_DB_TIMEOUT,
+    PROP_USE_DBUS,
+    N_PROPERTIES
 };
+
+static GParamSpec *properties[N_PROPERTIES];
 
 enum
 {
@@ -129,6 +135,7 @@ struct _AgManagerPrivate {
     guint db_timeout;
 
     guint abort_on_db_timeout : 1;
+    guint use_dbus : 1;
     guint is_disposed : 1;
     guint is_readonly : 1;
 
@@ -154,7 +161,12 @@ typedef struct {
     struct timespec ts;
 } ProcessedSignalData;
 
-G_DEFINE_TYPE (AgManager, ag_manager, G_TYPE_OBJECT);
+static void ag_manager_initable_iface_init(gpointer g_iface,
+                                           gpointer iface_data);
+
+G_DEFINE_TYPE_WITH_CODE (AgManager, ag_manager, G_TYPE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
+                                            ag_manager_initable_iface_init));
 
 #define AG_MANAGER_PRIV(obj) (AG_MANAGER(obj)->priv)
 
@@ -199,13 +211,24 @@ ag_manager_store_dbus_async (AgManager *manager, AgAccount *account,
                              GSimpleAsyncResult *async_result,
                              GCancellable *cancellable)
 {
+    AgManagerPrivate *priv = manager->priv;
     AgAccountChanges *changes;
     GVariant *dbus_changes;
+
+    if (G_UNLIKELY (!priv->use_dbus)) {
+        g_simple_async_result_set_error (async_result,
+                                         AG_ACCOUNTS_ERROR,
+                                         AG_ACCOUNTS_ERROR_READONLY,
+                                         "DB read-only and D-Bus disabled");
+        g_simple_async_result_complete_in_idle (async_result);
+        g_object_unref (async_result);
+        return;
+    }
 
     changes = _ag_account_steal_changes (account);
     dbus_changes = _ag_account_build_dbus_changes (account, changes, NULL);
 
-    g_dbus_connection_call (manager->priv->dbus_conn,
+    g_dbus_connection_call (priv->dbus_conn,
                             AG_MANAGER_SERVICE_NAME,
                             AG_MANAGER_OBJECT_PATH,
                             AG_MANAGER_INTERFACE,
@@ -225,14 +248,23 @@ static gboolean
 ag_manager_store_dbus_sync (AgManager *manager, AgAccount *account,
                             GError **error)
 {
+    AgManagerPrivate *priv = manager->priv;
     AgAccountChanges *changes;
     GVariant *dbus_changes;
     GError *error_int = NULL;
 
+    if (G_UNLIKELY (!priv->use_dbus)) {
+        g_set_error_literal (error,
+                             AG_ACCOUNTS_ERROR,
+                             AG_ACCOUNTS_ERROR_READONLY,
+                             "DB read-only and D-Bus disabled");
+        return FALSE;
+    }
+
     changes = _ag_account_steal_changes (account);
     dbus_changes = _ag_account_build_dbus_changes (account, changes, NULL);
 
-    g_dbus_connection_call_sync (manager->priv->dbus_conn,
+    g_dbus_connection_call_sync (priv->dbus_conn,
                             AG_MANAGER_SERVICE_NAME,
                             AG_MANAGER_OBJECT_PATH,
                             AG_MANAGER_INTERFACE,
@@ -972,8 +1004,11 @@ exec_transaction (AgManager *manager, AgAccount *account,
                              account);
     }
 
-    /* emit DBus signals to notify other processes */
-    signal_account_changes (manager, account, changes);
+    if (G_LIKELY (priv->use_dbus))
+    {
+        /* emit DBus signals to notify other processes */
+        signal_account_changes (manager, account, changes);
+    }
 
     updated = ag_manager_must_emit_updated(manager, changes);
 
@@ -1387,16 +1422,16 @@ add_typeless_match (AgManager *manager)
 }
 
 static gboolean
-setup_dbus (AgManager *manager)
+setup_dbus (AgManager *manager, GError **error)
 {
     AgManagerPrivate *priv = manager->priv;
-    GError *error = NULL;
+    GError *error_int = NULL;
 
-    priv->dbus_conn = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
-    if (G_UNLIKELY (error != NULL))
+    priv->dbus_conn = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error_int);
+    if (G_UNLIKELY (error_int != NULL))
     {
-        g_warning ("Failed to get D-Bus connection (%s)", error->message);
-        g_error_free (error);
+        g_warning ("Failed to get D-Bus connection (%s)", error_int->message);
+        g_propagate_error (error, error_int);
         return FALSE;
     }
 
@@ -1442,30 +1477,9 @@ ag_manager_init (AgManager *manager)
                                NULL, (GDestroyNotify)account_weak_unref);
 
     priv->db_timeout = MAX_SQLITE_BUSY_LOOP_TIME_MS; /* 5 seconds */
+    priv->use_dbus = TRUE;
 
     priv->object_paths = g_ptr_array_new_with_free_func (g_free);
-}
-
-static GObject *
-ag_manager_constructor (GType type, guint n_params,
-                        GObjectConstructParam *params)
-{
-    GObjectClass *object_class = (GObjectClass *)ag_manager_parent_class;
-    AgManager *manager;
-    GObject *object;
-
-    object = object_class->constructor (type, n_params, params);
-
-    g_return_val_if_fail (object != NULL, NULL);
-
-    manager = AG_MANAGER (object);
-    if (G_UNLIKELY (!open_db (manager) || !setup_dbus (manager)))
-    {
-        g_object_unref (object);
-        return NULL;
-    }
-
-    return object;
 }
 
 static void
@@ -1479,6 +1493,15 @@ ag_manager_get_property (GObject *object, guint property_id,
     {
     case PROP_SERVICE_TYPE:
         g_value_set_string (value, priv->service_type);
+        break;
+    case PROP_DB_TIMEOUT:
+        g_value_set_uint (value, priv->db_timeout);
+        break;
+    case PROP_ABORT_ON_DB_TIMEOUT:
+        g_value_set_boolean (value, priv->abort_on_db_timeout);
+        break;
+    case PROP_USE_DBUS:
+        g_value_set_boolean (value, priv->use_dbus);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -1498,6 +1521,15 @@ ag_manager_set_property (GObject *object, guint property_id,
     case PROP_SERVICE_TYPE:
         g_assert (priv->service_type == NULL);
         priv->service_type = g_value_dup_string (value);
+        break;
+    case PROP_DB_TIMEOUT:
+        priv->db_timeout = g_value_get_uint (value);
+        break;
+    case PROP_ABORT_ON_DB_TIMEOUT:
+        priv->abort_on_db_timeout = g_value_get_boolean (value);
+        break;
+    case PROP_USE_DBUS:
+        priv->use_dbus = g_value_get_boolean (value);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -1588,6 +1620,36 @@ ag_manager_finalize (GObject *object)
     G_OBJECT_CLASS (ag_manager_parent_class)->finalize (object);
 }
 
+static gboolean
+ag_manager_initable_init (GInitable *initable,
+                          G_GNUC_UNUSED GCancellable *cancellable,
+                          GError **error)
+{
+    AgManager *manager = AG_MANAGER (initable);
+
+    if (G_UNLIKELY (!open_db (manager)))
+    {
+        g_set_error_literal (error, AG_ACCOUNTS_ERROR, AG_ACCOUNTS_ERROR_DB,
+                             "Could not open accounts DB file");
+        return FALSE;
+    }
+
+    if (G_UNLIKELY (manager->priv->use_dbus && !setup_dbus (manager, error)))
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+static void
+ag_manager_initable_iface_init (gpointer g_iface,
+                                G_GNUC_UNUSED gpointer iface_data)
+{
+    GInitableIface *iface = (GInitableIface *)g_iface;
+    iface->init = ag_manager_initable_init;
+}
+
 static void
 ag_manager_account_deleted (AgManager *manager, AgAccountId id)
 {
@@ -1606,7 +1668,6 @@ ag_manager_class_init (AgManagerClass *klass)
     g_type_class_add_private (object_class, sizeof (AgManagerPrivate));
 
     klass->account_deleted = ag_manager_account_deleted;
-    object_class->constructor = ag_manager_constructor;
     object_class->dispose = ag_manager_dispose;
     object_class->get_property = ag_manager_get_property;
     object_class->set_property = ag_manager_set_property;
@@ -1619,11 +1680,53 @@ ag_manager_class_init (AgManagerClass *klass)
      * as ag_manager_list() and ag_manager_list_services(), will be restricted
      * to only affect accounts or services with that service type.
      */
-    g_object_class_install_property
-        (object_class, PROP_SERVICE_TYPE,
-         g_param_spec_string ("service-type", "service type", "Set service type",
-                              NULL,
-                              G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+    properties[PROP_SERVICE_TYPE] =
+        g_param_spec_string ("service-type", "service type", "Set service type",
+                             NULL,
+                             G_PARAM_STATIC_STRINGS |
+                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
+
+    /**
+     * AgManager:db-timeout:
+     *
+     * Timeout for database operations, in milliseconds.
+     */
+    properties[PROP_DB_TIMEOUT] =
+        g_param_spec_uint ("db-timeout", "DB timeout",
+                           "Timeout for DB operations (ms)",
+                           0, G_MAXUINT, MAX_SQLITE_BUSY_LOOP_TIME_MS,
+                           G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
+
+    /**
+     * AgManager:abort-on-db-timeout:
+     *
+     * Whether to abort the application when a database timeout occurs.
+     */
+    properties[PROP_ABORT_ON_DB_TIMEOUT] =
+        g_param_spec_boolean ("abort-on-db-timeout", "Abort on DB timeout",
+                              "Whether to abort the application on DB timeout",
+                              FALSE,
+                              G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
+
+    /**
+     * AgManager:use-dbus:
+     *
+     * Whether to use D-Bus for inter-process change notification. Setting this
+     * property to %FALSE causes libaccounts not to emit the change
+     * notification signals, and also not react to changes made by other
+     * processes. Disabling D-Bus is only meant to be used for specific cases,
+     * such as maintenance programs.
+     */
+    properties[PROP_USE_DBUS] =
+        g_param_spec_boolean ("use-dbus", "Use D-Bus",
+                              "Whether to use D-Bus for IPC",
+                              TRUE,
+                              G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE |
+                              G_PARAM_CONSTRUCT_ONLY);
+
+    g_object_class_install_properties (object_class,
+                                       N_PROPERTIES,
+                                       properties);
 
     /**
      * AgManager::account-created:
@@ -1716,7 +1819,8 @@ ag_manager_class_init (AgManagerClass *klass)
 AgManager *
 ag_manager_new ()
 {
-    return g_object_new (AG_TYPE_MANAGER, NULL);
+    return g_initable_new (AG_TYPE_MANAGER, NULL, NULL,
+                           NULL);
 }
 
 GList *
@@ -2549,14 +2653,11 @@ ag_manager_list_providers (AgManager *manager)
 AgManager *
 ag_manager_new_for_service_type (const gchar *service_type)
 {
-    AgManager *manager;
-
     g_return_val_if_fail (service_type != NULL, NULL);
 
-    manager = g_object_new (AG_TYPE_MANAGER, "service-type", service_type, NULL);
-    g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
-
-    return manager;
+    return g_initable_new (AG_TYPE_MANAGER, NULL, NULL,
+                           "service-type", service_type,
+                           NULL);
 }
 
 /**

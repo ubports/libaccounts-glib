@@ -1,5 +1,13 @@
 libaccounts-glib NEWS
 
+Version 1.17
+------------
+
+* Allow instantiation of AgManager with no D-Bus
+* Tests: increase timeout in test_store_locked_cancel
+* AgManager: expose DB timeout parameters as properties
+* Fix build with -Werror
+
 Version 1.16
 ------------
 
