@@ -1,12 +1,30 @@
-libaccounts-glib (1.16-0ubuntu1) UNRELEASED; urgency=medium
+libaccounts-glib (1.17-0ubuntu1) UNRELEASED; urgency=medium
 
   * New upstream release
     - Deliver store events to D-Bus Account Manager when DB is R/O
     - Fix all memory leaks reported by valgrind
     - Allow running the test suite in a wrapper program such as gdb and
       valgrind
+  * New upstream release
+    - Allow instantiation of AgManager with no D-Bus
+    - Tests: increase timeout in test_store_locked_cancel
+    - AgManager: expose DB timeout parameters as properties
+    - Fix build with -Werror
 
- -- Alberto Mardegan <alberto.mardegan@canonical.com>  Fri, 03 Jan 2014 18:33:21 +0200
+ -- Alberto Mardegan <alberto.mardegan@canonical.com>  Thu, 14 Aug 2014 15:47:39 +0300
+
+libaccounts-glib (1.15+14.04.20131126.2-0ubuntu3) trusty; urgency=medium
+
+  * Add multiarch annotations to libaccounts-glib0 and
+    libaccounts-glib-tools.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 21 Mar 2014 18:16:18 +0000
+
+libaccounts-glib (1.15+14.04.20131126.2-0ubuntu2) trusty; urgency=medium
+
+  * Rebuild to drop files installed into /usr/share/pyshared.
+
+ -- Matthias Klose <doko@ubuntu.com>  Sun, 23 Feb 2014 13:47:59 +0000
 
 libaccounts-glib (1.15+14.04.20131126.2-0ubuntu1) trusty; urgency=low
 
