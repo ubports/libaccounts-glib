@@ -1,5 +1,6 @@
-libaccounts-glib (1.17-0ubuntu1) UNRELEASED; urgency=medium
+libaccounts-glib (1.17+14.10.20140825-0ubuntu1) utopic; urgency=medium
 
+  [ Alberto Mardegan ]
   * New upstream release
     - Deliver store events to D-Bus Account Manager when DB is R/O
     - Fix all memory leaks reported by valgrind
@@ -11,7 +12,11 @@ libaccounts-glib (1.17-0ubuntu1) UNRELEASED; urgency=medium
     - AgManager: expose DB timeout parameters as properties
     - Fix build with -Werror
 
- -- Alberto Mardegan <alberto.mardegan@canonical.com>  Thu, 14 Aug 2014 15:47:39 +0300
+  [ Ken VanDine ]
+  * no longer build depend on libtool-bin, that split has been reverted
+    in the libtool package.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 25 Aug 2014 07:52:44 +0000
 
 libaccounts-glib (1.15+14.04.20131126.2-0ubuntu3) trusty; urgency=medium
 
