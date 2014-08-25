@@ -13,6 +13,19 @@ libaccounts-glib (1.17-0ubuntu1) UNRELEASED; urgency=medium
 
  -- Alberto Mardegan <alberto.mardegan@canonical.com>  Thu, 14 Aug 2014 15:47:39 +0300
 
+libaccounts-glib (1.15+14.04.20131126.2-0ubuntu3) trusty; urgency=medium
+
+  * Add multiarch annotations to libaccounts-glib0 and
+    libaccounts-glib-tools.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 21 Mar 2014 18:16:18 +0000
+
+libaccounts-glib (1.15+14.04.20131126.2-0ubuntu2) trusty; urgency=medium
+
+  * Rebuild to drop files installed into /usr/share/pyshared.
+
+ -- Matthias Klose <doko@ubuntu.com>  Sun, 23 Feb 2014 13:47:59 +0000
+
 libaccounts-glib (1.15+14.04.20131126.2-0ubuntu1) trusty; urgency=low
 
   [ Alberto Mardegan ]
