@@ -30,6 +30,16 @@ def _get_bool(self, key, default_value=None):
     else:
         return default_value
 
+class Manager(Accounts.Manager):
+    def __new__(cls):
+        # Since AgManager implements GInitable, g_object_new() doesn't
+        # initialize it properly
+        # See also: https://bugzilla.gnome.org/show_bug.cgi?id=724275
+        return Accounts.Manager.new()
+
+Manager = override(Manager)
+__all__.append('Manager')
+
 class Account(Accounts.Account):
     get_string = _get_string
     get_int = _get_int
