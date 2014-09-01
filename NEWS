@@ -1,5 +1,11 @@
 libaccounts-glib NEWS
 
+Version 1.18
+------------
+
+* Python: fix Accounts.Manager() constructor, which got broken when version
+  1.17 was released.
+
 Version 1.17
 ------------
 
