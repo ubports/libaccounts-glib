@@ -1,9 +1,10 @@
-libaccounts-glib (1.18-0ubuntu1) UNRELEASED; urgency=medium
+libaccounts-glib (1.18+14.10.20140901-0ubuntu1) utopic; urgency=medium
 
+  [ Alberto Mardegan ]
   * New upstream release
     - Python: fix the Accounts.Manager() constructor
 
- -- Alberto Mardegan <alberto.mardegan@canonical.com>  Mon, 01 Sep 2014 16:22:23 +0300
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 01 Sep 2014 14:59:16 +0000
 
 libaccounts-glib (1.17+14.10.20140825-0ubuntu1) utopic; urgency=medium
 
