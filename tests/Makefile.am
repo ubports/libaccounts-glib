@@ -51,10 +51,11 @@ BUILT_SOURCES = \
 	$(nodist_accounts_glib_testsuite_SOURCES)
 
 TESTS_ENVIRONMENT = \
-	DTDDIR=$(top_srcdir)/libaccounts-glib/ \
-	TESTDATADIR=$(top_srcdir)/tests/ \
-	TESTDIR=$(top_srcdir)/tests/ \
-	XMLLINT=$(XMLLINT)
+	DTDDIR=$(top_srcdir)/libaccounts-glib/; export DTDDIR; \
+	TESTDATADIR=$(top_srcdir)/tests/; export TESTDATADIR; \
+	TESTDIR=$(top_srcdir)/tests/; export TESTDIR; \
+	XMLLINT=$(XMLLINT); export XMLLINT; \
+	abs_top_builddir=$(abs_top_builddir); export abs_top_builddir;
 
 TESTS = $(dist_check_SCRIPTS)
 

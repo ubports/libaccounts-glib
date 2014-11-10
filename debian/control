@@ -7,7 +7,7 @@ Build-Depends: automake (>= 1:1.13),
                dbus-test-runner,
                debhelper (>= 9),
                dh-autoreconf,
-               gobject-introspection,
+               gobject-introspection (>= 1.41.4-1~),
                gtk-doc-tools,
                intltool,
                libgirepository1.0-dev,
@@ -55,6 +55,7 @@ Description: library for single signon
 Package: gir1.2-accounts-1.0
 Section: introspection
 Architecture: any
+Multi-Arch: same
 Depends: libaccounts-glib0 (= ${binary:Version}),
          ${gir:Depends},
          ${misc:Depends},
