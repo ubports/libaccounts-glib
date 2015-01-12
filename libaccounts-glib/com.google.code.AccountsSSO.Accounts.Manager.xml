@@ -42,6 +42,7 @@
       <arg name="deleted" type="b" direction="in"/>
       <arg name="provider" type="s" direction="in"/>
       <arg name="settings" type="a(ssua{sv}as)" direction="in"/>
+      <arg name="accountId" type="u" direction="out"/>
     </method>
   </interface>
 </node>
