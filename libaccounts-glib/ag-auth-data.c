@@ -320,7 +320,7 @@ ag_auth_data_insert_parameters (AgAuthData *self, GHashTable *parameters)
 /**
  * ag_auth_data_get_login_parameters:
  * @self: the #AgAuthData.
- * @extra_parameters: (transfer floating): a #GVariant containing
+ * @extra_parameters: (transfer floating) (allow-none): a #GVariant containing
  * client-specific authentication parameters to be added to the returned
  * dictionary.
  *

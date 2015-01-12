@@ -571,6 +571,7 @@ test_store_read_only_handle_store_cb (TestManager *test_manager,
                                       StoreCbData *store_data)
 {
     g_debug ("%s called", G_STRFUNC);
+    guint result_id = store_data->account_id;
 
     store_data->called = TRUE;
     store_data->account_id = account_id;
@@ -578,7 +579,7 @@ test_store_read_only_handle_store_cb (TestManager *test_manager,
     store_data->deleted = deleted;
     store_data->provider = g_strdup (provider);
     store_data->settings = g_variant_ref (settings);
-    test_manager_complete_store (test_manager, invocation);
+    test_manager_complete_store (test_manager, invocation, result_id);
     return TRUE;
 }
 
@@ -603,6 +604,8 @@ START_TEST(test_store_read_only)
     StoreCbData store_data = { 0 };
     GDBusObjectManagerServer *object_manager;
     GDBusConnection *conn;
+    const gchar *display_name = "My readonly account";
+    const AgAccountId expected_id = 4;
     GError *error = NULL;
     guint reg_id;
 
@@ -637,11 +640,15 @@ START_TEST(test_store_read_only)
     manager = ag_manager_new ();
     ck_assert (manager != NULL);
 
-    /* create an account, and expect a failure */
+    /* create an account, write its display name */
     account = ag_manager_create_account (manager, "fakebook");
     fail_unless (AG_IS_ACCOUNT (account),
                  "Failed to create the AgAccount.");
+    ag_account_set_display_name (account, display_name);
 
+    /* We want to verify that the local account will be updated with this
+     * ID */
+    store_data.account_id = expected_id;
     ag_account_store_async (account, NULL,
                             test_store_read_only_store_cb,
                             main_loop);
@@ -653,6 +660,11 @@ START_TEST(test_store_read_only)
     ck_assert_uint_eq (store_data.account_id, 0);
     ck_assert_str_eq (store_data.provider, "fakebook");
     store_cb_data_unset (&store_data);
+
+    ck_assert_uint_eq (account->id, expected_id);
+    const char *name = ag_account_get_display_name (account);
+    ck_assert (name != NULL);
+    ck_assert_str_eq (name, display_name);
 
     /* cleaning up */
     g_object_unref (object_manager);
