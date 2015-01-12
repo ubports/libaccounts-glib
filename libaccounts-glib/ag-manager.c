@@ -161,6 +161,8 @@ typedef struct {
     struct timespec ts;
 } ProcessedSignalData;
 
+static const gchar *key_remote_changes = "ag_remote_changes";
+
 static void ag_manager_initable_iface_init(gpointer g_iface,
                                            gpointer iface_data);
 
@@ -199,6 +201,21 @@ on_dbus_store_done (GObject *object, GAsyncResult *res,
     }
     else
     {
+        GObject *source =
+            g_async_result_get_source_object ((GAsyncResult *)async_result);
+        AgAccount *account = AG_ACCOUNT (source);
+        /* If this was a new account, we must update the local data
+         * structure */
+        if (account->id == 0 &&
+            g_variant_n_children (result) >= 1)
+        {
+            AgAccountChanges *changes;
+
+            g_variant_get_child (result, 0, "u", &account->id);
+            changes = g_object_get_data ((GObject *)async_result,
+                                         key_remote_changes);
+            _ag_account_done_changes (account, changes);
+        }
         g_variant_unref (result);
     }
 
@@ -227,6 +244,9 @@ ag_manager_store_dbus_async (AgManager *manager, AgAccount *account,
 
     changes = _ag_account_steal_changes (account);
     dbus_changes = _ag_account_build_dbus_changes (account, changes, NULL);
+    g_object_set_data_full ((GObject *)async_result,
+                            key_remote_changes, changes,
+                            (GDestroyNotify) _ag_account_changes_free);
 
     g_dbus_connection_call (priv->dbus_conn,
                             AG_MANAGER_SERVICE_NAME,
@@ -240,8 +260,6 @@ ag_manager_store_dbus_async (AgManager *manager, AgAccount *account,
                             cancellable,
                             (GAsyncReadyCallback)on_dbus_store_done,
                             async_result);
-
-    _ag_account_changes_free (changes);
 }
 
 static gboolean
@@ -251,6 +269,7 @@ ag_manager_store_dbus_sync (AgManager *manager, AgAccount *account,
     AgManagerPrivate *priv = manager->priv;
     AgAccountChanges *changes;
     GVariant *dbus_changes;
+    GVariant *result;
     GError *error_int = NULL;
 
     if (G_UNLIKELY (!priv->use_dbus)) {
@@ -264,19 +283,18 @@ ag_manager_store_dbus_sync (AgManager *manager, AgAccount *account,
     changes = _ag_account_steal_changes (account);
     dbus_changes = _ag_account_build_dbus_changes (account, changes, NULL);
 
-    g_dbus_connection_call_sync (priv->dbus_conn,
-                            AG_MANAGER_SERVICE_NAME,
-                            AG_MANAGER_OBJECT_PATH,
-                            AG_MANAGER_INTERFACE,
-                            "store",
-                            dbus_changes,
-                            NULL,
-                            G_DBUS_CALL_FLAGS_NONE,
-                            -1,
-                            NULL,
-                            &error_int);
-
-    _ag_account_changes_free (changes);
+    result =
+        g_dbus_connection_call_sync (priv->dbus_conn,
+                                     AG_MANAGER_SERVICE_NAME,
+                                     AG_MANAGER_OBJECT_PATH,
+                                     AG_MANAGER_INTERFACE,
+                                     "store",
+                                     dbus_changes,
+                                     NULL,
+                                     G_DBUS_CALL_FLAGS_NONE,
+                                     -1,
+                                     NULL,
+                                     &error_int);
 
     if (G_UNLIKELY (error_int))
     {
@@ -286,9 +304,18 @@ ag_manager_store_dbus_sync (AgManager *manager, AgAccount *account,
                              AG_ACCOUNTS_ERROR_READONLY,
                              error_int->message);
         g_error_free (error_int);
+        _ag_account_changes_free (changes);
         return FALSE;
     }
 
+    if (account->id == 0 &&
+        g_variant_n_children (result) >= 1)
+    {
+        g_variant_get_child (result, 0, "u", &account->id);
+        _ag_account_done_changes (account, changes);
+    }
+
+    _ag_account_changes_free (changes);
     return TRUE;
 }
 
