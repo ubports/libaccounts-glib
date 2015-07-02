@@ -24,12 +24,11 @@ AC_DEFUN([AC_TDD_GCOV],
 [
   AC_ARG_ENABLE(gcov,
   AS_HELP_STRING([--enable-gcov],
-		 [enable coverage testing with gcov]),
-  [use_gcov=yes], [use_gcov=no])
+		 [enable coverage testing with gcov]))
 
-  AM_CONDITIONAL(HAVE_GCOV, test "x$use_gcov" = "xyes")
+  AM_CONDITIONAL(HAVE_GCOV, test "x$enable_gcov" = "xyes")
 
-  if test "x$use_gcov" = "xyes"; then
+  if test "x$enable_gcov" = "xyes"; then
   # we need gcc:
   if test "$GCC" != "yes"; then
     AC_MSG_ERROR([GCC is required for --enable-gcov])
