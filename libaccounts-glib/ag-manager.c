@@ -517,7 +517,7 @@ static void
 set_error_from_db (AgManager *manager)
 {
     AgManagerPrivate *priv = manager->priv;
-    AgError code;
+    AgAccountsError code;
     GError *error;
 
     switch (sqlite3_errcode (priv->db))
