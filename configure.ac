@@ -69,17 +69,16 @@ AS_IF([test "x$have_check" = "xyes"],
                [testdatadir="$withval"],
                [testdatadir="\${pkgdatadir}/testdata"])
    AC_MSG_RESULT([$testdatadir])
-   AC_SUBST([testdatadir])
-
-   # gcov coverage reporting
-   m4_include([m4/gcov.m4])
-   AC_TDD_GCOV
-   AC_SUBST(COVERAGE_CFLAGS)
-   AC_SUBST(COVERAGE_CXXFLAGS)
-   AC_SUBST(COVERAGE_LDFLAGS)
-   ],
+   AC_SUBST([testdatadir])],
   [AS_IF([test "x$enable_tests" = "xyes"],
       [AC_MSG_ERROR([tests enabled but required dependencies were not found])])])
+
+# gcov coverage reporting
+m4_include([m4/gcov.m4])
+AC_TDD_GCOV
+AC_SUBST(COVERAGE_CFLAGS)
+AC_SUBST(COVERAGE_CXXFLAGS)
+AC_SUBST(COVERAGE_LDFLAGS)
 
 AM_CONDITIONAL([ENABLE_TESTS], [test "x$have_check" = "xyes"])
 
