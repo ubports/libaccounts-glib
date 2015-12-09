@@ -1,10 +1,10 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.64])
 AC_INIT([libaccounts-glib],
-        [1.18],
-        [http://code.google.com/p/accounts-sso/issues/entry],
+        [1.19],
+        [https://gitlab.com/accounts-sso/libaccounts-glib/issues],
         [libaccounts-glib],
-        [http://code.google.com/p/accounts-sso/])
+        [https://gitlab.com/accounts-sso/libaccounts-glib])
 
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
@@ -69,17 +69,16 @@ AS_IF([test "x$have_check" = "xyes"],
                [testdatadir="$withval"],
                [testdatadir="\${pkgdatadir}/testdata"])
    AC_MSG_RESULT([$testdatadir])
-   AC_SUBST([testdatadir])
-
-   # gcov coverage reporting
-   m4_include([m4/gcov.m4])
-   AC_TDD_GCOV
-   AC_SUBST(COVERAGE_CFLAGS)
-   AC_SUBST(COVERAGE_CXXFLAGS)
-   AC_SUBST(COVERAGE_LDFLAGS)
-   ],
+   AC_SUBST([testdatadir])],
   [AS_IF([test "x$enable_tests" = "xyes"],
       [AC_MSG_ERROR([tests enabled but required dependencies were not found])])])
+
+# gcov coverage reporting
+m4_include([m4/gcov.m4])
+AC_TDD_GCOV
+AC_SUBST(COVERAGE_CFLAGS)
+AC_SUBST(COVERAGE_CXXFLAGS)
+AC_SUBST(COVERAGE_LDFLAGS)
 
 AM_CONDITIONAL([ENABLE_TESTS], [test "x$have_check" = "xyes"])
 

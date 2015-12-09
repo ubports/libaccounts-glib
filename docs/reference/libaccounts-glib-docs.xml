@@ -10,7 +10,7 @@
     <releaseinfo>
       This document is for libaccounts-glib, version &version;. The latest
       version of this documentation can be built from the source code at
-      <ulink role="online-location" url="https://code.google.com/p/accounts-sso/source/checkout?repo=libaccounts-glib">https://code.google.com/p/accounts-sso/source/checkout?repo=libaccounts-glib</ulink>.
+      <ulink role="online-location" url="https://gitlab.com/accounts-sso/libaccounts-glib">https://gitlab.com/accounts-sso/libaccounts-glib</ulink>.
     </releaseinfo>
   </bookinfo>
 

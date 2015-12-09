@@ -1,3 +1,18 @@
+libaccounts-glib (1.19-0ubuntu1) UNRELEASED; urgency=medium
+
+  * New upstream release
+    - Build: ignore deprecations of GSimpleAsyncResult (LP: #1521226)
+    - Build: don't emit a build error on deprecations
+    - Coverage: allow lcov versions up to 1.11
+    - Build: fix handling of coverage flags
+    - Build: fix build errors when building with clang
+    - Update account ID after a remotely-executed store
+    - Vala: add allow-none and update VAPI file
+      https://code.google.com/p/accounts-sso/issues/detail?id=241
+    - Build: multiarch fixes
+
+ -- Alberto Mardegan <alberto.mardegan@canonical.com>  Wed, 09 Dec 2015 09:49:05 +0200
+
 libaccounts-glib (1.18+15.04.20141110-0ubuntu1) vivid; urgency=medium
 
   [ Iain Lane ]
