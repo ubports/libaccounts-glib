@@ -291,8 +291,10 @@ _ag_account_build_dbus_changes (AgAccount *account, AgAccountChanges *changes,
 
     if (ts)
     {
-        g_variant_builder_add (&builder, "u", ts->tv_sec);
-        g_variant_builder_add (&builder, "u", ts->tv_nsec);
+        guint32 sec = ts->tv_sec;
+        guint32 nsec = ts->tv_nsec;
+        g_variant_builder_add (&builder, "u", sec);
+        g_variant_builder_add (&builder, "u", nsec);
     }
     g_variant_builder_add (&builder, "u", account->id);
     g_variant_builder_add (&builder, "b", changes->created);
