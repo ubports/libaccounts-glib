@@ -699,16 +699,18 @@ dbus_filter_callback (G_GNUC_UNUSED GDBusConnection *dbus_conn,
     if (!object_path_is_interesting (object_path, priv->object_paths))
         return;
 
-    memset (&ts, 0, sizeof (struct timespec));
+    guint32 sec, nsec;
     g_variant_get (msg,
                    "(uuubb&s@*)",
-                   &ts.tv_sec,
-                   &ts.tv_nsec,
+                   &sec,
+                   &nsec,
                    &account_id,
                    &created,
                    &deleted,
                    &provider_name,
                    &v_services);
+    ts.tv_sec = sec;
+    ts.tv_nsec = nsec;
 
     DEBUG_INFO ("path = %s, time = %lu-%lu (%p)",
                 object_path, ts.tv_sec, ts.tv_nsec,
