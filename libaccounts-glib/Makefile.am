@@ -9,7 +9,7 @@ libaccounts_glib_la_CPPFLAGS = \
 libaccounts_glib_la_CFLAGS = \
 	$(LIBACCOUNTS_CFLAGS) \
 	$(COVERAGE_CFLAGS) \
-	-Wall -Werror
+	-Wall -Werror -Wno-error=deprecated-declarations
 libaccounts_glib_la_LIBADD = \
 	$(LIBACCOUNTS_LIBS)
 libaccounts_glib_la_LDFLAGS = \

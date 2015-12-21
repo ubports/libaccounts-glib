@@ -291,8 +291,10 @@ _ag_account_build_dbus_changes (AgAccount *account, AgAccountChanges *changes,
 
     if (ts)
     {
-        g_variant_builder_add (&builder, "u", ts->tv_sec);
-        g_variant_builder_add (&builder, "u", ts->tv_nsec);
+        guint32 sec = ts->tv_sec;
+        guint32 nsec = ts->tv_nsec;
+        g_variant_builder_add (&builder, "u", sec);
+        g_variant_builder_add (&builder, "u", nsec);
     }
     g_variant_builder_add (&builder, "u", account->id);
     g_variant_builder_add (&builder, "b", changes->created);
@@ -695,7 +697,9 @@ _ag_account_store_completed (AgAccount *account, AgAccountChanges *changes)
 {
     AgAccountPrivate *priv = account->priv;
 
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     g_simple_async_result_complete_in_idle (priv->store_async_result);
+G_GNUC_END_IGNORE_DEPRECATIONS
     g_clear_object (&priv->store_async_result);
 
     _ag_account_changes_free (changes);
@@ -2485,28 +2489,34 @@ ag_account_store_async (AgAccount *account, GCancellable *cancellable,
     if (G_UNLIKELY (priv->store_async_result != NULL))
     {
         g_critical ("ag_account_store_async called again before completion");
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
         g_simple_async_report_error_in_idle ((GObject *)account,
                                              callback, user_data,
                                              AG_ACCOUNTS_ERROR,
                                              AG_ACCOUNTS_ERROR_STORE_IN_PROGRESS,
                                              "Store operation already "
                                              "in progress");
+G_GNUC_END_IGNORE_DEPRECATIONS
         return;
     }
 
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     priv->store_async_result =
         g_simple_async_result_new ((GObject *)account,
                                    callback, user_data,
                                    ag_account_store_async);
     g_simple_async_result_set_check_cancellable (priv->store_async_result,
                                                  cancellable);
+G_GNUC_END_IGNORE_DEPRECATIONS
     g_object_add_weak_pointer ((GObject *)priv->store_async_result,
                                (gpointer *)&priv->store_async_result);
 
     if (G_UNLIKELY (priv->changes == NULL))
     {
         /* Nothing to do: invoke the callback immediately */
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
         g_simple_async_result_complete_in_idle (priv->store_async_result);
+G_GNUC_END_IGNORE_DEPRECATIONS
         g_clear_object (&priv->store_async_result);
         return;
     }
@@ -2537,7 +2547,9 @@ ag_account_store_finish (AgAccount *account, GAsyncResult *res,
     g_return_val_if_fail (AG_IS_ACCOUNT (account), FALSE);
 
     async_result = (GSimpleAsyncResult *)res;
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     return !g_simple_async_result_propagate_error (async_result, error);
+G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 /**

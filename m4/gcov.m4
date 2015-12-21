@@ -24,12 +24,11 @@ AC_DEFUN([AC_TDD_GCOV],
 [
   AC_ARG_ENABLE(gcov,
   AS_HELP_STRING([--enable-gcov],
-		 [enable coverage testing with gcov]),
-  [use_gcov=yes], [use_gcov=no])
+		 [enable coverage testing with gcov]))
 
-  AM_CONDITIONAL(HAVE_GCOV, test "x$use_gcov" = "xyes")
+  AM_CONDITIONAL(HAVE_GCOV, test "x$enable_gcov" = "xyes")
 
-  if test "x$use_gcov" = "xyes"; then
+  if test "x$enable_gcov" = "xyes"; then
   # we need gcc:
   if test "$GCC" != "yes"; then
     AC_MSG_ERROR([GCC is required for --enable-gcov])
@@ -47,7 +46,7 @@ AC_DEFUN([AC_TDD_GCOV],
     AC_MSG_ERROR([ccache must be disabled when --enable-gcov option is used. You can disable ccache by setting environment variable CCACHE_DISABLE=1.])
   fi
 
-  lcov_version_list="1.6 1.7 1.8 1.9"
+  lcov_version_list="1.6 1.7 1.8 1.9 1.10 1.11"
   AC_CHECK_PROG(LCOV, lcov, lcov)
   AC_CHECK_PROG(GENHTML, genhtml, genhtml)
 

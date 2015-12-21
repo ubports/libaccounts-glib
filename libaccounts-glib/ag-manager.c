@@ -187,6 +187,7 @@ on_dbus_store_done (GObject *object, GAsyncResult *res,
     GVariant *result;
     GError *error_int = NULL;
 
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     result = g_dbus_connection_call_finish (conn, res, &error_int);
     if (G_UNLIKELY (error_int))
     {
@@ -221,6 +222,7 @@ on_dbus_store_done (GObject *object, GAsyncResult *res,
 
     g_simple_async_result_complete_in_idle (async_result);
     g_object_unref (async_result);
+G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 static void
@@ -233,11 +235,13 @@ ag_manager_store_dbus_async (AgManager *manager, AgAccount *account,
     GVariant *dbus_changes;
 
     if (G_UNLIKELY (!priv->use_dbus)) {
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
         g_simple_async_result_set_error (async_result,
                                          AG_ACCOUNTS_ERROR,
                                          AG_ACCOUNTS_ERROR_READONLY,
                                          "DB read-only and D-Bus disabled");
         g_simple_async_result_complete_in_idle (async_result);
+G_GNUC_END_IGNORE_DEPRECATIONS
         g_object_unref (async_result);
         return;
     }
@@ -517,7 +521,7 @@ static void
 set_error_from_db (AgManager *manager)
 {
     AgManagerPrivate *priv = manager->priv;
-    AgError code;
+    AgAccountsError code;
     GError *error;
 
     switch (sqlite3_errcode (priv->db))
@@ -695,16 +699,18 @@ dbus_filter_callback (G_GNUC_UNUSED GDBusConnection *dbus_conn,
     if (!object_path_is_interesting (object_path, priv->object_paths))
         return;
 
-    memset (&ts, 0, sizeof (struct timespec));
+    guint32 sec, nsec;
     g_variant_get (msg,
                    "(uuubb&s@*)",
-                   &ts.tv_sec,
-                   &ts.tv_nsec,
+                   &sec,
+                   &nsec,
                    &account_id,
                    &created,
                    &deleted,
                    &provider_name,
                    &v_services);
+    ts.tv_sec = sec;
+    ts.tv_nsec = nsec;
 
     DEBUG_INFO ("path = %s, time = %lu-%lu (%p)",
                 object_path, ts.tv_sec, ts.tv_nsec,
@@ -1104,7 +1110,9 @@ exec_transaction_idle (StoreCbData *sd)
 finish:
     if (error != NULL)
     {
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
         g_simple_async_result_take_error (sd->async_result, error);
+G_GNUC_END_IGNORE_DEPRECATIONS
     }
 
     _ag_account_store_completed (account, sd->changes);
@@ -2409,7 +2417,9 @@ _ag_manager_exec_transaction (AgManager *manager, const gchar *sql,
 finish:
     if (error != NULL)
     {
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
         g_simple_async_result_take_error (async_result, error);
+G_GNUC_END_IGNORE_DEPRECATIONS
     }
 
     _ag_account_store_completed (account, changes);
@@ -2470,9 +2480,11 @@ ag_manager_store_local_async (AgManager *manager, AgAccount *account,
     sql = _ag_account_get_store_sql (account, &error);
     if (G_UNLIKELY (error))
     {
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
         g_simple_async_result_take_error (async_result,
                                           error);
         g_simple_async_result_complete_in_idle (async_result);
+G_GNUC_END_IGNORE_DEPRECATIONS
         g_object_unref (async_result);
         return;
     }
