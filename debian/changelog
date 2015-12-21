@@ -1,5 +1,6 @@
-libaccounts-glib (1.19-0ubuntu1) UNRELEASED; urgency=medium
+libaccounts-glib (1.19+16.04.20151221-0ubuntu1) xenial; urgency=medium
 
+  [ Alberto Mardegan ]
   * New upstream release
     - Build: ignore deprecations of GSimpleAsyncResult (LP: #1521226)
     - Build: don't emit a build error on deprecations
@@ -11,7 +12,10 @@ libaccounts-glib (1.19-0ubuntu1) UNRELEASED; urgency=medium
       https://code.google.com/p/accounts-sso/issues/detail?id=241
     - Build: multiarch fixes
 
- -- Alberto Mardegan <alberto.mardegan@canonical.com>  Wed, 09 Dec 2015 09:49:05 +0200
+  [ CI Train Bot ]
+  * No-change rebuild.
+
+ -- David Barth <david.barth@canonical.com>  Mon, 21 Dec 2015 08:57:48 +0000
 
 libaccounts-glib (1.18+15.04.20150116-0ubuntu1) vivid; urgency=low
 
