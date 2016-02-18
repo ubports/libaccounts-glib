@@ -52,7 +52,7 @@ BUILT_SOURCES = \
 
 TESTS_ENVIRONMENT = \
 	DTDDIR=$(top_srcdir)/libaccounts-glib/; export DTDDIR; \
-	TESTDATADIR=$(top_srcdir)/tests/; export TESTDATADIR; \
+	TESTDATADIR=$(top_srcdir)/tests/data; export TESTDATADIR; \
 	TESTDIR=$(top_srcdir)/tests/; export TESTDIR; \
 	XMLLINT=$(XMLLINT); export XMLLINT; \
 	abs_top_builddir=$(abs_top_builddir); export abs_top_builddir;
@@ -73,17 +73,17 @@ test_DATA = \
 	tests.xml
 
 dist_testdata_DATA = \
-	e-mail.service-type \
-	Gallery.application \
-	Mailer.application \
-	MyProvider.provider \
-	MyService.service \
-	MyService2.service \
-	OtherService.service \
-	maemo.provider
+	data/accounts/applications/Gallery.application \
+	data/accounts/applications/Mailer.application \
+	data/accounts/providers/MyProvider.provider \
+	data/accounts/providers/maemo.provider \
+	data/accounts/service-types/e-mail.service-type \
+	data/accounts/services/MyService.service \
+	data/accounts/services/MyService2.service \
+	data/accounts/services/OtherService.service
 
 nobase_dist_testdata_DATA = \
-	applications/Mailer.desktop
+	data/applications/Mailer.desktop
 
 installcheck-local: $(TESTS)
 	cd "$(testdir)" && TESTDATADIR="$(testdatadir)" ./accounts-glib-test.sh
