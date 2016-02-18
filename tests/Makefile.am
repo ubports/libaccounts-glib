@@ -76,6 +76,7 @@ dist_testdata_DATA = \
 	data/accounts/applications/Gallery.application \
 	data/accounts/applications/Mailer.application \
 	data/accounts/providers/MyProvider.provider \
+	data/accounts/providers/fake-os/MyProvider.provider \
 	data/accounts/providers/maemo.provider \
 	data/accounts/service-types/e-mail.service-type \
 	data/accounts/services/MyService.service \
