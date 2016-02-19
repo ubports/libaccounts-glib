@@ -190,6 +190,7 @@ AC_CONFIG_FILES([
 	docs/reference/version.xml
 	pygobject/Makefile
 	tests/Makefile
+	tests/data/Makefile
 	tools/Makefile
 ])
 AC_OUTPUT

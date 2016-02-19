@@ -1,5 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
+SUBDIRS = data
+
 AM_CPPFLAGS = -I$(top_srcdir)
 
 test_PROGRAMS = \
@@ -71,20 +73,6 @@ dist_noinst_DATA = \
 
 test_DATA = \
 	tests.xml
-
-dist_testdata_DATA = \
-	data/accounts/applications/Gallery.application \
-	data/accounts/applications/Mailer.application \
-	data/accounts/providers/MyProvider.provider \
-	data/accounts/providers/fake-os/MyProvider.provider \
-	data/accounts/providers/maemo.provider \
-	data/accounts/service-types/e-mail.service-type \
-	data/accounts/services/MyService.service \
-	data/accounts/services/MyService2.service \
-	data/accounts/services/OtherService.service
-
-nobase_dist_testdata_DATA = \
-	data/applications/Mailer.desktop
 
 installcheck-local: $(TESTS)
 	cd "$(testdir)" && TESTDATADIR="$(testdatadir)" ./accounts-glib-test.sh
