@@ -1,5 +1,34 @@
 libaccounts-glib NEWS
 
+Version 1.21
+------------
+
+* Fix installation of test data files
+
+Version 1.20
+------------
+
+* Support desktop-specific overrides for service and providers files:
+  desktops can define service and providers files in
+    /usr/share/accounts/{providers,services}/$XDG_CURRENT_DESKTOP
+  and these would override any files having the same name in the parent
+  (default) directory.
+* Fix endianness issues
+  https://gitlab.com/accounts-sso/libaccounts-glib/issues/2
+
+Version 1.19
+------------
+
+* Build: ignore deprecations of GSimpleAsyncResult
+* Build: don't emit a build error on deprecations
+* Coverage: allow lcov versions up to 1.11
+* Build: fix handling of coverage flags
+* Build: fix build errors when building with clang
+* Update account ID after a remotely-executed store
+* Vala: add allow-none and update VAPI file
+  https://code.google.com/p/accounts-sso/issues/detail?id=241
+* Build: multiarch fixes
+
 Version 1.18
 ------------
 

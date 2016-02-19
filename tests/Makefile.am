@@ -1,5 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
+SUBDIRS = data
+
 AM_CPPFLAGS = -I$(top_srcdir)
 
 test_PROGRAMS = \
@@ -52,7 +54,7 @@ BUILT_SOURCES = \
 
 TESTS_ENVIRONMENT = \
 	DTDDIR=$(top_srcdir)/libaccounts-glib/; export DTDDIR; \
-	TESTDATADIR=$(top_srcdir)/tests/; export TESTDATADIR; \
+	TESTDATADIR=$(top_srcdir)/tests/data; export TESTDATADIR; \
 	TESTDIR=$(top_srcdir)/tests/; export TESTDIR; \
 	XMLLINT=$(XMLLINT); export XMLLINT; \
 	abs_top_builddir=$(abs_top_builddir); export abs_top_builddir;
@@ -71,19 +73,6 @@ dist_noinst_DATA = \
 
 test_DATA = \
 	tests.xml
-
-dist_testdata_DATA = \
-	e-mail.service-type \
-	Gallery.application \
-	Mailer.application \
-	MyProvider.provider \
-	MyService.service \
-	MyService2.service \
-	OtherService.service \
-	maemo.provider
-
-nobase_dist_testdata_DATA = \
-	applications/Mailer.desktop
 
 installcheck-local: $(TESTS)
 	cd "$(testdir)" && TESTDATADIR="$(testdatadir)" ./accounts-glib-test.sh

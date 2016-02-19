@@ -384,7 +384,7 @@ list_data_files (AgManager *manager,
     GList *file_list;
     const gchar * const *dirs;
     const gchar *env_dirname, *datadir;
-    gchar *dirname;
+    gchar *dirname, *desktop_override = NULL;
 
     loaded_files = g_hash_table_new_full (g_str_hash, g_str_equal,
                                           g_free, NULL);
@@ -407,9 +407,23 @@ list_data_files (AgManager *manager,
         g_free (dirname);
     }
 
+    /* Check what desktop is this running on */
+    env_dirname = g_getenv ("XDG_CURRENT_DESKTOP");
+    if (env_dirname)
+        desktop_override = g_ascii_strdown (env_dirname, -1);
+
     dirs = g_get_system_data_dirs ();
     for (datadir = *dirs; datadir != NULL; dirs++, datadir = *dirs)
     {
+        /* Check first if desktop override files exist and if yes, load them first */
+        if (desktop_override)
+        {
+            dirname = g_build_filename (datadir, subdir, desktop_override, NULL);
+            add_data_files_from_dir (manager, dirname, loaded_files, suffix,
+                                     load_file_func);
+            g_free (dirname);
+        }
+
         dirname = g_build_filename (datadir, subdir, NULL);
         add_data_files_from_dir (manager, dirname, loaded_files, suffix,
                                  load_file_func);
@@ -419,6 +433,7 @@ list_data_files (AgManager *manager,
 finish:
     file_list = g_hash_table_get_values (loaded_files);
     g_hash_table_unref (loaded_files);
+    g_free (desktop_override);
 
     return file_list;
 }

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<provider id="MyProvider">
+  <name>FakeOs Provider</name>
+  <description>My Provider Description</description>
+  <translations>provider_i18n</translations>
+  <icon>general_myprovider</icon>
+  <domains>.*provider\.com</domains>
+</provider>

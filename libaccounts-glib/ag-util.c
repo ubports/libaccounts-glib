@@ -577,7 +577,7 @@ _ag_find_libaccounts_file (const gchar *file_id,
     const gchar * const *dirs;
     const gchar *dirname;
     const gchar *env_dirname;
-    gchar *filename, *filepath;
+    gchar *filename, *filepath, *desktop_override = NULL;
 
     filename = g_strconcat (file_id, suffix, NULL);
     env_dirname = g_getenv (env_var);
@@ -598,9 +598,22 @@ _ag_find_libaccounts_file (const gchar *file_id,
         g_free (filepath);
     }
 
+    /* Check what desktop is this running on */
+    env_dirname = g_getenv ("XDG_CURRENT_DESKTOP");
+    if (env_dirname)
+        desktop_override = g_ascii_strdown (env_dirname, -1);
+
     dirs = g_get_system_data_dirs ();
     for (dirname = *dirs; dirname != NULL; dirs++, dirname = *dirs)
     {
+        /* Check first if desktop override files exist and if yes, load them first */
+        if (desktop_override)
+        {
+            filepath = g_build_filename (dirname, subdir, desktop_override, filename, NULL);
+            if (g_file_test (filepath, G_FILE_TEST_IS_REGULAR))
+                goto found;
+            g_free (filepath);
+        }
         filepath = g_build_filename (dirname, subdir, filename, NULL);
         if (g_file_test (filepath, G_FILE_TEST_IS_REGULAR))
             goto found;
@@ -609,6 +622,7 @@ _ag_find_libaccounts_file (const gchar *file_id,
 
     filepath = NULL;
 found:
+    g_free (desktop_override);
     g_free (filename);
     return filepath;
 }
