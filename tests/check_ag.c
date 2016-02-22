@@ -416,6 +416,56 @@ START_TEST(test_provider_settings)
 }
 END_TEST
 
+START_TEST(test_provider_directories)
+{
+    AgProvider *provider;
+    gchar *ag_providers_env;
+    gchar *xdg_data_home_env, *xdg_data_dirs_env;
+
+    /* Unset the AG_PROVIDERS environment variable, just for this test, as
+     * that disables the fallback mechanism which we now want to test. */
+    ag_providers_env = g_strdup (g_getenv ("AG_PROVIDERS"));
+    g_unsetenv ("AG_PROVIDERS");
+    /* Disable also XDG_DATA_HOME, but reuse its value for XDG_DATA_DIRS
+     * which is where the fallback mechanism is implemented. */
+    xdg_data_home_env = g_strdup (g_getenv ("XDG_DATA_HOME"));
+    g_unsetenv ("XDG_DATA_HOME");
+    g_setenv ("XDG_DATA_DIRS", xdg_data_home_env, TRUE);
+
+    /* check that the expected MyProvider file is loaded */
+    g_unsetenv ("XDG_CURRENT_DESKTOP");
+    manager = ag_manager_new ();
+
+    provider = ag_manager_get_provider (manager, "MyProvider");
+    fail_unless (provider != NULL);
+    ck_assert_str_eq (ag_provider_get_name (provider), "MyProvider");
+    ck_assert_str_eq (ag_provider_get_display_name (provider), "My Provider");
+
+    ag_provider_unref (provider);
+    g_object_unref (manager);
+
+    /* Now check a desktop-specific override */
+    g_setenv ("XDG_CURRENT_DESKTOP", "Fake-OS", TRUE);
+    manager = ag_manager_new ();
+
+    provider = ag_manager_get_provider (manager, "MyProvider");
+    fail_unless (provider != NULL);
+    ck_assert_str_eq (ag_provider_get_name (provider), "MyProvider");
+    ck_assert_str_eq (ag_provider_get_display_name (provider), "FakeOs Provider");
+
+    ag_provider_unref (provider);
+    g_object_unref (manager);
+
+    g_unsetenv ("XDG_DATA_DIRS");
+    g_setenv ("XDG_DATA_HOME", xdg_data_home_env, TRUE);
+    g_free (xdg_data_home_env);
+    g_setenv ("AG_PROVIDERS", ag_providers_env, TRUE);
+    g_free (ag_providers_env);
+    manager = NULL;
+    end_test ();
+}
+END_TEST
+
 void account_store_cb (AgAccount *account, const GError *error,
                        gpointer user_data)
 {
@@ -3951,6 +4001,7 @@ ag_suite(const char *test_case)
     tc = tcase_create("Provider");
     tcase_add_test (tc, test_provider);
     tcase_add_test (tc, test_provider_settings);
+    tcase_add_test (tc, test_provider_directories);
     IF_TEST_CASE_ENABLED("Provider")
         suite_add_tcase (s, tc);
 

@@ -1,9 +1,9 @@
 #!/bin/sh
 
-export AG_APPLICATIONS=$TESTDATADIR
-export AG_SERVICES=$TESTDATADIR
-export AG_SERVICE_TYPES=$TESTDATADIR
-export AG_PROVIDERS=$TESTDATADIR
+export AG_APPLICATIONS=$TESTDATADIR/accounts/applications
+export AG_SERVICES=$TESTDATADIR/accounts/services
+export AG_SERVICE_TYPES=$TESTDATADIR/accounts/service-types
+export AG_PROVIDERS=$TESTDATADIR/accounts/providers
 export ACCOUNTS=/tmp/
 export AG_DEBUG=all
 export G_MESSAGES_DEBUG=all

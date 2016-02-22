@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.64])
 AC_INIT([libaccounts-glib],
-        [1.19],
+        [1.21],
         [https://gitlab.com/accounts-sso/libaccounts-glib/issues],
         [libaccounts-glib],
         [https://gitlab.com/accounts-sso/libaccounts-glib])
@@ -190,6 +190,7 @@ AC_CONFIG_FILES([
 	docs/reference/version.xml
 	pygobject/Makefile
 	tests/Makefile
+	tests/data/Makefile
 	tools/Makefile
 ])
 AC_OUTPUT
