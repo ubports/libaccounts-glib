@@ -1,5 +1,6 @@
-libaccounts-glib (1.21-0ubuntu1) UNRELEASED; urgency=medium
+libaccounts-glib (1.21+16.04.20160222-0ubuntu1) xenial; urgency=medium
 
+  [ Alberto Mardegan ]
   * New upstream release
     - Support desktop-specific overrides for service and providers files:
       desktops can define service and providers files in
@@ -9,7 +10,10 @@ libaccounts-glib (1.21-0ubuntu1) UNRELEASED; urgency=medium
     - Fix endianness issues
       https://gitlab.com/accounts-sso/libaccounts-glib/issues/2
 
- -- Alberto Mardegan <alberto.mardegan@canonical.com>  Fri, 19 Feb 2016 13:00:19 +0300
+  [ CI Train Bot ]
+  * No-change rebuild.
+
+ -- David Barth <david.barth@canonical.com>  Mon, 22 Feb 2016 09:12:58 +0000
 
 libaccounts-glib (1.19+16.04.20151221-0ubuntu1) xenial; urgency=medium
 
