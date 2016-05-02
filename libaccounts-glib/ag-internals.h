@@ -4,7 +4,7 @@
  * This file is part of libaccounts-glib
  *
  * Copyright (C) 2009-2010 Nokia Corporation.
- * Copyright (C) 2012-2013 Canonical Ltd.
+ * Copyright (C) 2012-2016 Canonical Ltd.
  * Copyright (C) 2012 Intel Corporation.
  *
  * Contact: Alberto Mardegan <alberto.mardegan@canonical.com>
@@ -95,8 +95,7 @@ G_GNUC_INTERNAL
 void _ag_manager_exec_transaction (AgManager *manager, const gchar *sql,
                                    AgAccountChanges *changes,
                                    AgAccount *account,
-                                   GSimpleAsyncResult *async_result,
-                                   GCancellable *cancellable);
+                                   GTask *task);
 
 typedef gboolean (*AgQueryCallback) (sqlite3_stmt *stmt, gpointer user_data);
 
@@ -125,8 +124,7 @@ guint _ag_manager_get_service_id (AgManager *manager, AgService *service);
 
 G_GNUC_INTERNAL
 void _ag_manager_store_async (AgManager *manager, AgAccount *account,
-                              GSimpleAsyncResult *async_result,
-                              GCancellable *cancellable);
+                              GTask *task);
 G_GNUC_INTERNAL
 gboolean _ag_manager_store_sync (AgManager *manager, AgAccount *account,
                                  GError **error);

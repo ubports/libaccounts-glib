@@ -4,7 +4,7 @@
  * This file is part of libaccounts-glib
  *
  * Copyright (C) 2009-2010 Nokia Corporation.
- * Copyright (C) 2012 Canonical Ltd.
+ * Copyright (C) 2012-2016 Canonical Ltd.
  *
  * Contact: Alberto Mardegan <alberto.mardegan@canonical.com>
  *
@@ -185,8 +185,8 @@ struct _AgAccountPrivate {
      */
     GHashTable *changes_for_watches;
 
-    /* GSimpleAsyncResult for the ag_account_store_async operation. */
-    GSimpleAsyncResult *store_async_result;
+    /* GTask for the ag_account_store_async operation. */
+    GTask *store_task;
 
     /* The "foreign" flag means that the account has been created by another
      * instance and we got informed about it from D-Bus. In this case, all the
@@ -697,10 +697,7 @@ _ag_account_store_completed (AgAccount *account, AgAccountChanges *changes)
 {
     AgAccountPrivate *priv = account->priv;
 
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-    g_simple_async_result_complete_in_idle (priv->store_async_result);
-G_GNUC_END_IGNORE_DEPRECATIONS
-    g_clear_object (&priv->store_async_result);
+    g_clear_object (&priv->store_task);
 
     _ag_account_changes_free (changes);
 }
@@ -2486,43 +2483,32 @@ ag_account_store_async (AgAccount *account, GCancellable *cancellable,
     g_return_if_fail (AG_IS_ACCOUNT (account));
     priv = account->priv;
 
-    if (G_UNLIKELY (priv->store_async_result != NULL))
+    if (G_UNLIKELY (priv->store_task != NULL))
     {
         g_critical ("ag_account_store_async called again before completion");
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-        g_simple_async_report_error_in_idle ((GObject *)account,
-                                             callback, user_data,
-                                             AG_ACCOUNTS_ERROR,
-                                             AG_ACCOUNTS_ERROR_STORE_IN_PROGRESS,
-                                             "Store operation already "
-                                             "in progress");
-G_GNUC_END_IGNORE_DEPRECATIONS
+        g_task_report_new_error (account,
+                                 callback, user_data,
+                                 ag_account_store_async,
+                                 AG_ACCOUNTS_ERROR,
+                                 AG_ACCOUNTS_ERROR_STORE_IN_PROGRESS,
+                                 "Store operation already in progress");
         return;
     }
 
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-    priv->store_async_result =
-        g_simple_async_result_new ((GObject *)account,
-                                   callback, user_data,
-                                   ag_account_store_async);
-    g_simple_async_result_set_check_cancellable (priv->store_async_result,
-                                                 cancellable);
-G_GNUC_END_IGNORE_DEPRECATIONS
-    g_object_add_weak_pointer ((GObject *)priv->store_async_result,
-                               (gpointer *)&priv->store_async_result);
+    priv->store_task =
+        g_task_new (account, cancellable, callback, user_data);
+    g_object_add_weak_pointer ((GObject *)priv->store_task,
+                               (gpointer *)&priv->store_task);
 
     if (G_UNLIKELY (priv->changes == NULL))
     {
         /* Nothing to do: invoke the callback immediately */
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-        g_simple_async_result_complete_in_idle (priv->store_async_result);
-G_GNUC_END_IGNORE_DEPRECATIONS
-        g_clear_object (&priv->store_async_result);
+        g_task_return_boolean (priv->store_task, TRUE);
+        g_clear_object (&priv->store_task);
         return;
     }
 
-    _ag_manager_store_async (priv->manager, account,
-                             priv->store_async_result, cancellable);
+    _ag_manager_store_async (priv->manager, account, priv->store_task);
 }
 
 /**
@@ -2542,14 +2528,9 @@ gboolean
 ag_account_store_finish (AgAccount *account, GAsyncResult *res,
                          GError **error)
 {
-    GSimpleAsyncResult *async_result;
-
     g_return_val_if_fail (AG_IS_ACCOUNT (account), FALSE);
 
-    async_result = (GSimpleAsyncResult *)res;
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-    return !g_simple_async_result_propagate_error (async_result, error);
-G_GNUC_END_IGNORE_DEPRECATIONS
+    return g_task_propagate_boolean (G_TASK (res), error);
 }
 
 /**
