@@ -4,7 +4,7 @@
  * This file is part of libaccounts-glib
  *
  * Copyright (C) 2009-2010 Nokia Corporation.
- * Copyright (C) 2012-2013 Canonical Ltd.
+ * Copyright (C) 2012-2016 Canonical Ltd.
  * Copyright (C) 2012 Intel Corporation.
  *
  * Contact: Alberto Mardegan <alberto.mardegan@canonical.com>
@@ -148,8 +148,7 @@ typedef struct {
     gchar *sql;
     AgAccountChanges *changes;
     guint id;
-    GSimpleAsyncResult *async_result;
-    GCancellable *cancellable;
+    GTask *task;
 } StoreCbData;
 
 typedef struct {
@@ -183,27 +182,23 @@ on_dbus_store_done (GObject *object, GAsyncResult *res,
                     gpointer user_data)
 {
     GDBusConnection *conn = G_DBUS_CONNECTION (object);
-    GSimpleAsyncResult *async_result = user_data;
+    GTask *task = user_data;
     GVariant *result;
     GError *error_int = NULL;
 
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     result = g_dbus_connection_call_finish (conn, res, &error_int);
     if (G_UNLIKELY (error_int))
     {
         /* We always report a read-only error here */
-        GError error = {
-            AG_ACCOUNTS_ERROR,
-            AG_ACCOUNTS_ERROR_READONLY,
-            error_int->message
-        };
-        g_simple_async_result_set_from_error (async_result, &error);
+        g_task_return_new_error (task,
+                                 AG_ACCOUNTS_ERROR,
+                                 AG_ACCOUNTS_ERROR_READONLY,
+                                 "%s", error_int->message);
         g_error_free (error_int);
     }
     else
     {
-        GObject *source =
-            g_async_result_get_source_object ((GAsyncResult *)async_result);
+        GObject *source = g_task_get_source_object (task);
         AgAccount *account = AG_ACCOUNT (source);
         /* If this was a new account, we must update the local data
          * structure */
@@ -213,42 +208,37 @@ G_GNUC_BEGIN_IGNORE_DEPRECATIONS
             AgAccountChanges *changes;
 
             g_variant_get_child (result, 0, "u", &account->id);
-            changes = g_object_get_data ((GObject *)async_result,
+            changes = g_object_get_data ((GObject *)task,
                                          key_remote_changes);
             _ag_account_done_changes (account, changes);
         }
         g_variant_unref (result);
+        g_task_return_boolean (task, TRUE);
     }
 
-    g_simple_async_result_complete_in_idle (async_result);
-    g_object_unref (async_result);
-G_GNUC_END_IGNORE_DEPRECATIONS
+    g_object_unref (task);
 }
 
 static void
 ag_manager_store_dbus_async (AgManager *manager, AgAccount *account,
-                             GSimpleAsyncResult *async_result,
-                             GCancellable *cancellable)
+                             GTask *task)
 {
     AgManagerPrivate *priv = manager->priv;
     AgAccountChanges *changes;
     GVariant *dbus_changes;
 
     if (G_UNLIKELY (!priv->use_dbus)) {
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-        g_simple_async_result_set_error (async_result,
-                                         AG_ACCOUNTS_ERROR,
-                                         AG_ACCOUNTS_ERROR_READONLY,
-                                         "DB read-only and D-Bus disabled");
-        g_simple_async_result_complete_in_idle (async_result);
-G_GNUC_END_IGNORE_DEPRECATIONS
-        g_object_unref (async_result);
+        g_task_return_new_error (task,
+                                 AG_ACCOUNTS_ERROR,
+                                 AG_ACCOUNTS_ERROR_READONLY,
+                                 "DB read-only and D-Bus disabled");
+        g_object_unref (task);
         return;
     }
 
     changes = _ag_account_steal_changes (account);
     dbus_changes = _ag_account_build_dbus_changes (account, changes, NULL);
-    g_object_set_data_full ((GObject *)async_result,
+    g_object_set_data_full ((GObject *)task,
                             key_remote_changes, changes,
                             (GDestroyNotify) _ag_account_changes_free);
 
@@ -261,9 +251,9 @@ G_GNUC_END_IGNORE_DEPRECATIONS
                             NULL,
                             G_DBUS_CALL_FLAGS_NONE,
                             -1,
-                            cancellable,
+                            g_task_get_cancellable (task),
                             (GAsyncReadyCallback)on_dbus_store_done,
-                            async_result);
+                            task);
 }
 
 static gboolean
@@ -1095,11 +1085,9 @@ exec_transaction_idle (StoreCbData *sd)
     g_object_ref (account);
 
     /* If the operation was cancelled, abort it. */
-    if (sd->cancellable != NULL)
+    if (g_task_return_error_if_cancelled (sd->task))
     {
-        g_cancellable_set_error_if_cancelled (sd->cancellable, &error);
-        if (error != NULL)
-            goto finish;
+        goto finish;
     }
 
     g_return_val_if_fail (priv->begin_stmt != NULL, FALSE);
@@ -1125,9 +1113,11 @@ exec_transaction_idle (StoreCbData *sd)
 finish:
     if (error != NULL)
     {
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-        g_simple_async_result_take_error (sd->async_result, error);
-G_GNUC_END_IGNORE_DEPRECATIONS
+        g_task_return_error (sd->task, error);
+    }
+    else
+    {
+        g_task_return_boolean (sd->task, TRUE);
     }
 
     _ag_account_store_completed (account, sd->changes);
@@ -2390,8 +2380,7 @@ sqlite_error_to_gerror (int db_error, sqlite3 *db)
 void
 _ag_manager_exec_transaction (AgManager *manager, const gchar *sql,
                               AgAccountChanges *changes, AgAccount *account,
-                              GSimpleAsyncResult *async_result,
-                              GCancellable *cancellable)
+                              GTask *task)
 {
     AgManagerPrivate *priv = manager->priv;
     GError *error = NULL;
@@ -2413,8 +2402,7 @@ _ag_manager_exec_transaction (AgManager *manager, const gchar *sql,
         sd->manager = manager;
         sd->account = account;
         sd->changes = changes;
-        sd->async_result = async_result;
-        sd->cancellable = cancellable;
+        sd->task = task;
         sd->sql = g_strdup (sql);
         sd->id = g_idle_add ((GSourceFunc)exec_transaction_idle, sd);
         priv->locks = g_list_prepend (priv->locks, sd);
@@ -2432,9 +2420,11 @@ _ag_manager_exec_transaction (AgManager *manager, const gchar *sql,
 finish:
     if (error != NULL)
     {
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-        g_simple_async_result_take_error (async_result, error);
-G_GNUC_END_IGNORE_DEPRECATIONS
+        g_task_return_error (task, error);
+    }
+    else
+    {
+        g_task_return_boolean (task, TRUE);
     }
 
     _ag_account_store_completed (account, changes);
@@ -2485,8 +2475,7 @@ _ag_manager_exec_transaction_blocking (AgManager *manager, const gchar *sql,
 
 static void
 ag_manager_store_local_async (AgManager *manager, AgAccount *account,
-                              GSimpleAsyncResult *async_result,
-                              GCancellable *cancellable)
+                              GTask *task)
 {
     AgAccountChanges *changes;
     GError *error = NULL;
@@ -2495,19 +2484,14 @@ ag_manager_store_local_async (AgManager *manager, AgAccount *account,
     sql = _ag_account_get_store_sql (account, &error);
     if (G_UNLIKELY (error))
     {
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-        g_simple_async_result_take_error (async_result,
-                                          error);
-        g_simple_async_result_complete_in_idle (async_result);
-G_GNUC_END_IGNORE_DEPRECATIONS
-        g_object_unref (async_result);
+        g_task_return_error (task, error);
+        g_object_unref (task);
         return;
     }
 
     changes = _ag_account_steal_changes (account);
 
-    _ag_manager_exec_transaction (manager, sql, changes, account,
-                                  async_result, cancellable);
+    _ag_manager_exec_transaction (manager, sql, changes, account, task);
     g_free (sql);
 }
 
@@ -2547,18 +2531,15 @@ ag_manager_store_local_sync (AgManager *manager, AgAccount *account,
 
 void
 _ag_manager_store_async (AgManager *manager, AgAccount *account,
-                         GSimpleAsyncResult *async_result,
-                         GCancellable *cancellable)
+                         GTask *task)
 {
     if (manager->priv->is_readonly)
     {
-        ag_manager_store_dbus_async (manager, account, async_result,
-                                     cancellable);
+        ag_manager_store_dbus_async (manager, account, task);
     }
     else
     {
-        ag_manager_store_local_async (manager, account, async_result,
-                                      cancellable);
+        ag_manager_store_local_async (manager, account, task);
     }
 }
 
