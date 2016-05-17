@@ -34,3 +34,18 @@ test_amd64:
     - sudo -u tester make coverage-html
   dependencies:
     - build_amd64
+  artifacts:
+    paths:
+      - ./
+
+pages:
+  stage: deploy
+  script:
+    - mkdir public
+    - cp -a build/coveragereport public/coverage
+    - cp -a build/docs/reference/html/* public/
+  dependencies:
+    - test_amd64
+  artifacts:
+    paths:
+      - public
