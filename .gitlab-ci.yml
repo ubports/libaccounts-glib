@@ -1,0 +1,36 @@
+image: ubuntu:xenial
+
+cache:
+  key: apt-cache
+  paths:
+  - apt-cache/
+
+before_script:
+  - export APT_CACHE_DIR=`pwd`/apt-cache && mkdir -pv $APT_CACHE_DIR
+  - apt-get update -yq && apt-get -o dir::cache::archives="$APT_CACHE_DIR" install -yq automake autotools-dev gobject-introspection gtk-doc-tools intltool libgirepository1.0-dev libglib2.0-dev libsqlite3-dev libtool libxml2-dev libxml2-utils python3 python3-gi python-gi-dev
+  - apt-get -o dir::cache::archives="$APT_CACHE_DIR" install -yq check dbus-test-runner lcov gcovr
+  - apt-get -o dir::cache::archives="$APT_CACHE_DIR" install -yq sudo
+  - useradd -m tester
+  - adduser tester sudo
+
+build_amd64:
+  stage: build
+  script:
+    - export PYTHON=python3
+    - mkdir build
+    - cd build
+    - ../autogen.sh --enable-gtk-doc --enable-gcov --enable-debug --enable-python --disable-wal
+    - make -j 4
+  artifacts:
+    paths:
+      - ./
+
+test_amd64:
+  stage: test
+  script:
+    - cd build
+    - chmod a+rw -R .
+    - sudo -u tester make check || (cat tests/test-suite.log && /bin/false)
+    - sudo -u tester make coverage-html
+  dependencies:
+    - build_amd64
