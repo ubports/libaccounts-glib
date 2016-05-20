@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.64])
 AC_INIT([libaccounts-glib],
-        [1.21],
+        [1.22],
         [https://gitlab.com/accounts-sso/libaccounts-glib/issues],
         [libaccounts-glib],
         [https://gitlab.com/accounts-sso/libaccounts-glib])
@@ -25,7 +25,7 @@ LT_INIT([disable-static])
 GOBJECT_INTROSPECTION_CHECK([1.30.0])
 
 LIBACCOUNTS_REQUIRED="glib-2.0 >= 2.26
-     gio-2.0 >= 2.30
+     gio-2.0 >= 2.36
      gio-unix-2.0
      gobject-2.0 >= 2.35.1
      libxml-2.0

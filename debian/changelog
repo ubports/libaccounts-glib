@@ -1,3 +1,12 @@
+libaccounts-glib (1.22-0ubuntu1) UNRELEASED; urgency=medium
+
+  * New upstream release
+    - Lib: migrate to GTask (LP: #1577373)
+    - Build: enable CI in gitlab
+    - Build: add support for lcov 1.12
+
+ -- Alberto Mardegan <alberto.mardegan@canonical.com>  Fri, 20 May 2016 11:54:22 +0300
+
 libaccounts-glib (1.21+16.04.20160222-0ubuntu1) xenial; urgency=medium
 
   [ Alberto Mardegan ]

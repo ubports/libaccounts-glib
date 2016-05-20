@@ -1,5 +1,12 @@
 libaccounts-glib NEWS
 
+Version 1.22
+------------
+
+* Lib: migrate to GTask
+* Build: enable CI in gitlab
+* Build: add support for lcov 1.12
+
 Version 1.21
 ------------
 
