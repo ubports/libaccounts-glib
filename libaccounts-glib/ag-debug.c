@@ -4,6 +4,7 @@
  * This file is part of libaccounts-glib
  *
  * Copyright (C) 2010 Nokia Corporation.
+ * Copyright (C) 2012-2016 Canonical Ltd.
  *
  * Contact: Alberto Mardegan <alberto.mardegan@canonical.com>
  *
