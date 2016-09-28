@@ -1625,6 +1625,8 @@ START_TEST(test_application)
                             "mailer-catalog") == 0);
     fail_unless (g_strcmp0 (ag_application_get_description (application),
                             "Mailer application") == 0);
+    ck_assert (ag_application_supports_service (application, email_service));
+    ck_assert (!ag_application_supports_service (application, sharing_service));
     fail_unless (g_strcmp0 (ag_application_get_service_usage (application,
                                                               email_service),
                             "Mailer can retrieve your e-mails") == 0);
@@ -1647,6 +1649,8 @@ START_TEST(test_application)
                             "Gallery") == 0);
     fail_unless (g_strcmp0 (ag_application_get_description (application),
                             "Image gallery") == 0);
+    ck_assert (!ag_application_supports_service (application, email_service));
+    ck_assert (ag_application_supports_service (application, sharing_service));
     fail_unless (g_strcmp0 (ag_application_get_service_usage (application,
                                                               sharing_service),
                             "Publish images on OtherService") == 0);
@@ -1655,6 +1659,46 @@ START_TEST(test_application)
 
     ag_service_unref (email_service);
     ag_service_unref (sharing_service);
+
+    end_test ();
+}
+END_TEST
+
+START_TEST(test_application_supported_services)
+{
+    AgService *email_service, *sharing_service;
+    AgApplication *application;
+    GList *list;
+    gint i;
+
+    manager = ag_manager_new ();
+
+    application = ag_manager_get_application (manager, "Mailer");
+    ck_assert (application != NULL);
+
+    list = ag_manager_list_services_by_application (manager, application);
+    ck_assert (list != NULL);
+    ck_assert_int_eq (g_list_length (list), 1);
+
+    email_service = list->data;
+    ck_assert (email_service != NULL);
+    ck_assert_str_eq (ag_service_get_name (email_service), "MyService");
+
+    ag_application_unref (application);
+    ag_service_list_free (list);
+
+    application = ag_manager_get_application (manager, "Gallery");
+    ck_assert (application != NULL);
+
+    list = ag_manager_list_services_by_application (manager, application);
+    ck_assert (list != NULL);
+    ck_assert_int_eq (g_list_length (list), 1);
+
+    email_service = list->data;
+    ck_assert_str_eq (ag_service_get_name (email_service), "OtherService");
+
+    ag_application_unref (application);
+    ag_service_list_free (list);
 
     end_test ();
 }
@@ -4039,6 +4083,7 @@ ag_suite(const char *test_case)
 
     tc = tcase_create("Application");
     tcase_add_test (tc, test_application);
+    tcase_add_test (tc, test_application_supported_services);
     IF_TEST_CASE_ENABLED("Application")
         suite_add_tcase (s, tc);
 
