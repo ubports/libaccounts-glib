@@ -1,5 +1,12 @@
 libaccounts-glib NEWS
 
+Version 1.23
+------------
+
+* Add a couple of methods related to .application files:
+  ag_manager_list_services_by_application() and
+  ag_application_supports_service().
+
 Version 1.22
 ------------
 

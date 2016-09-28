@@ -14,7 +14,7 @@ libaccounts_glib_la_LIBADD = \
 	$(LIBACCOUNTS_LIBS)
 libaccounts_glib_la_LDFLAGS = \
 	$(COVERAGE_LDFLAGS) \
-	-version-info 1:3:1 \
+	-version-info 2:0:2 \
 	--no-allow-shlib-undefined \
 	-export-symbols-regex '^ag_'
 
