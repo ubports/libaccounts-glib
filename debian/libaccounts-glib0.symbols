@@ -55,6 +55,7 @@ libaccounts-glib.so.0 libaccounts-glib0 #MINVER#
  ag_application_get_service_usage@Base 1.0
  ag_application_get_type@Base 1.0
  ag_application_ref@Base 1.0
+ ag_application_supports_service@Base 1.23
  ag_application_unref@Base 1.0
  ag_auth_data_get_credentials_id@Base 1.0
  ag_auth_data_get_login_parameters@Base 1.4
@@ -86,6 +87,7 @@ libaccounts-glib.so.0 libaccounts-glib0 #MINVER#
  ag_manager_list_providers@Base 1.0
  ag_manager_list_service_types@Base 1.0
  ag_manager_list_services@Base 1.0
+ ag_manager_list_services_by_application@Base 1.23
  ag_manager_list_services_by_type@Base 1.0
  ag_manager_load_account@Base 1.0
  ag_manager_load_service_type@Base 1.0
