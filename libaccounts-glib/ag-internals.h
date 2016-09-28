@@ -222,9 +222,8 @@ AgAuthData *_ag_auth_data_new (AgAccount *account, AgService *service);
 G_GNUC_INTERNAL
 AgApplication *_ag_application_new_from_file (const gchar *application_name);
 
-/* Application functions */
 G_GNUC_INTERNAL
-gboolean _ag_application_supports_service (AgApplication *self,
-                                           AgService *service);
+GList *_ag_application_list_supported_services (AgApplication *self,
+                                                AgManager *manager);
 
 #endif /* _AG_INTERNALS_H_ */

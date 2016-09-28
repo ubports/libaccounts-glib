@@ -3,7 +3,7 @@
 /*
  * This file is part of libaccounts-glib
  *
- * Copyright (C) 2012 Canonical Ltd.
+ * Copyright (C) 2012-2016 Canonical Ltd.
  *
  * Contact: Alberto Mardegan <alberto.mardegan@canonical.com>
  *
@@ -39,6 +39,8 @@ const gchar *ag_application_get_i18n_domain (AgApplication *self);
 
 GDesktopAppInfo *ag_application_get_desktop_app_info (AgApplication *self);
 
+gboolean ag_application_supports_service (AgApplication *self,
+                                          AgService *service);
 const gchar *ag_application_get_service_usage(AgApplication *self,
                                               AgService *service);
 

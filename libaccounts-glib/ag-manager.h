@@ -4,7 +4,7 @@
  * This file is part of libaccounts-glib
  *
  * Copyright (C) 2009-2010 Nokia Corporation.
- * Copyright (C) 2012 Canonical Ltd.
+ * Copyright (C) 2012-2016 Canonical Ltd.
  * Copyright (C) 2012 Intel Corporation.
  *
  * Contact: Alberto Mardegan <alberto.mardegan@canonical.com>
@@ -95,6 +95,8 @@ AgService *ag_manager_get_service (AgManager *manager,
 GList *ag_manager_list_services (AgManager *manager);
 GList *ag_manager_list_services_by_type (AgManager *manager,
                                          const gchar *service_type);
+GList *ag_manager_list_services_by_application (AgManager *manager,
+                                                AgApplication *application);
 GList *ag_manager_list_enabled (AgManager *manager);
 GList *ag_manager_list_enabled_by_service_type (AgManager *manager,
                                                 const gchar *service_type);
