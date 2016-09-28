@@ -1,3 +1,12 @@
+libaccounts-glib (1.23-0ubuntu1) UNRELEASED; urgency=medium
+
+  * New upstream release
+    - Add a couple of methods related to .application files:
+      ag_manager_list_services_by_application() and
+      ag_application_supports_service().
+
+ -- Alberto Mardegan <alberto.mardegan@canonical.com>  Wed, 28 Sep 2016 10:55:30 +0300
+
 libaccounts-glib (1.22+16.10.20160520.2-0ubuntu1) yakkety; urgency=medium
 
   [ Alberto Mardegan ]
