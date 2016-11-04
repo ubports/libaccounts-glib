@@ -3,7 +3,7 @@
 /*
  * This file is part of libaccounts-glib
  *
- * Copyright (C) 2012 Canonical Ltd.
+ * Copyright (C) 2012-2016 Canonical Ltd.
  *
  * Contact: Alberto Mardegan <alberto.mardegan@canonical.com>
  *
@@ -157,6 +157,8 @@ parse_item (xmlTextReaderPtr reader, GHashTable *hash_table,
 
     item = g_slice_new0 (AgApplicationItem);
     g_hash_table_insert (hash_table, item_id, item);
+
+    if (xmlTextReaderIsEmptyElement (reader)) return TRUE;
 
     ret = xmlTextReaderRead (reader);
     while (ret == 1)
@@ -365,6 +367,13 @@ err_reader:
     return ret;
 }
 
+static gint compare_service_name (gconstpointer a, gconstpointer b)
+{
+    AgService *service = (AgService *)a;
+    const gchar *name = b;
+    return g_strcmp0 (ag_service_get_name (service), name);
+}
+
 AgApplication *
 _ag_application_new_from_file (const gchar *application_name)
 {
@@ -383,10 +392,42 @@ _ag_application_new_from_file (const gchar *application_name)
     return application;
 }
 
-gboolean
-_ag_application_supports_service (AgApplication *self, AgService *service)
+GList *
+_ag_application_list_supported_services (AgApplication *self, AgManager *manager)
 {
-    return _ag_application_get_service_item (self, service) != NULL;
+    GHashTableIter iter;
+    GList *ret = NULL;
+    gchar *key;
+    AgService *service;
+
+    g_return_val_if_fail (self != NULL, NULL);
+
+    if (self->service_types)
+    {
+        g_hash_table_iter_init (&iter, self->service_types);
+        while (g_hash_table_iter_next (&iter, (gpointer)&key, NULL))
+        {
+            GList *services = ag_manager_list_services_by_type (manager, key);
+            ret = g_list_concat (ret, services);
+        }
+    }
+
+    if (self->services)
+    {
+        g_hash_table_iter_init (&iter, self->services);
+        while (g_hash_table_iter_next (&iter, (gpointer)&key, NULL))
+        {
+            if (g_list_find_custom (ret, key, compare_service_name)) continue;
+
+            service = ag_manager_get_service (manager, key);
+            if (service)
+            {
+                ret = g_list_prepend (ret, service);
+            }
+        }
+    }
+
+    return ret;
 }
 
 /**
@@ -460,6 +501,28 @@ ag_application_get_desktop_app_info (AgApplication *self)
     _ag_application_ensure_desktop_app_info (self);
     return self->desktop_app_info != NULL ?
         g_object_ref (self->desktop_app_info) : NULL;
+}
+
+/**
+ * ag_application_supports_service:
+ * @self: the #AgApplication.
+ * @service: an #AgService.
+ *
+ * Check whether the application supports the given service.
+ *
+ * Returns: %TRUE if @service is supported, %FALSE otherwise.
+ */
+gboolean
+ag_application_supports_service (AgApplication *self, AgService *service)
+{
+    AgApplicationItem *item;
+
+    g_return_val_if_fail (self != NULL, FALSE);
+    g_return_val_if_fail (service != NULL, FALSE);
+
+    item = _ag_application_get_service_item (self, service);
+
+    return item != NULL;
 }
 
 /**

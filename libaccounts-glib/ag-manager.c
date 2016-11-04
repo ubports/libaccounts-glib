@@ -2839,7 +2839,7 @@ ag_manager_list_applications_by_service (AgManager *manager,
     for (list = all_applications; list != NULL; list = list->next)
     {
         AgApplication *application = list->data;
-        if (_ag_application_supports_service (application, service))
+        if (ag_application_supports_service (application, service))
         {
             applications = g_list_prepend (applications, application);
         }
@@ -2853,3 +2853,21 @@ ag_manager_list_applications_by_service (AgManager *manager,
     return applications;
 }
 
+/**
+ * ag_manager_list_services_by_application:
+ * @manager: the #AgManager.
+ * @application: a #AgApplication.
+ *
+ * Get the list of services that are supported by @application.
+ *
+ * Returns: (transfer full) (element-type AgService): a #GList of #AgService
+ * items representing all the services which are supported. Must be free'd with
+ * ag_service_list_free().
+ */
+GList *
+ag_manager_list_services_by_application (AgManager *manager,
+                                         AgApplication *application)
+{
+    g_return_val_if_fail (AG_IS_MANAGER (manager), NULL);
+    return _ag_application_list_supported_services (application, manager);
+}

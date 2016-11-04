@@ -3,9 +3,19 @@
   <description>Mailer application</description>
   <translations>mailer-catalog</translations>
 
+	<!-- This file refers to "missing-service" and "missing-service-type" which,
+			 as their name hints, do not exist. The only valid reference contained in
+			 this file is the "e-mail" service type. -->
+  <services>
+    <service id="missing-service" />
+  </services>
+
   <service-types>
 		<service-type id="e-mail">
 			<description>Mailer can retrieve your e-mails</description>
+		</service-type>
+		<service-type id="missing-service-type">
+			<description>I wish I could do something with it</description>
 		</service-type>
   </service-types>
 
