@@ -93,7 +93,7 @@ store_cb_data_unset (StoreCbData *data)
 {
     g_free (data->provider);
     g_variant_unref (data->settings);
-    memset (data, 0, sizeof (data));
+    memset (data, 0, sizeof (*data));
 }
 
 static void
@@ -308,7 +308,6 @@ START_TEST(test_provider)
     const gchar *plugin_name;
     AgSettingSource source;
     AgProvider *provider;
-    GVariant *variant;
     GList *providers, *list;
     gboolean single_account;
     gboolean found;
@@ -389,7 +388,6 @@ END_TEST
 START_TEST(test_provider_settings)
 {
     AgSettingSource source;
-    AgProvider *provider;
     GVariant *variant;
 
     manager = ag_manager_new ();
@@ -420,7 +418,7 @@ START_TEST(test_provider_directories)
 {
     AgProvider *provider;
     gchar *ag_providers_env;
-    gchar *xdg_data_home_env, *xdg_data_dirs_env;
+    gchar *xdg_data_home_env;
 
     /* Unset the AG_PROVIDERS environment variable, just for this test, as
      * that disables the fallback mechanism which we now want to test. */
@@ -1438,7 +1436,6 @@ check_variant_in_dict (GVariant *dict, const gchar *key,
                        GVariant *expected)
 {
     GVariant *actual;
-    gboolean equal;
 
     actual = g_variant_lookup_value (dict, key, NULL);
     if (actual == NULL)
@@ -1542,7 +1539,6 @@ START_TEST(test_auth_data_insert_parameters)
 {
     GList *account_services;
     AgAccountService *account_service;
-    AgService *my_service;
     AgAuthData *data;
     GHashTable *params;
     GValue v_display = { 0, };
@@ -1599,7 +1595,6 @@ START_TEST(test_application)
     AgApplication *application;
     GDesktopAppInfo *app_info;
     GList *list;
-    gint i;
 
     manager = ag_manager_new ();
 
@@ -1666,10 +1661,9 @@ END_TEST
 
 START_TEST(test_application_supported_services)
 {
-    AgService *email_service, *sharing_service;
+    AgService *email_service;
     AgApplication *application;
     GList *list;
-    gint i;
 
     manager = ag_manager_new ();
 
@@ -1868,8 +1862,6 @@ START_TEST(test_service)
     fail_unless (data_stored, "Callback not invoked immediately");
     data_stored = FALSE;
 
-    g_debug ("Service id: %d", service->id);
-    g_debug ("Service2 id: %d", service2->id);
     g_debug ("Account id: %d", account->id);
     account_id = account->id;
 
@@ -1991,7 +1983,6 @@ service_in_list(GList *list, const gchar *service_name)
 START_TEST(test_account_services)
 {
     GList *services;
-    AgService *service;
 
     manager = ag_manager_new ();
 
@@ -2081,7 +2072,6 @@ END_TEST
 START_TEST(test_signals_other_manager)
 {
     AgAccountId account_id;
-    gboolean service_enabled = FALSE;
     AgManager *manager2;
     AgAccount *account2;
     EnabledCbData ecd;
@@ -2151,8 +2141,6 @@ START_TEST(test_list)
     const gchar *my_service_name = "MyService";
     const gchar *service_name = "OtherService";
     const gchar *service_type;
-    GValue value = { 0 };
-    AgSettingSource source;
     GList *list;
 
     manager = ag_manager_new ();
@@ -2755,7 +2743,7 @@ START_TEST(test_watches)
     w_dir = ag_account_watch_dir (account, "parameters/",
                                   (AgAccountNotifyCb)dir_changed_cb,
                                   &dir_changed);
-    fail_unless (w_port != NULL);
+    fail_unless (w_dir != NULL);
 
     /* change the port */
     g_value_init (&value, G_TYPE_INT);
@@ -3155,7 +3143,6 @@ START_TEST(test_service_regression)
     fail_unless (data_stored, "Callback not invoked immediately");
     data_stored = FALSE;
 
-    g_debug ("Service id: %d", service->id);
     g_debug ("Account id: %d", account->id);
     account_id = account->id;
 
@@ -3284,7 +3271,7 @@ END_TEST
 
 START_TEST(test_cache_regression)
 {
-    AgAccountId account_id1, account_id2;
+    AgAccountId account_id;
     const gchar *provider1 = "first_provider";
     const gchar *provider2 = "second_provider";
     const gchar *display_name1 = "first_displayname";
@@ -3310,7 +3297,7 @@ START_TEST(test_cache_regression)
     fail_unless (data_stored, "Callback not invoked immediately");
     data_stored = FALSE;
 
-    account_id1 = account->id;
+    account_id = account->id;
 
     /* now remove the account, but don't destroy the object */
     ag_account_delete (account);
@@ -3323,7 +3310,7 @@ START_TEST(test_cache_regression)
 
     /* after deleting the account, we shouldn't get it anymore, even if we
      * didn't release our reference */
-    account = ag_manager_get_account (manager, account_id1);
+    account = ag_manager_get_account (manager, account_id);
     fail_unless (account == NULL);
 
     /* create another account */
@@ -3336,8 +3323,6 @@ START_TEST(test_cache_regression)
     run_main_loop_for_n_seconds(0);
     fail_unless (data_stored, "Callback not invoked immediately");
     data_stored = FALSE;
-
-    account_id2 = account->id;
 
     /* check that the values are the correct ones */
     fail_unless (g_strcmp0 (ag_account_get_display_name (account),
@@ -3446,7 +3431,6 @@ END_TEST
 
 START_TEST(test_delete_regression)
 {
-    AgAccountId id;
     AgAccountService *account_service;
     gboolean enabled_called, deleted_called;
 
@@ -3467,7 +3451,6 @@ START_TEST(test_delete_regression)
     data_stored = FALSE;
 
     fail_unless (account->id != 0, "Account ID is still 0!");
-    id = account->id;
 
     account_service = ag_account_service_new (account, service);
 
@@ -3949,7 +3932,6 @@ on_account_created_with_db_locked (AgManager *manager, AgAccountId account_id)
 
     service = list->data;
     fail_unless (service != NULL);
-    fail_unless (service->id != 0);
 
     name = ag_service_get_name (service);
     fail_unless (strcmp (name, "MyService") == 0);
@@ -4117,7 +4099,7 @@ ag_suite(const char *test_case)
      * Should we even need those tests back, they can be found in the git
      * history.
      */
-    tcase_set_timeout (tc, 10);
+    tcase_set_timeout (tc, 30);
     IF_TEST_CASE_ENABLED("Concurrency")
         suite_add_tcase (s, tc);
 
