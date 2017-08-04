@@ -26,6 +26,10 @@
 #ifndef _AG_ERRORS_H_
 #define _AG_ERRORS_H_
 
+#if !defined (__ACCOUNTS_GLIB_H_INSIDE__) && !defined (ACCOUNTS_GLIB_COMPILATION)
+#warning "Only <libaccounts-glib.h> should be included directly."
+#endif
+
 #include <glib.h>
 
 G_BEGIN_DECLS

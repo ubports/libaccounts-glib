@@ -25,20 +25,16 @@
 #ifndef _ACCOUNTS_GLIB_H_
 #define _ACCOUNTS_GLIB_H_
 
-#if !defined (ACCOUNTS_GLIB_COMPILATION)
-#warning "<accounts-glib.h> is deprecated, only <libaccounts-glib.h> should be included directly."
-#endif
-
 #define __ACCOUNTS_GLIB_H_INSIDE__
 
-#include <libaccounts-glib/ag-account.h>
-#include <libaccounts-glib/ag-account-service.h>
-#include <libaccounts-glib/ag-application.h>
-#include <libaccounts-glib/ag-auth-data.h>
-#include <libaccounts-glib/ag-errors.h>
-#include <libaccounts-glib/ag-manager.h>
-#include <libaccounts-glib/ag-provider.h>
-#include <libaccounts-glib/ag-service.h>
-#include <libaccounts-glib/ag-service-type.h>
+#include <ag-account.h>
+#include <ag-account-service.h>
+#include <ag-application.h>
+#include <ag-auth-data.h>
+#include <ag-errors.h>
+#include <ag-manager.h>
+#include <ag-provider.h>
+#include <ag-service.h>
+#include <ag-service-type.h>
 
 #endif /* _ACCOUNTS_GLIB_H_ */

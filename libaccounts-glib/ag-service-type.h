@@ -28,6 +28,10 @@
 #ifndef _AG_SERVICE_TYPE_H_
 #define _AG_SERVICE_TYPE_H_
 
+#if !defined (__ACCOUNTS_GLIB_H_INSIDE__) && !defined (ACCOUNTS_GLIB_COMPILATION)
+#warning "Only <libaccounts-glib.h> should be included directly."
+#endif
+
 #include <glib.h>
 #include <glib-object.h>
 #include <libaccounts-glib/ag-types.h>

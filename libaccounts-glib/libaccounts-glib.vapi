@@ -2,7 +2,7 @@
 
 [CCode (cprefix = "Ag", gir_namespace = "Accounts", gir_version = "1.0", lower_case_cprefix = "ag_")]
 namespace Ag {
-	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", type_id = "ag_account_get_type ()")]
+	[CCode (cheader_filename = "libaccounts-glib.h", type_id = "ag_account_get_type ()")]
 	public class Account : GLib.Object, GLib.Initable {
 		[CCode (has_construct_function = false)]
 		protected Account ();
@@ -50,7 +50,7 @@ namespace Ag {
 		public signal void display_name_changed ();
 		public signal void enabled (string service, bool enabled);
 	}
-	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", type_id = "ag_account_service_get_type ()")]
+	[CCode (cheader_filename = "libaccounts-glib.h", type_id = "ag_account_service_get_type ()")]
 	public class AccountService : GLib.Object {
 		[CCode (has_construct_function = false)]
 		public AccountService (owned Ag.Account account, owned Ag.Service? service);
@@ -78,7 +78,7 @@ namespace Ag {
 		public signal void changed ();
 		public signal void enabled (bool enabled);
 	}
-	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", copy_function = "g_boxed_copy", free_function = "g_boxed_free", lower_case_csuffix = "account_settings_iter", type_id = "ag_account_settings_iter_get_type ()")]
+	[CCode (cheader_filename = "libaccounts-glib.h", copy_function = "g_boxed_copy", free_function = "g_boxed_free", lower_case_csuffix = "account_settings_iter", type_id = "ag_account_settings_iter_get_type ()")]
 	[Compact]
 	public class AccountSettingIter {
 		public weak Ag.Account account;
@@ -87,11 +87,11 @@ namespace Ag {
 		[Deprecated (replacement = "get_next", since = "1.4")]
 		public bool next (out unowned string key, out GLib.Value value);
 	}
-	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h")]
+	[CCode (cheader_filename = "libaccounts-glib.h")]
 	[Compact]
 	public class AccountWatch {
 	}
-	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", copy_function = "g_boxed_copy", free_function = "g_boxed_free", type_id = "ag_application_get_type ()")]
+	[CCode (cheader_filename = "libaccounts-glib.h", copy_function = "g_boxed_copy", free_function = "g_boxed_free", type_id = "ag_application_get_type ()")]
 	[Compact]
 	public class Application {
 		public unowned string get_description ();
@@ -102,7 +102,7 @@ namespace Ag {
 		public Ag.Application @ref ();
 		public void unref ();
 	}
-	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", copy_function = "g_boxed_copy", free_function = "g_boxed_free", type_id = "ag_auth_data_get_type ()")]
+	[CCode (cheader_filename = "libaccounts-glib.h", copy_function = "g_boxed_copy", free_function = "g_boxed_free", type_id = "ag_auth_data_get_type ()")]
 	[Compact]
 	public class AuthData {
 		public uint get_credentials_id ();
@@ -116,7 +116,7 @@ namespace Ag {
 		public Ag.AuthData @ref ();
 		public void unref ();
 	}
-	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", type_id = "ag_manager_get_type ()")]
+	[CCode (cheader_filename = "libaccounts-glib.h", type_id = "ag_manager_get_type ()")]
 	public class Manager : GLib.Object, GLib.Initable {
 		[CCode (has_construct_function = false)]
 		public Manager ();
@@ -156,7 +156,7 @@ namespace Ag {
 		public signal void account_updated (uint account_id);
 		public signal void enabled_event (uint account_id);
 	}
-	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", copy_function = "g_boxed_copy", free_function = "g_boxed_free", type_id = "ag_provider_get_type ()")]
+	[CCode (cheader_filename = "libaccounts-glib.h", copy_function = "g_boxed_copy", free_function = "g_boxed_free", type_id = "ag_provider_get_type ()")]
 	[Compact]
 	public class Provider {
 		public unowned string get_description ();
@@ -173,7 +173,7 @@ namespace Ag {
 		public Ag.Provider @ref ();
 		public void unref ();
 	}
-	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", copy_function = "g_boxed_copy", free_function = "g_boxed_free", type_id = "ag_service_get_type ()")]
+	[CCode (cheader_filename = "libaccounts-glib.h", copy_function = "g_boxed_copy", free_function = "g_boxed_free", type_id = "ag_service_get_type ()")]
 	[Compact]
 	public class Service {
 		public unowned string get_description ();
@@ -190,7 +190,7 @@ namespace Ag {
 		public Ag.Service @ref ();
 		public void unref ();
 	}
-	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", copy_function = "g_boxed_copy", free_function = "g_boxed_free", type_id = "ag_service_type_get_type ()")]
+	[CCode (cheader_filename = "libaccounts-glib.h", copy_function = "g_boxed_copy", free_function = "g_boxed_free", type_id = "ag_service_type_get_type ()")]
 	[Compact]
 	public class ServiceType {
 		public unowned string get_description ();
@@ -205,17 +205,17 @@ namespace Ag {
 		public Ag.ServiceType @ref ();
 		public void unref ();
 	}
-	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h")]
+	[CCode (cheader_filename = "libaccounts-glib.h")]
 	[SimpleType]
 	public struct AccountId : uint {
 	}
-	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", cprefix = "AG_SETTING_SOURCE_", has_type_id = false)]
+	[CCode (cheader_filename = "libaccounts-glib.h", cprefix = "AG_SETTING_SOURCE_", has_type_id = false)]
 	public enum SettingSource {
 		NONE,
 		ACCOUNT,
 		PROFILE
 	}
-	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", cprefix = "AG_ACCOUNTS_ERROR_")]
+	[CCode (cheader_filename = "libaccounts-glib.h", cprefix = "AG_ACCOUNTS_ERROR_")]
 	public errordomain AccountsError {
 		DB,
 		DISPOSED,
@@ -226,13 +226,13 @@ namespace Ag {
 		READONLY;
 		public static GLib.Quark quark ();
 	}
-	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", instance_pos = 2.9)]
+	[CCode (cheader_filename = "libaccounts-glib.h", instance_pos = 2.9)]
 	public delegate void AccountNotifyCb (Ag.Account account, string key);
-	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", instance_pos = 2.9)]
+	[CCode (cheader_filename = "libaccounts-glib.h", instance_pos = 2.9)]
 	public delegate void AccountServiceNotifyCb (Ag.AccountService self, string key);
 	[Deprecated (since = "1.4")]
-	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h", instance_pos = 2.9)]
+	[CCode (cheader_filename = "libaccounts-glib.h", instance_pos = 2.9)]
 	public delegate void AccountStoreCb (Ag.Account account, GLib.Error error);
-	[CCode (cheader_filename = "libaccounts-glib/accounts-glib.h")]
+	[CCode (cheader_filename = "libaccounts-glib.h")]
 	public static GLib.Quark errors_quark ();
 }

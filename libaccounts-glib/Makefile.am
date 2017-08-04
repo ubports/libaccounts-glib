@@ -5,6 +5,7 @@ libaccounts_glib_la_CPPFLAGS = \
 	-I$(top_srcdir) \
 	-I$(top_builddir) \
 	-I$(builddir) \
+	-DACCOUNTS_GLIB_COMPILATION \
 	-DG_LOG_DOMAIN=\"accounts-glib\"
 libaccounts_glib_la_CFLAGS = \
 	$(LIBACCOUNTS_CFLAGS) \
@@ -52,6 +53,7 @@ nodist_libaccounts_glib_la_SOURCES = \
 
 libaccounts_glib_includedir = $(includedir)/libaccounts-glib
 libaccounts_glib_include_HEADERS = \
+	libaccounts-glib.h \
 	accounts-glib.h \
 	ag-account.h \
 	ag-account-service.h \
@@ -103,10 +105,11 @@ Accounts_1_0_gir_INCLUDES = GObject-2.0 Gio-2.0
 Accounts_1_0_gir_SCANNERFLAGS = \
 	--identifier-prefix=Ag \
 	--symbol-prefix=ag \
-	--c-include="libaccounts-glib/accounts-glib.h" \
+	--c-include="libaccounts-glib.h" \
 	--warn-all
 Accounts_1_0_gir_CFLAGS = \
 	$(LIBACCOUNTS_CFLAGS) \
+	-DACCOUNTS_GLIB_COMPILATION \
 	-I$(top_srcdir)
 Accounts_1_0_gir_LIBS = libaccounts-glib.la
 Accounts_1_0_gir_FILES = $(introspection_sources)

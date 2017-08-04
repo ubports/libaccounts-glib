@@ -13,4 +13,4 @@ Requires: glib-2.0 gobject-2.0 gio-unix-2.0
 Require.private: libxml-2.0 sqlite3
 Version: @VERSION@
 Libs: -L${libdir} -laccounts-glib
-Cflags: -I${includedir}
+Cflags: -I${includedir} -I${includedir}/libaccounts-glib

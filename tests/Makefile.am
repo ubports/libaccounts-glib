@@ -2,7 +2,7 @@
 
 SUBDIRS = data
 
-AM_CPPFLAGS = -I$(top_srcdir)
+AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/libaccounts-glib
 
 test_PROGRAMS = \
 	accounts-glib-testsuite \

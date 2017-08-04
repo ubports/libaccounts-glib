@@ -25,6 +25,10 @@
 #ifndef _AG_APPLICATION_H_
 #define _AG_APPLICATION_H_
 
+#if !defined (__ACCOUNTS_GLIB_H_INSIDE__) && !defined (ACCOUNTS_GLIB_COMPILATION)
+#warning "Only <libaccounts-glib.h> should be included directly."
+#endif
+
 #include <gio/gdesktopappinfo.h>
 #include <glib-object.h>
 #include <libaccounts-glib/ag-types.h>

@@ -26,6 +26,10 @@
 #ifndef _AG_TYPES_H_
 #define _AG_TYPES_H_
 
+#if !defined (__ACCOUNTS_GLIB_H_INSIDE__) && !defined (ACCOUNTS_GLIB_COMPILATION)
+#warning "Only <libaccounts-glib.h> should be included directly."
+#endif
+
 G_BEGIN_DECLS
 
 /**
