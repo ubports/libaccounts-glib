@@ -1,3 +1,9 @@
+libaccounts-glib (1.23+ubports) xenial; urgency=medium
+
+  * No change rebuild for ubports xenial repo 
+
+ -- Dan Chapman <dan@ubports.com>  Sat, 06 Jan 2018 09:11:12 +0000
+
 libaccounts-glib (1.23+17.04.20161104-0ubuntu1) zesty; urgency=medium
 
   * New upstream release
